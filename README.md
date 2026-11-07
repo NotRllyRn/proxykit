@@ -18,7 +18,42 @@ curl -i http://127.0.0.1:8080/
 
 Clients use ProxyKit as their base URL. An upstream such as `https://example.com/api?version=1` prefixes incoming paths and appends incoming query parameters. This is a **reverse proxy**, not a CONNECT forward proxy for `HTTP_PROXY`/`HTTPS_PROXY` settings.
 
-The listener defaults to loopback. There is no client authentication or inbound TLS configuration; public deployment needs those controls outside this core. Upstream HTTPS certificates are verified normally. Upstream URLs cannot contain credentials or fragments. Request Authorization headers are forwarded.
+The listener defaults to loopback. There is no client authentication. For direct HTTPS/WSS, add `-tls-cert cert.pem -tls-key key.pem`; otherwise terminate TLS in front of ProxyKit. Public deployment still needs access controls. Upstream HTTPS certificates are verified normally. Upstream URLs cannot contain credentials or fragments. Request Authorization headers are forwarded.
+
+## Connection support
+
+**Transport support, verified with local fixtures—not live-provider certification.** Configure the client's base URL and send the credentials its upstream expects. One ProxyKit instance forwards to one upstream; it does not translate formats or route among providers.
+
+| Connection / request | Support |
+| --- | --- |
+| OpenAI/Codex Responses, `/v1/responses/compact`, Chat Completions | Yes: opaque HTTP bodies and SSE; compaction/state fields preserved |
+| Claude/Anthropic Messages, Gemini REST, other HTTP APIs | Yes: paths, provider headers and bodies pass through; no adapters |
+| SSE, binary/event streams, audio/images/files, multipart uploads | Yes: incremental request/response streaming, including known-length bodies |
+| Responses, Realtime/voice, Gemini Live WebSockets | Yes: HTTP/1.1 upgrade, WS/WSS, text/binary, fragmentation, ping/pong, close |
+| HTTP/1.1 and HTTP/2, duplex streams and trailers | Yes: HTTP/2 over TLS on both sides; prior-knowledge h2c inbound only |
+| gRPC over HTTP/2 | Opaque frames/trailers tested; no service discovery or protocol translation |
+| WebRTC voice | HTTP session/SDP signaling only; media/data channels bypass this proxy |
+| HTTP/3, WebSocket over HTTP/2 extended CONNECT, CONNECT tunnels, SIP | Not supported |
+| OAuth/login, signing, model access, API-format conversion | Client/upstream responsibility; not implemented here |
+
+OpenAI-compatible services (including compatible Grok endpoints) use the same generic transport. Names such as Kiro or Muse do not establish a wire protocol or a tested integration. Clients must allow endpoint configuration; signed requests must be valid for the actual upstream Host/path. Browser CORS policy and absolute redirects/upload URLs remain upstream-owned and are not rewritten. See [coverage and evidence](docs/TRANSPORT_COVERAGE.md).
+
+### Codex with an API-key upstream
+
+Run `go run ./cmd/proxykit -upstream https://api.openai.com`, then configure a Codex provider in `~/.codex/config.toml`:
+
+```toml
+model_provider = "proxykit"
+
+[model_providers.proxykit]
+name = "ProxyKit"
+base_url = "http://127.0.0.1:8080/v1"
+wire_api = "responses"
+env_key = "OPENAI_API_KEY"
+supports_websockets = true
+```
+
+Keep your chosen upstream-supported model and supply the key through your environment. This follows the [documented Codex configuration](https://developers.openai.com/codex/config-reference); it is not a tested ChatGPT subscription-login or hosted Codex Cloud integration. A cloud client needs a reachable proxy URL and support for overriding its endpoint.
 
 ## Behavior
 
@@ -26,13 +61,13 @@ The listener defaults to loopback. There is no client authentication or inbound 
 - Reuses upstream connections and preserves compressed representations, end-to-end headers, status codes and trailers.
 - Rewrites destination and Host; strips hop-by-hop headers and Go's recognized Forwarded/X-Forwarded identity headers. It does not add forwarding identity headers or follow environment proxy settings.
 - Returns 502 on upstream connection/TLS errors. Interrupted responses terminate. No application retry policy is added.
-- Uses a 10-second request-header timeout and 90-second idle timeout, with no total stream deadline. SIGINT/SIGTERM allows ordinary active requests up to 10 seconds to finish before forced closure.
+- Uses a 10-second request-header timeout and 90-second idle timeout, with no total stream deadline. SIGINT/SIGTERM allows ordinary active requests up to 10 seconds to finish, then cancels remaining connections, including WebSocket tunnels. Shutdown closes tunnels without synthesizing WebSocket close frames.
 
-Standard-library upgrade handling is retained, but WebSocket compatibility and draining hijacked connections are not tested or guaranteed. There is no TLS interception, protocol-specific AI logic, extension host, storage or dashboard.
+WebSocket traffic uses standard-library upgrade handling; there is no WebSocket message parser. There is no TLS interception, protocol-specific AI logic, extension host, storage or dashboard.
 
 ## Native composition
 
-`proxy.New(upstream)` returns a standard `*httputil.ReverseProxy`. Configure its `Rewrite`, `ModifyResponse` or `Transport` before serving to modify requests and responses, including body readers. Transformations must keep length/encoding headers correct and close replaced bodies. Configuration must remain unchanged while requests are running. Close the transport's idle connections when finished.
+`proxy.New(upstream)` returns a `*proxy.Proxy` embedding the standard `*httputil.ReverseProxy`, with HTTP/1 full duplex enabled. Configure its `Rewrite`, `ModifyResponse` or `Transport` before serving to modify requests and responses, including body readers. Transformations must keep length/encoding headers correct and close replaced bodies. Configuration must remain unchanged while requests are running. Close the transport's idle connections when finished. Embedded servers should supply a cancellable `http.Server.BaseContext` and cancel it after HTTP draining to close upgraded connections, as the executable does.
 
 This is a Go composition surface, not an implemented TypeScript extension API. A future Node worker host can provide TypeScript/npm authoring; its IPC, lifecycle and streaming contracts remain to be designed.
 
@@ -44,9 +79,9 @@ go vet ./...
 go test ./proxy -run '^$' -bench BenchmarkProxy -benchmem -benchtime=2s -cpu=4
 ```
 
-Tests cover configuration validation; forwarding, escaping, headers, compression, trailers, HEAD and no-content regressions; socket integration for streaming uploads/downloads, SSE, cancellation, HTTPS, connection reuse, failures and native body transformations; and a compiled-process system test for startup and graceful shutdown. The signal-based system test runs on POSIX systems and skips Windows. CI runs vet, race-enabled tests and a build on Linux. Research fixtures are isolated from the application module.
+Tests cover forwarding and opaque API payloads; SSE and duplex streaming; compression and trailers; TLS, HTTP/2 and h2c; WebSocket frames, disconnects and shutdown; errors and connection reuse; and a compiled-process startup/draining test. Tests use local fixtures, with no provider credentials. The POSIX signal test skips Windows. CI runs vet, race-enabled tests and a build on Linux. Research fixtures are isolated from the application module.
 
-Local baseline: Go 1.27.1, Linux amd64, Intel i9-13900H, four benchmark CPUs, parallel 32 KiB responses over loopback: **261,582 ns/op, 125.27 MB/s, 47,919 B/op, 160 allocations/op**. These are whole-harness measurements including client, proxy and upstream, not isolated proxy latency, production capacity, bounded-memory proof, or a Go-versus-Node comparison. No claim of maximum achievable speed is made; this is a repeatable starting point without speculative optimization.
+Local baseline: Go 1.27.1, Linux amd64, Intel i9-13900H, four benchmark CPUs, parallel 32 KiB responses over loopback: **221,310 ns/op, 148.06 MB/s, 48,050 B/op, 161 allocations/op**. These are whole-harness measurements including client, proxy and upstream, not isolated proxy latency, production capacity, bounded-memory proof, or a Go-versus-Node comparison. No claim of maximum achievable speed is made; this is a repeatable starting point without speculative optimization.
 
 ## Project context
 

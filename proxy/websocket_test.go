@@ -102,6 +102,7 @@ func TestWebSocketPassThrough(t *testing.T) {
 					}
 				}))
 				if secure {
+					upstream.EnableHTTP2 = true // Upgrade requests must still negotiate HTTP/1.1.
 					upstream.StartTLS()
 				} else {
 					upstream.Start()
