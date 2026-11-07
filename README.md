@@ -1,4 +1,4 @@
-# WeaveProxy
+# ProxyKit
 
 A customizable HTTP proxy core with modular extensions for routing, context management, gateway tools, and observability.
 

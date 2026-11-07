@@ -1,4 +1,4 @@
-# WeaveProxy: project direction and architecture waypoint
+# ProxyKit: project direction and architecture waypoint
 
 Created: 2026-11-07. Status: founding brief, not an implemented specification.
 
@@ -175,7 +175,7 @@ The existing `feature/proxy-extension-layer` branch is useful prior work, not th
 - Host-owned authentication, account selection, credential injection, and failover.
 - No host-managed gateway-tool loop or general agent-session ownership; non-Responses protocols are opaque and WebSocket upgrades are rejected.
 
-Those boundaries suit traffic customization within Broker. For WeaveProxy, account selection needs a provider role, gateway tools need a shared execution loop, durable context needs stronger storage contracts, and failure/concurrency policy needs to vary by responsibility.
+Those boundaries suit traffic customization within Broker. For ProxyKit, account selection needs a provider role, gateway tools need a shared execution loop, durable context needs stronger storage contracts, and failure/concurrency policy needs to vary by responsibility.
 
 Keep useful abstractions and behavior tests. Do not assume a wholesale rewrite or wholesale source copy is necessary. Check the source license and current implementation before porting anything.
 
@@ -234,4 +234,4 @@ Public sources reviewed in the founding discussion:
 - Codex Broker source: https://github.com/NotRllyRn/codex-broker
 - Broker branch contract: `docs/proxy-extensions.md` and `packages/proxy-extension/index.d.ts` on `feature/proxy-extension-layer`.
 
-No implementation, live provider compatibility test, performance benchmark, or security audit has been performed for WeaveProxy. This document is the waypoint for deciding and building those things.
+No implementation, live provider compatibility test, performance benchmark, or security audit has been performed for ProxyKit. This document is the waypoint for deciding and building those things.
