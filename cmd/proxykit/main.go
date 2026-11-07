@@ -30,6 +30,8 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	flags := flag.NewFlagSet("proxykit", flag.ContinueOnError)
 	flags.SetOutput(output)
 	listen := flags.String("listen", "127.0.0.1:8080", "HTTP listen address")
+	certificate := flags.String("tls-cert", "", "optional PEM certificate file (requires -tls-key)")
+	privateKey := flags.String("tls-key", "", "optional PEM private key file (requires -tls-cert)")
 	upstream := flags.String("upstream", "", "required upstream HTTP(S) URL")
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -40,6 +42,9 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	if flags.NArg() != 0 {
 		return fmt.Errorf("unexpected positional arguments")
 	}
+	if (*certificate == "") != (*privateKey == "") {
+		return fmt.Errorf("-tls-cert and -tls-key must be supplied together")
+	}
 	handler, err := proxy.New(*upstream)
 	if err != nil {
 		return err
@@ -47,8 +52,18 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	defer handler.Transport.(*http.Transport).CloseIdleConnections()
 	logger := log.New(output, "proxykit: ", log.LstdFlags)
 	handler.ErrorLog = logger
+	// Signal cancellation starts draining; this separate context closes upgraded
+	// connections when draining finishes, since Server.Shutdown does not own them.
+	connections, closeConnections := context.WithCancel(context.Background())
+	defer closeConnections()
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetHTTP2(true)
+	protocols.SetUnencryptedHTTP2(true)
 	server := &http.Server{
 		Handler:           handler,
+		Protocols:         protocols,
+		BaseContext:       func(net.Listener) context.Context { return connections },
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       90 * time.Second,
 		ErrorLog:          logger,
@@ -59,7 +74,13 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	}
 	logger.Printf("listening on %s", listener.Addr())
 	result := make(chan error, 1)
-	go func() { result <- server.Serve(listener) }()
+	go func() {
+		if *certificate != "" {
+			result <- server.ServeTLS(listener, *certificate, *privateKey)
+		} else {
+			result <- server.Serve(listener)
+		}
+	}()
 	select {
 	case err := <-result:
 		return err

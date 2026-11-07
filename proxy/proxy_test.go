@@ -27,7 +27,7 @@ func startProxy(t testing.TB, upstream string, configure func(*httputil.ReverseP
 	transport := handler.Transport.(*http.Transport)
 	t.Cleanup(transport.CloseIdleConnections)
 	if configure != nil {
-		configure(handler)
+		configure(handler.ReverseProxy)
 	}
 	server := httptest.NewServer(handler)
 	t.Cleanup(server.Close)
