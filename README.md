@@ -1,8 +1,8 @@
 # ProxyKit
 
-A small, streaming HTTP reverse proxy written in Go. The core has no third-party dependencies. Extensions, a dashboard and npm/npx packaging are future work.
+A small, streaming HTTP reverse proxy written in Go, with native Go extensions and trusted Node ESM workers. The Go core has no third-party dependencies. Installed extensions activate on server restart; a dashboard and published npm/npx packaging remain future work.
 
-Go was selected for its compiled transport, standard-library reverse proxy and standalone deployment. TypeScript on Node is easier for in-process TypeScript extensions, but Go better fits this initial transport-only deliverable. See the [decision matrix and transport contract](docs/TRANSPORT_DECISION.md) for tradeoffs and the future Node boundary. Go does not compile through Rust.
+Go owns transport and extension execution; Node supplies an optional TypeScript/JavaScript authoring boundary. See the [transport decision](docs/TRANSPORT_DECISION.md), [extension SDK](sdk/README.md), and [implementation tracker](docs/IMPLEMENTATION_TRACKER.md). Cross-application acceptance is still in progress; implemented boundaries are not blanket support for every client or provider.
 
 ## Run
 
@@ -18,11 +18,29 @@ curl -i http://127.0.0.1:8080/
 
 Clients use ProxyKit as their base URL. An upstream such as `https://example.com/api?version=1` prefixes incoming paths and appends incoming query parameters. This is a **reverse proxy**, not a CONNECT forward proxy for `HTTP_PROXY`/`HTTPS_PROXY` settings.
 
-The listener defaults to loopback. There is no client authentication. For direct HTTPS/WSS, add `-tls-cert cert.pem -tls-key key.pem`; otherwise terminate TLS in front of ProxyKit. Public deployment still needs access controls. Upstream HTTPS certificates are verified normally. Upstream URLs cannot contain credentials or fragments. Request Authorization headers are forwarded.
+The listener defaults to loopback. Without an authentication extension, there is no client authentication. For direct HTTPS/WSS, add `-tls-cert cert.pem -tls-key key.pem`; otherwise terminate TLS in front of ProxyKit. Public deployment still needs access controls. Upstream HTTPS certificates are verified normally. Upstream URLs cannot contain credentials or fragments. Request Authorization headers are forwarded.
+
+## Install extensions
+
+Requires Node on PATH when activating Node extensions (tested with Node 24). Packages must contain a root `proxykit-extension.json` manifest and prebuilt ESM; installation does not run npm, build commands or package scripts.
+
+```sh
+# Replace this placeholder with a repository you have reviewed and trust:
+/tmp/proxykit extension install https://github.com/OWNER/REPOSITORY --trust
+/tmp/proxykit extension list
+# Start/restart with the same extension store to validate and activate hooks:
+/tmp/proxykit -listen 127.0.0.1:8080 -upstream https://example.com
+# Removal also takes effect on restart:
+/tmp/proxykit extension remove example-extension
+```
+
+Set `PROXYKIT_EXTENSIONS_DIR` to select the store; otherwise it lives under your OS user configuration directory at `proxykit/extensions`. Installation records the resolved GitHub commit. Invalid packages or hook configurations fail activation rather than being silently ignored. Updating currently requires explicit removal/reinstallation, not a hot swap.
+
+**Trusted extensions execute arbitrary server-side code with the server's privileges.** `--trust` is an acknowledgment, not a sandbox or security review. Review the repository before installing. See the [SDK and authoring guide](sdk/README.md), [example extension](examples/node-personal-usage/), and [installation/runtime contracts](docs/implementation/distribution.md).
 
 ## Connection support
 
-**Transport support, verified with local fixtures—not live-provider certification.** Configure the client's base URL and send the credentials its upstream expects. One ProxyKit instance forwards to one upstream; it does not translate formats or route among providers.
+**No-extension transport support, verified with local fixtures—not live-provider certification.** Configure the client's base URL and send the credentials its upstream expects. Without extensions, one instance forwards to one configured upstream and does not translate formats or route among providers. Optional native application examples add narrower routing and AI protocol capabilities.
 
 | Connection / request | Support |
 | --- | --- |
@@ -55,7 +73,7 @@ supports_websockets = true
 
 Keep your chosen upstream-supported model and supply the key through your environment. This follows the [documented Codex configuration](https://developers.openai.com/codex/config-reference); it is not a tested ChatGPT subscription-login or hosted Codex Cloud integration. A cloud client needs a reachable proxy URL and support for overriding its endpoint.
 
-## Behavior
+## No-extension behavior
 
 - Streams request and response bodies, including SSE, with backpressure and cancellation; no whole-body buffering.
 - Reuses upstream connections and preserves compressed representations, end-to-end headers, status codes and trailers.
@@ -63,18 +81,20 @@ Keep your chosen upstream-supported model and supply the key through your enviro
 - Returns 502 on upstream connection/TLS errors. Interrupted responses terminate. No application retry policy is added.
 - Uses a 10-second request-header timeout and 90-second idle timeout, with no total stream deadline. SIGINT/SIGTERM allows ordinary active requests up to 10 seconds to finish, then cancels remaining connections, including WebSocket tunnels. Shutdown closes tunnels without synthesizing WebSocket close frames.
 
-WebSocket traffic uses standard-library upgrade handling; there is no WebSocket message parser. There is no TLS interception, protocol-specific AI logic, extension host, storage or dashboard.
+WebSocket traffic uses standard-library upgrade handling; there is no gateway WebSocket message parser or TLS interception. Optional AI adapters and durable application examples are separate from the transport. There is no built-in dashboard.
 
 ## Native composition
 
 `proxy.New(upstream)` returns a `*proxy.Proxy` embedding the standard `*httputil.ReverseProxy`, with HTTP/1 full duplex enabled. Configure its `Rewrite`, `ModifyResponse` or `Transport` before serving to modify requests and responses, including body readers. Transformations must keep length/encoding headers correct and close replaced bodies. Configuration must remain unchanged while requests are running. Close the transport's idle connections when finished. Embedded servers should supply a cancellable `http.Server.BaseContext` and cancel it after HTTP draining to close upgraded connections, as the executable does.
 
-This is a Go composition surface, not an implemented TypeScript extension API. A future Node worker host can provide TypeScript/npm authoring; its IPC, lifecycle and streaming contracts remain to be designed.
+For managed native extensions, use `extension.New` and `proxy.NewWithEngine`. The engine owns ordered hooks, bounded body recovery, scoped internal calls, original observations and delivery evidence. See [execution contracts](docs/implementation/execution.md). `nodehost.Open` adapts installed Node hooks to that same engine; the CLI uses it automatically when extensions are installed. TypeScript authors compile to ESM before packaging.
+
+Optional examples demonstrate [account brokering](examples/brokerapp/), [managed AI coordination](examples/aihost/) and [durable recall](examples/recall/). They are application building blocks, not enabled-by-default services or universal protocol adapters.
 
 ## Verify
 
 ```sh
-go test -race -timeout 90s ./...
+go test -race -count=1 -timeout 180s ./...
 go vet ./...
 go test ./proxy -run '^$' -bench BenchmarkProxy -benchmem -benchtime=2s -cpu=4
 ```
@@ -85,7 +105,7 @@ Local baseline: Go 1.27.1, Linux amd64, Intel i9-13900H, four benchmark CPUs, pa
 
 ## Project context
 
-Start with the [consolidated extension plan](docs/EXTENSION_PLAN.md) for current decisions, recovery/re-entry recommendations, open cases and implementation progress.
+Start with the [implementation tracker](docs/IMPLEMENTATION_TRACKER.md) for current integration status and evidence. The [consolidated extension plan](docs/EXTENSION_PLAN.md) retains the design decisions, recovery/re-entry recommendations and open cases.
 
 The [extension composition note](docs/EXTENSION_COMPOSITION.md) records current priorities, proposed hook stages/ledger, streaming rules, and source findings from Pi and Codex Broker.
 

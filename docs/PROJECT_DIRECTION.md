@@ -1,6 +1,6 @@
 # ProxyKit: project direction and architecture waypoint
 
-Updated: 2026-11-08. Status: current direction with historical research. The Go transport is implemented; extension contracts remain proposed.
+Updated: 2026-11-08. Status: direction and historical research. Transport, managed native execution, installed Node hooks and optional application examples are implemented; combined system acceptance is in progress. See the [implementation tracker](IMPLEMENTATION_TRACKER.md) and linked package contracts for tested scope. Historical proposals below are not a claim that every capability is implemented.
 
 The authoritative [six extension architecture decisions](research/2026-11-extension-audit/extension-requirements.md) cover R01–R50 under the extension-owned application model. Read the [core readiness review and staged gates](CORE_READINESS.md) before implementing extensions. Historical router evidence does not override these ownership rules.
 
@@ -26,9 +26,9 @@ The desired product is a reusable foundation, not merely a renamed Codex-specifi
 
 ## Immediate scope and authorization
 
-The initial context-only handoff is historical. The generic Go transport has since been authorized and implemented. The current task updates architecture documentation and reviews readiness; it does not implement the extension layer.
+The initial context-only handoff and subsequent readiness-only phase are historical. The user has now authorized extension implementation, including GitHub CLI installation and manager/worker implementation and review groups. Current progress and unresolved acceptance gates are tracked separately.
 
-The milestones are acceptance gates for future authorized work, not instructions to build every possible feature. Go is selected for transport; extension authoring/worker APIs, packaging and deployment details remain open.
+The milestones remain acceptance gates, not instructions to turn every optional capability into a mandatory core subsystem. Go owns transport and execution; trusted Node ESM workers provide the initial JavaScript/TypeScript authoring boundary. Installation requires explicit trust and server restart for activation.
 
 ## Recommendation
 
@@ -198,4 +198,4 @@ Public sources reviewed in the founding discussion:
 - Codex Broker source: https://github.com/NotRllyRn/codex-broker
 - Broker branch contract: `docs/proxy-extensions.md` and `packages/proxy-extension/index.d.ts` on `feature/proxy-extension-layer`.
 
-The Go transport and local socket/system tests are implemented, with a local benchmark documented in the README. Extension contracts remain proposals. No live-provider compatibility certification, complete R01–R50 acceptance run, or security audit is established by this brief. See the readiness review for the exact verification scope.
+The Go transport and extension implementation have local socket/process evidence, with a historical transport benchmark in the README. This architecture brief itself does not establish live-provider compatibility certification, complete R01–R50 acceptance, or a security audit. See the implementation tracker and package evidence for current verification; the readiness review records the original gates.
