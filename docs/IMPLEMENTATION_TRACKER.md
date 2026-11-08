@@ -1,6 +1,6 @@
 # Extension implementation tracker
 
-Status: implementation authorized by the user; work in progress. This file records current decisions and acceptance evidence, not blanket support claims. Historical research remains historical.
+Status: the bounded extension layer and local integration acceptance pass are implemented and verified. All dispatched implementation/review groups have returned and their approved changes are integrated locally. This is not completion of every optional R01–R50 capability: unsupported modes and remaining evidence gaps are listed in the independent audit. Historical research remains historical.
 
 ## Delivery rules
 
@@ -36,7 +36,7 @@ All managers: Pi `codex-broker/gpt-6-astra`, thinking medium. All implementation
 
 ## Acceptance status
 
-The [independent R01–R50 evidence matrix](implementation/acceptance-audit.md) classifies tested boundaries, example-only behavior, conditional support, unsupported modes and missing evidence. It accepts the native execution boundaries and bounded application examples, not blanket completion. Each manager must return concrete tests/commands/results, limitations and commit IDs. Combined application integration and the independent installed-activation review have returned. The latter found a reproducible small-frame worker error defect, now corrected and independently verified after integration. Remaining system edge-case evidence is active before acceptance. R41 untrusted sandboxing is optional and not offered by trusted workers; it must not receive a false implemented checkmark.
+The [independent R01–R50 evidence matrix](implementation/acceptance-audit.md) classifies tested boundaries, example-only behavior, conditional support, unsupported modes and missing evidence. It accepts the native execution boundaries and bounded application examples, not blanket completion. Each manager must return concrete tests/commands/results, limitations and commit IDs. Combined application integration and the independent installed-activation review have returned. The latter found a reproducible small-frame worker error defect, now corrected and independently verified after integration. The final system edge-case tests are integrated and the full combined checks pass. Full-catalog certification remains unclaimed. R41 untrusted sandboxing is optional and not offered by trusted workers; it must not receive a false implemented checkmark.
 
 ### Integrated group results
 
@@ -45,16 +45,16 @@ The [independent R01–R50 evidence matrix](implementation/acceptance-audit.md) 
 - **Group B / distribution/runtime:** foundation `23ada1c` integrated as `f83dd40`; reviewed installed HTTP activation bridge `c39637d` integrated as `8f36088`. `nodehost.Open` activates validated workers through the native engine, with bounded managed HTTP callbacks and startup rollback. Compiled-process fixtures cover GitHub-fixture installation through real Node hooks and upstream/client output. Parent inspected activation/managed-call code and passed the full repository race suite (`-timeout=180s`), vet, CLI build and all three SDK tests, including TypeScript with no skips. See [distribution contracts](implementation/distribution.md). Published npm/npx distribution and a dashboard are not claimed.
 - **Group C / optional AI and recall:** foundation `aac1a40` integrated as `0d234d2`; reviewed managed-host bridge `863daaf` integrated as `1aa85ca`. Includes bounded Chat/Messages adapters, tool coordination, candidate selection, usage presence, durable recall/CAS, actual `Input.Call` inference, required original-evidence recording, cumulative durable budgets and process-restart tests. See [AI contracts](implementation/ai.md). Parent reran the full repository race suite (`-timeout=180s`), vet and CLI build successfully after bridge integration. Multi-original-source results are explicitly rejected pending authoritative selected-source provenance. The separate combined system group has now supplied composition with the real broker example (see below); fixture-local catalog/auth hooks alone were not treated as that evidence.
 
-### Active integration work
+### Integration and review results
 
-All groups continue with Astra-medium managers and Sol-medium workers in isolated T3 worktrees; substantive corrections require fresh delegated review rounds.
+Groups used Astra-medium managers and Sol-medium workers in isolated T3 worktrees; substantive corrections went through fresh delegated review rounds. All groups below have returned; no delegated work remains active.
 
 - `proxykit-group-a-manager-r4`: completed, reviewed and integrated; result publication now follows admission release. Further core changes wait for concrete bridge findings.
 - `proxykit-group-b-manager-r3`: completed, reviewed and integrated; installed hooks now activate through `nodehost/` and the serving CLI.
 - `proxykit-group-c-manager-r2`: completed, reviewed and integrated; real managed inference and durable replay composition in `examples/aihost/`.
 - `proxykit-group-d-manager-r2`: completed and integrated in `examples/brokerapp/`.
 - `proxykit-system-manager-r1`: completed; reviewed commit `38a9476` integrated as `9c4415f`. Actual broker + AI + recall + independent durable recorder composition now has two-tenant socket/fresh-process evidence, classifier/candidates/explicit rerouting, served-route provenance, mixed tools, restart continuation, original usage versus decoration, revocation, restored budgets and failure quarantine. See [system contracts and tests](implementation/system.md). Parent independently passed all 11 packages with `go test -race -count=1 -timeout=180s ./...`, plus `go vet ./...` and `go build ./...` after integration.
-- `proxykit-system-manager-r2`: active follow-up tests for combined buffered SSE, shutdown/cancellation races and negative route/protocol evidence; no new mandatory core subsystem.
+- `proxykit-system-manager-r2`: completed; reviewed `e5b95d9` + `c227191` integrated as `b850b11` + `34475db`. Added combined split buffered SSE with fresh-process continuation, deterministic shutdown waiting on required recording, stopped admission, same-endpoint route/account/wire mismatch rejection and ordinary transport failure without hidden retry. Review found and corrected shutdown fixture scheduling/teardown issues. Cooperative cancellation and buffered semantics remain explicit; authoritative-evidence mismatch and setup-fault injection are not claimed.
 - `proxykit-acceptance-audit-r1`: completed read-only manager/worker review at `1aa85ca`; [full evidence matrix and objections](implementation/acceptance-audit.md). No new blocker established for the declared single-source managed-AI slice. Installed activation and combined application evidence were pending at that baseline.
 - `proxykit-acceptance-audit-r2`: completed at `e074b34`. Accepts narrow installed activation, not exhaustive compiled-CLI lifecycle coverage. Found P2: `worker/runtime.mjs` truncates exceptions by JS code units rather than encoded frame size, so long Unicode/escaped messages can terminate the worker at small supported limits. Default-frame control survives. Positive upstream credential-delivery assertion also needs strengthening.
 - `proxykit-group-b-manager-r4`: completed; reviewed `690b044` integrated as `e6d7bd5`. Complete UTF-8 JSON error frames are bounded at 256/1024/1048576 bytes while preserving correlation, error codes and nonempty diagnostics. Real-process tests prove unrelated/subsequent work survives, including cancellation and shutdown. Installed tests prove optional recovery/required 502 and Authorization delivery to actual outer/inner upstream requests without leaking into later snapshots. Parent independently passed all 11 packages under race, vet/build and all three SDK tests including TypeScript, zero skips.
@@ -65,7 +65,30 @@ The parent replaced the timing-sensitive `ai/correction_test.go` observation fix
 
 Baseline before implementation: `go test -race -count=1 -timeout 90s ./...`, `go vet ./...` and `go build ./cmd/proxykit` passed on Go 1.27.1 / Linux. Node v24.16.0 is available for worker process tests. This is transport evidence only.
 
-Integration gates after group review:
+## Final integrated verification
+
+Parent checkout at `34475db`, including the runtime correction and all combined-system tests:
+
+- `go test -count=1 -timeout=240s ./...` — all 11 packages passed.
+- `go test -race -count=1 -timeout=240s ./...` — all 11 packages passed.
+- `go vet ./...` — passed.
+- `go build ./...` — passed.
+- `TSC_BINARY=/root/.npm/_npx/483d2954a4c5190c/node_modules/typescript/bin/tsc node --test sdk/*.test.mjs` — 3 passed, 0 failed, 0 skipped. This compiler path is local verification tooling, not a runtime dependency.
+- `git diff --check` — passed.
+
+Local acceptance checkpoints:
+
+- [x] Native execution contracts and no-extension transport regressions.
+- [x] GitHub-fixture installation, compiled server activation and Node hook execution.
+- [x] Managed nested calls, selected credential delivery, recovery and required failure denial.
+- [x] Real broker + AI + recall + independent recorder composition, two tenants and process restart.
+- [x] Split buffered SSE, cancellation/shutdown, negative selection, transport-error and multi-source rejection evidence.
+- [x] Independent requirement audit and defect correction; supported scope documented.
+- [ ] Every optional capability in R01–R50 implemented/certified. See the [classification matrix and limitations](implementation/acceptance-audit.md), not a fabricated blanket checkmark.
+
+Changes are committed on local `main`; no remote push or release has been performed. Performance is not newly benchmarked; tests establish behavior, not maximum throughput. Dashboard/npm publication, untrusted sandboxing, live incremental semantic continuation, general multi-source retry attribution, cache implementation, monetary enforcement and live-provider certification are not delivered by this acceptance pass.
+
+Integration gate definitions (evidence above and package contracts):
 
 1. Merge reviewed isolated commits; bind the worker descriptors/invocations to the native host without duplicating dispatch or body ownership.
 2. Prove CLI install → restart activation → real HTTP request → Node hook → upstream → transformed response, plus worker failure fallback and required-hook failure denial.

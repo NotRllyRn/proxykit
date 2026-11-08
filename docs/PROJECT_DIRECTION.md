@@ -1,6 +1,6 @@
 # ProxyKit: project direction and architecture waypoint
 
-Updated: 2026-11-08. Status: direction and historical research. Transport, managed native execution, installed Node hooks and optional application examples are implemented; combined system acceptance is in progress. See the [implementation tracker](IMPLEMENTATION_TRACKER.md) and linked package contracts for tested scope. Historical proposals below are not a claim that every capability is implemented.
+Updated: 2026-11-08. Status: direction and historical research. Transport, managed native execution, installed Node hooks and optional application examples are implemented; bounded local installed-worker and combined-system acceptance tests pass. See the [implementation tracker](IMPLEMENTATION_TRACKER.md) and linked package contracts for tested scope. Historical proposals below are not a claim that every capability is implemented.
 
 The authoritative [six extension architecture decisions](research/2026-11-extension-audit/extension-requirements.md) cover R01–R50 under the extension-owned application model. Read the [core readiness review and staged gates](CORE_READINESS.md) before implementing extensions. Historical router evidence does not override these ownership rules.
 

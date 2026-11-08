@@ -1,6 +1,6 @@
 # Core readiness and extension implementation gates
 
-Current implementation status: [implementation tracker](IMPLEMENTATION_TRACKER.md). Native execution, installed Node activation and optional application examples are now implemented; combined acceptance remains in progress. The verdict and checks below are the historical pre-extension review, not a description of the latest checkout. [Extension plan and decision log](EXTENSION_PLAN.md) retains design decisions; the R01–R50 table below remains the acceptance rubric.
+Current implementation status: [implementation tracker](IMPLEMENTATION_TRACKER.md). Native execution, installed Node activation and optional application examples are now implemented; bounded local installed-worker and combined-system acceptance tests pass. The independent R01–R50 audit records unsupported modes and remaining evidence gaps. The verdict and checks below are the historical pre-extension review, not a description of the latest checkout. [Extension plan and decision log](EXTENSION_PLAN.md) retains design decisions; the R01–R50 table below remains the acceptance rubric.
 
 Reviewed 2026-11-07 against commit `71a60824f1e2a4c94db31b4ae886e2221a33dd03`, Go 1.27.1, Linux amd64. This is a source/test review and proposed implementation sequence, not an implemented extension specification.
 

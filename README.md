@@ -2,7 +2,7 @@
 
 A small, streaming HTTP reverse proxy written in Go, with native Go extensions and trusted Node ESM workers. The Go core has no third-party dependencies. Installed extensions activate on server restart; a dashboard and published npm/npx packaging remain future work.
 
-Go owns transport and extension execution; Node supplies an optional TypeScript/JavaScript authoring boundary. See the [transport decision](docs/TRANSPORT_DECISION.md), [extension SDK](sdk/README.md), and [implementation tracker](docs/IMPLEMENTATION_TRACKER.md). Cross-application acceptance is still in progress; implemented boundaries are not blanket support for every client or provider.
+Go owns transport and extension execution; Node supplies an optional TypeScript/JavaScript authoring boundary. See the [transport decision](docs/TRANSPORT_DECISION.md), [extension SDK](sdk/README.md), and [implementation tracker](docs/IMPLEMENTATION_TRACKER.md). Local installed-worker and combined-application acceptance tests pass; the [R01–R50 audit](docs/implementation/acceptance-audit.md) distinguishes tested boundaries from optional, unsupported or uncertified capabilities.
 
 ## Run
 
@@ -89,7 +89,7 @@ WebSocket traffic uses standard-library upgrade handling; there is no gateway We
 
 For managed native extensions, use `extension.New` and `proxy.NewWithEngine`. The engine owns ordered hooks, bounded body recovery, scoped internal calls, original observations and delivery evidence. See [execution contracts](docs/implementation/execution.md). `nodehost.Open` adapts installed Node hooks to that same engine; the CLI uses it automatically when extensions are installed. TypeScript authors compile to ESM before packaging.
 
-Optional examples demonstrate [account brokering](examples/brokerapp/), [managed AI coordination](examples/aihost/) and [durable recall](examples/recall/). They are application building blocks, not enabled-by-default services or universal protocol adapters.
+Optional examples demonstrate [account brokering](examples/brokerapp/), [managed AI coordination](examples/aihost/), [durable recall](examples/recall/) and their [combined composition](examples/system/) with an independent original recorder. Local socket/process tests cover two tenants, routing, tools, restart continuation, buffered SSE and shutdown. They are application building blocks, not enabled-by-default services or universal protocol adapters.
 
 ## Verify
 
