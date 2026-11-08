@@ -24,6 +24,25 @@ function send(message) {
   // Once a write is attempted, delivery is uncertain: never reuse correlation.
   catch (error) { fatal(error); }
 }
+function sendHookError(id, code, error) {
+  // Bound the complete UTF-8 JSON frame, including escaping and correlation.
+  // Keep diagnostic work bounded too; never split a Unicode code point.
+  const characters = [];
+  for (const character of String(error?.message ?? error) || 'hook failed') {
+    characters.push(character);
+    if (characters.length === 512) break;
+  }
+  const message = { type: 'error', id, error: { code, message: '' } };
+  let low = 1, high = characters.length;
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    message.error.message = characters.slice(0, middle).join('');
+    if (Buffer.byteLength(JSON.stringify({ v: 1, ...message })) <= maxFrame) low = middle;
+    else high = middle - 1;
+  }
+  message.error.message = characters.slice(0, low).join('');
+  send(message);
+}
 function keys(m, required, optional = []) {
   if (!m || Array.isArray(m) || typeof m !== 'object') throw new Error('expected message object');
   if (required.some(k => !Object.hasOwn(m, k)) || Object.keys(m).some(k => !required.includes(k) && !optional.includes(k))) throw new Error('invalid message fields');
@@ -88,7 +107,7 @@ async function invoke(m) {
     // JSON serialization validation occurs before releasing capacity.
     send({ type: 'result', id: m.id, output });
   } catch (error) {
-    send({ type: 'error', id: m.id, error: { code: controller.signal.aborted ? 'CANCELLED' : 'HOOK_ERROR', message: String(error?.message ?? error).slice(0, 512) || 'hook failed' } });
+    sendHookError(m.id, controller.signal.aborted ? 'CANCELLED' : 'HOOK_ERROR', error);
   } finally { clearTimeout(timer); call.pending?.reject(new Error('expired managed scope')); call.pending = undefined; active.delete(m.id); }
 }
 async function shutdown(m) {

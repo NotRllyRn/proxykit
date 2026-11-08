@@ -44,9 +44,16 @@ func closeHost(t *testing.T, h *Host) {
 }
 func openProxy(t *testing.T, store string, cfg extension.Config, auth bool, capacities ...int) (*httptest.Server, *Host, *atomic.Int32) {
 	t.Helper()
+	return openProxyWithUpstream(t, store, cfg, auth, nil, capacities...)
+}
+func openProxyWithUpstream(t *testing.T, store string, cfg extension.Config, auth bool, inspect func(*http.Request), capacities ...int) (*httptest.Server, *Host, *atomic.Int32) {
+	t.Helper()
 	var calls atomic.Int32
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls.Add(1)
+		if inspect != nil {
+			inspect(r)
+		}
 		w.Header().Set("Content-Type", "text/plain")
 		w.Header().Set("X-Upstream", "original")
 		_, _ = io.WriteString(w, "upstream")
@@ -166,6 +173,32 @@ func TestOptionalCrashPreservesLastAcceptedWholeAndRequiredBlocks(t *testing.T) 
 		})
 	}
 }
+func TestOrdinaryHookErrorRecoveryAndRequiredDenial(t *testing.T) {
+	for _, failure := range []string{"failOpen", "block"} {
+		t.Run(failure, func(t *testing.T) {
+			store := t.TempDir()
+			installFixture(t, store, "example-user", `export default api=>{
+ api.on({id:'accepted',stage:'responseBody',bodyMode:'buffered',order:-1},i=>({action:'replace',message:{...i.response,body:Buffer.from('accepted').toString('base64')}}));
+ api.on({id:'error',stage:'responseBody',bodyMode:'buffered',failure:'`+failure+`'},i=>{if(i.request.url.endsWith('/fail'))throw Error('😀\\\"\u0000'.repeat(512));return {action:'pass'}});
+};`)
+			server, _, calls := openProxy(t, store, extension.Config{}, false)
+			status, body := get(t, server.URL+"/fail")
+			if failure == "failOpen" && (status != 200 || body != "accepted") {
+				t.Fatalf("optional error lost accepted input: %d %q", status, body)
+			}
+			if failure == "block" && status != 502 {
+				t.Fatalf("required error allowed response: %d %q", status, body)
+			}
+			if status, body := get(t, server.URL+"/fresh"); status != 200 || body != "accepted" {
+				t.Fatalf("worker did not survive ordinary error: %d %q", status, body)
+			}
+			if calls.Load() != 2 {
+				t.Fatalf("upstream calls: %d", calls.Load())
+			}
+		})
+	}
+}
+
 func TestOpaqueStreamRecoveryAndSequence(t *testing.T) {
 	store := t.TempDir()
 	installFixture(t, store, "first", `export default api=>{const seen=new Map();api.on({id:'edit',stage:'responseBody',bodyMode:'stream',order:-1},i=>{const s=i.stream;if(s.end || s.sequence!==(seen.get(s.streamId)??0))throw Error('sequence');seen.set(s.streamId,s.sequence+1);return {action:'replace',message:{...i.response,body:Buffer.from(Buffer.from(s.data,'base64').toString().toUpperCase()).toString('base64')}}});};`)
@@ -294,7 +327,10 @@ func TestChildUsesFullChainAndCredentialsStaySeparate(t *testing.T) {
  api.on({id:'child',stage:'responseStart',bodyMode:'none'},i=>i.request.url.endsWith('/outer')?{action:'child',request:{method:'GET',url:i.request.url.replace('/outer','/inner'),header:{},status:0,body:''}}:{action:'pass'});
  api.on({id:'body',stage:'responseBody',bodyMode:'buffered'},i=>({action:'replace',message:{...i.response,body:Buffer.from(Buffer.from(i.response.body,'base64').toString()+'!').toString('base64')}}));
 }`)
-	s, _, _ := openProxy(t, store, extension.Config{}, false)
+	credentials := make(chan string, 2)
+	s, _, _ := openProxyWithUpstream(t, store, extension.Config{}, false, func(r *http.Request) {
+		credentials <- r.URL.Path + ":" + r.Header.Get("Authorization")
+	})
 	r, err := http.Get(s.URL + "/outer")
 	if err != nil {
 		t.Fatal(err)
@@ -303,6 +339,16 @@ func TestChildUsesFullChainAndCredentialsStaySeparate(t *testing.T) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil || r.StatusCode != 200 || string(b) != "upstream!!" {
 		t.Fatalf("child chain: %d %q %v", r.StatusCode, b, err)
+	}
+	for _, path := range []string{"/outer", "/inner"} {
+		select {
+		case got := <-credentials:
+			if want := path + ":Bearer example-upstream"; got != want {
+				t.Fatalf("actual upstream credential: got %q, want %q", got, want)
+			}
+		default:
+			t.Fatalf("missing actual upstream request for %s", path)
+		}
 	}
 }
 
