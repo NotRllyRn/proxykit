@@ -11,11 +11,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/NotRllyRn/proxykit/ai"
+	"github.com/NotRllyRn/proxykit/examples/brokerapp"
 	"github.com/NotRllyRn/proxykit/extension"
 )
 
@@ -95,16 +97,19 @@ func TestCombinedBufferedSplitSSEContinuation(t *testing.T) {
 // recorder callback. The callback is released explicitly: no forced Go kill.
 func TestCombinedShutdownWaitsForRequiredRecorder(t *testing.T) {
 	arrived, canceled, sinkEntered, release := make(chan struct{}), make(chan struct{}), make(chan struct{}), make(chan struct{})
+	var releaseOnce sync.Once
+	releaseSink := func() { releaseOnce.Do(func() { close(release) }) }
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		io.Copy(io.Discard, r.Body)
-		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"model":"actual-classify","choices":[`)
-		w.(http.Flusher).Flush()
+		// Signal that inference reached the socket, but withhold headers and body.
+		// Shutdown therefore cannot race a partial original snapshot.
 		close(arrived)
 		<-r.Context().Done()
 		close(canceled)
 	}))
-	defer upstream.Close()
+	// Register first so cooperative release/client cancellation happens before
+	// httptest waits for any blocked upstream handler.
+	t.Cleanup(upstream.Close)
 	dir := t.TempDir()
 	f := setup(t, dir, upstream.URL, "")
 	var cleaned atomic.Int32
@@ -115,19 +120,53 @@ func TestCombinedShutdownWaitsForRequiredRecorder(t *testing.T) {
 		<-release
 		return original(ctx, batch)
 	}
-	// Serve through the same real host, retaining its Close handle.
+	// Release the cooperative sink and cancel the caller on every failure path,
+	// before waiting on the gateway server's active connections.
+	var host *brokerapp.Host
+	var server *httptest.Server
+	var cancelClient context.CancelFunc
+	var catalog, enrollment net.Listener
+	t.Cleanup(func() {
+		releaseSink()
+		if cancelClient != nil {
+			cancelClient()
+		}
+		if server != nil {
+			server.CloseClientConnections()
+		}
+		if host != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := host.Close(ctx); err != nil {
+				t.Errorf("teardown shutdown: %v", err)
+			}
+		}
+		if server != nil {
+			server.Close()
+		}
+		if catalog != nil {
+			catalog.Close()
+		}
+		if enrollment != nil {
+			enrollment.Close()
+		}
+	})
+	// Serve through the same real host, retaining its Close handle. New takes
+	// listener ownership on both success and validation failure.
 	var err error
-	f.cfg.Host.Catalog, err = net.Listen("tcp", "127.0.0.1:0")
+	catalog, err = net.Listen("tcp", "127.0.0.1:0")
 	must(t, err)
-	f.cfg.Host.Enrollment, err = net.Listen("tcp", "127.0.0.1:0")
+	enrollment, err = net.Listen("tcp", "127.0.0.1:0")
 	must(t, err)
+	f.cfg.Host.Catalog, f.cfg.Host.Enrollment = catalog, enrollment
 	f.cfg.Host.ServiceToken = "synthetic-service"
 	f.cfg.Host.RetryInterval = time.Hour
-	host, err := New(f.broker, f.cfg)
+	host, err = New(f.broker, f.cfg)
 	must(t, err)
-	server := httptest.NewServer(host)
-	defer server.Close()
-	req, err := http.NewRequest("POST", server.URL+"/v1/chat/completions", bytes.NewReader(wire(t, []ai.Message{{Role: "user", Text: "original"}})))
+	server = httptest.NewServer(host)
+	clientCtx, cancel := context.WithCancel(context.Background())
+	cancelClient = cancel
+	req, err := http.NewRequestWithContext(clientCtx, "POST", server.URL+"/v1/chat/completions", bytes.NewReader(wire(t, []ai.Message{{Role: "user", Text: "original"}})))
 	must(t, err)
 	req.Header.Set("Authorization", "Bearer token-personal")
 	req.Header.Set("Content-Type", "application/json")
@@ -158,7 +197,7 @@ func TestCombinedShutdownWaitsForRequiredRecorder(t *testing.T) {
 		t.Fatal("cleanup before active recorder exit")
 	}
 	expectDenied(t, post(t, server.URL, "personal", 0, wire(t, []ai.Message{{Role: "user", Text: "another"}})))
-	close(release)
+	releaseSink()
 	select {
 	case err := <-closeDone:
 		must(t, err)
@@ -173,8 +212,8 @@ func TestCombinedShutdownWaitsForRequiredRecorder(t *testing.T) {
 		t.Fatal("new effect after shutdown")
 	}
 	batches := lines[[]ai.Attempt](t, filepath.Join(dir, "attempts"))
-	// Cancellation before response headers produces no original snapshot; the
-	// required sink still acknowledges the empty batch before shutdown exits.
+	// Upstream withheld response headers and body until cancellation, so no
+	// original snapshot exists. The required sink acknowledges the empty batch.
 	if len(batches) != 1 || len(batches[0]) != 0 {
 		t.Fatalf("unexpected pre-header original: %+v", batches)
 	}

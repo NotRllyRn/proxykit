@@ -169,12 +169,14 @@ limits above were not certified by round 1. No push or merge was performed.
   tool. A fresh-process continuation sends both private recall and client
   results, records a second complete original SSE, and delivers independently
   decorated Chat usage 900. This is buffered decode, not streaming delivery.
-- `TestCombinedShutdownWaitsForRequiredRecorder` cancels active inference while
-  the required sink is blocked, observes upstream cancellation and stopped
-  admission, verifies cleanup has not run before the callback exits, releases
-  the cooperative callback, then sees one fsynced empty batch, one cleanup and
-  quarantined work without effects. Cancellation before response headers may
-  produce no source snapshot; an empty required batch does not invent one.
+- `TestCombinedShutdownWaitsForRequiredRecorder` reaches active upstream inference
+  but deliberately withholds all response headers and body until cancellation;
+  no partial original can race shutdown. With the required sink blocked, it
+  observes upstream cancellation and stopped admission, verifies cleanup has not
+  run before callback exit, then releases the cooperative callback. It sees one
+  fsynced empty batch, one cleanup and quarantined work without effects. Fatal
+  paths also release the sink and cancel the client before closing the server;
+  an empty required batch does not invent source evidence.
 - `TestCombinedSameEndpointTupleMismatchRejected` exercises an uncataloged
   version, another caller's account at the same endpoint, and a cataloged
   Chat protocol at a Messages endpoint. The first two do not reach upstream;
@@ -186,6 +188,11 @@ limits above were not certified by round 1. No push or merge was performed.
 - Focused commands passed: `go test ./examples/system -count=1 -timeout=90s`;
   `go test -race ./examples/system -count=1 -timeout=120s`;
   `go test ./examples/system -run 'TestCombined(ShutdownWaitsForRequiredRecorder|BufferedSplitSSEContinuation|SameEndpointTupleMismatchRejected|TransportErrorDoesNotSelectOrRetry)$' -count=5 -timeout=120s`.
+
+Correction validation: `go test ./examples/system -count=10 -timeout=180s`,
+`go test -race ./examples/system -count=3 -timeout=180s`, focused four-case
+`go test -race ./examples/system -run '^TestCombined(ShutdownWaitsForRequiredRecorder|BufferedSplitSSEContinuation|SameEndpointTupleMismatchRejected|TransportErrorDoesNotSelectOrRetry)$' -count=5 -timeout=180s`,
+and shutdown-only `go test -race ./examples/system -run '^TestCombinedShutdownWaitsForRequiredRecorder$' -count=30 -timeout=120s` passed.
 
 Round 2 does not establish atomic external-effect revocation, a multi-source
 winner, a sandbox/cache, live provider/client compatibility, incremental
