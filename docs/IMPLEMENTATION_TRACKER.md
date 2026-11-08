@@ -20,7 +20,8 @@ All managers: Pi `codex-broker/gpt-6-astra`, thinking medium. All implementation
 
 1. **Execution** — package `extension/` and its `proxy/` integration; stages/order, bodies, route dispatch, identities/ledger/metadata, failure/admission, lifecycle and managed re-entry. Owns core API. Do not change CLI or optional AI packages.
 2. **Distribution/runtime** — packages `extensions/` (installer), `worker/` (Node process protocol), `sdk/`, examples for JS authoring, and CLI wiring. Implement independently testable installer/worker first; bridge to `extension/` after core contract integration. Do not change `proxy/` or `extension/`.
-3. **Optional AI/application examples** — package `ai/` and `examples/` subpackages for adapters, tools/coordinator, durable recall and dynamic routing. Keep independent managed-call interfaces until core integration; never implement a second proxy. Do not change CLI, `proxy/`, `extension/`, `worker/` or `extensions/`.
+3. **Optional AI/application examples** — package `ai/` and `examples/` subpackages for adapters, tools/coordinator, durable recall and dynamic routing (excluding `examples/brokerapp/` and `examples/node-*`). Keep independent managed-call interfaces until core integration; never implement a second proxy. Do not change CLI, `proxy/`, `extension/`, `worker/` or `extensions/`.
+4. **Broker application proof** — `examples/brokerapp/`: extension-owned enrollment/services, catalog/ACLs, credential refresh, durable activation/outbox, quota snapshots and lifecycle. This proves application freedom without putting account management into the generic core.
 
 ## Chosen planning defaults / open-case resolutions
 
@@ -36,6 +37,18 @@ All managers: Pi `codex-broker/gpt-6-astra`, thinking medium. All implementation
 ## Acceptance status
 
 No extension requirement is marked complete yet. Each manager must return requirement IDs, concrete tests/commands/results, limitations and its commit IDs. Final evidence needs cross-package integration, process tests, race tests, vet, build and the no-extension socket regressions. R41 untrusted sandboxing is optional and not offered by trusted workers; it must not receive a false implemented checkmark.
+
+Baseline before implementation: `go test -race -count=1 -timeout 90s ./...`, `go vet ./...` and `go build ./cmd/proxykit` passed on Go 1.27.1 / Linux. Node v24.16.0 is available for worker process tests. This is transport evidence only.
+
+Integration gates after group review:
+
+1. Merge reviewed isolated commits; bind the worker descriptors/invocations to the native host without duplicating dispatch or body ownership.
+2. Prove CLI install → restart activation → real HTTP request → Node hook → upstream → transformed response, plus worker failure fallback and required-hook failure denial.
+3. Bind broker, independent observer, protocol adapter, tools and recall through managed dispatch; inspect both provider input and client output, then restart and replay the next client request.
+4. Exercise two tenants concurrently, local responses, response-triggered child requests, one-slot re-entry, original usage despite decoration, unknown usage, malformed/spoofed internal headers, timeout late results and cancellation.
+5. Exercise SSE split across reads, retained-body overflow, trailers/truncation, duplex and upgrades; retain existing opaque transport guarantees or clearly reject incompatible declared transforms.
+6. Exercise rerouting/candidates before commitment, loser cancellation, target-specific credentials, state-affinity rejection and requested/served cache separation.
+7. Run repository race tests, vet/build, Node tests, compiled-process startup/shutdown tests and the representative combined scenario. Publish exact command evidence and remaining unsupported modes; do not turn a fixture pass into live-provider certification.
 
 ## Discovered cases / follow-up
 
