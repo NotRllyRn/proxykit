@@ -163,11 +163,17 @@ func eligible(a Account, caller string) bool {
 }
 
 func (b *Broker) choose(ctx context.Context, caller string, excluded map[string]bool) (Attempt, error) {
+	return b.chooseAccount(ctx, caller, excluded, "")
+}
+
+// chooseAccount retains ordinary selection when id is empty. Explicit selection
+// still rechecks live ACL, destination allowlist and refreshed committed state.
+func (b *Broker) chooseAccount(ctx context.Context, caller string, excluded map[string]bool, id string) (Attempt, error) {
 	if b.store.snapshot().Accounts == nil {
 		return Attempt{}, ErrStore
 	}
 	for _, a := range b.store.accounts() {
-		if excluded[a.ID] || !eligible(a, caller) || !b.endpoints[a.Endpoint] {
+		if (id != "" && a.ID != id) || excluded[a.ID] || !eligible(a, caller) || !b.endpoints[a.Endpoint] {
 			continue
 		}
 		if !a.Credential.Expires.After(time.Now()) {

@@ -31,6 +31,7 @@ type App struct {
 	Target          ai.Route
 	Protocols       map[string]ai.Protocol
 	Recorder        *ai.HostRecorder
+	BindTarget      func(context.Context, ai.Route) (context.Context, error)
 	Tools           []OwnedTool
 	// Select may classify/reroute/candidate using ONLY the supplied scoped Session.
 	// Trusted deployment code; never a caller-supplied destination/commit bool.
@@ -141,7 +142,7 @@ func (a *App) Registration() extension.Registration {
 		if in.Auth.Subject != req.Identity.Caller || in.Auth.Claims["tenant"] != req.Identity.Tenant || in.Auth.Claims["conversation"] != req.Identity.Conversation {
 			return extension.Result{}, errors.New("managed identity mismatch")
 		}
-		session := &ai.Session{Managed: ai.HostManaged{CallChild: in.Call, Recorder: a.Recorder, Protocols: a.Protocols}, Limits: a.Limits}
+		session := &ai.Session{Managed: ai.HostManaged{CallChild: in.Call, Recorder: a.Recorder, Protocols: a.Protocols, BindTarget: a.BindTarget}, Limits: a.Limits}
 		c := ai.Coordinator{Session: session, Tools: map[string]ai.Tool{}}
 		definitions := map[string]bool{}
 		for _, t := range req.Tools {

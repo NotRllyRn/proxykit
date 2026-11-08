@@ -37,7 +37,10 @@ type HostRecorder struct {
 	Owner    string
 	MaxBytes int
 	Evidence func(extension.Input) (Route, error)
-	Sink     AttemptSink // required synchronous durable handoff
+	// EvidenceContext supports request-local routing provenance from a cooperating
+	// broker. When set it supersedes Evidence; neither callback receives secrets.
+	EvidenceContext func(context.Context, extension.Input) (Route, error)
+	Sink            AttemptSink // required synchronous durable handoff
 }
 type captureKey struct{}
 type hostCapture struct {
@@ -72,10 +75,16 @@ func (r *HostRecorder) Registrations() []extension.Registration {
 			if in.Err != nil {
 				a.Error = in.Err.Error()
 			}
-			if r.Evidence == nil {
+			if r.Evidence == nil && r.EvidenceContext == nil {
 				c.err = errors.New("missing authoritative route evidence")
 			} else {
-				route, err := r.Evidence(in)
+				var route Route
+				var err error
+				if r.EvidenceContext != nil {
+					route, err = r.EvidenceContext(ctx, in)
+				} else {
+					route, err = r.Evidence(in)
+				}
 				if err != nil {
 					c.err = err
 				} else if route.Endpoint != in.Request.URL || route.Protocol == "" || route.Account == "" {
@@ -119,11 +128,20 @@ type HostManaged struct {
 	CallChild func(context.Context, *http.Request) (*http.Response, error)
 	Recorder  *HostRecorder
 	Protocols map[string]Protocol
+	// BindTarget installs trusted request-local selection before wire encoding.
+	// It may reject a target not present in the deployment's authorized catalog.
+	BindTarget func(context.Context, Route) (context.Context, error)
 }
 
 func (h HostManaged) Call(ctx context.Context, req Request) (result Result, err error) {
 	if h.CallChild == nil || h.Recorder == nil || h.Recorder.Sink == nil {
 		return result, errors.New("missing managed host/required recorder")
+	}
+	if h.BindTarget != nil {
+		ctx, err = h.BindTarget(ctx, req.Target)
+		if err != nil {
+			return result, err
+		}
 	}
 	p := h.Protocols[req.Target.Protocol]
 	if p == nil || p.Name() != req.Target.Protocol {
