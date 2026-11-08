@@ -1,5 +1,7 @@
 # Trusted Node authoring SDK
 
+New extension authors: start with the [TypeScript developer guide](../docs/EXTENSION_AUTHORING.md) for repository layout, a complete starter, publishing/installing, stage-by-stage recipes and testing. This page is the compact API contract reference.
+
 Dependency-free ESM and TypeScript declarations. Bundle/copy `index.mjs` and any relative runtime modules into the prebuilt package, or use the runtime-supplied `api` directly as the example does. The installer does not fetch SDK dependencies or compile TypeScript. `defineExtension` remains a generic worker API; `defineHTTP` gives typed installed-HTTP inputs, results and contexts over the same registration API.
 
 ```ts

@@ -38,6 +38,10 @@ Set `PROXYKIT_EXTENSIONS_DIR` to select the store; otherwise it lives under your
 
 **Trusted extensions execute arbitrary server-side code with the server's privileges.** `--trust` is an acknowledgment, not a sandbox or security review. Review the repository before installing. See the [SDK and authoring guide](sdk/README.md), [example extension](examples/node-personal-usage/), and [installation/runtime contracts](docs/implementation/distribution.md).
 
+## Develop an extension
+
+Start with the **[TypeScript extension developer guide](docs/EXTENSION_AUTHORING.md)**: a complete first extension, GitHub repository layout and manifest, prebuilt packaging, all HTTP hook stages, API recipes, ordering, credentials, lifecycle, testing and troubleshooting. Use the [SDK reference](sdk/README.md) and [typed API](sdk/http.d.mts) for exact contracts; see the [minimal runnable example](examples/node-personal-usage/) for an existing package.
+
 ## Connection support
 
 **No-extension transport support, verified with local fixtures—not live-provider certification.** Configure the client's base URL and send the credentials its upstream expects. Without extensions, one instance forwards to one configured upstream and does not translate formats or route among providers. Optional native application examples add narrower routing and AI protocol capabilities.
