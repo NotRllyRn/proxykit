@@ -210,15 +210,19 @@ func (e *Engine) invoke(ctx context.Context, h Registration, in Input) (Result, 
 		in.Call = scopedCall(scope, call)
 	}
 	go func() {
+		// Drain tracking includes recovery, copying and result publication.
 		defer e.wg.Done()
-		if e.slots != nil {
-			defer func() { <-e.slots }()
-		}
 		a := answer{}
 		defer func() {
 			endScope()
 			if p := recover(); p != nil {
 				a.err = fmt.Errorf("hook %s panic: %v", h.ID, p)
+			}
+			// A caller may immediately invoke the next hook on receipt. Keep
+			// admission charged through handler exit and copying (even after
+			// timeout), but release it before making completion observable.
+			if e.slots != nil {
+				<-e.slots
 			}
 			done <- a
 		}()
