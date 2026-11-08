@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NotRllyRn/proxykit/control"
 	"github.com/NotRllyRn/proxykit/extensions"
 	"github.com/NotRllyRn/proxykit/nodehost"
 	"github.com/NotRllyRn/proxykit/proxy"
@@ -42,6 +43,9 @@ func run(ctx context.Context, args []string, output io.Writer) (runErr error) {
 	upstream := flags.String("upstream", "", "required upstream HTTP(S) URL")
 	node := flags.String("node", "node", "trusted extension Node executable")
 	gateway := flags.String("gateway-origin", "", "exact gateway HTTP(S) origin for managed extension calls (defaults to bound listener)")
+	drainTime := flags.Duration("extension-drain", 30*time.Second, "finite retired generation drain")
+	cleanupTime := flags.Duration("extension-cleanup", 5*time.Second, "finite worker cleanup deadline")
+	maxDraining := flags.Int("extension-max-draining", 4, "maximum draining generations")
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return nil
@@ -58,10 +62,11 @@ func run(ctx context.Context, args []string, output io.Writer) (runErr error) {
 	if err != nil {
 		return err
 	}
-	installed, err := (extensions.Installer{Store: store}).List()
+	unlock, err := extensions.Lock(store)
 	if err != nil {
-		return fmt.Errorf("inspect installed extensions: %w", err)
+		return err
 	}
+	defer unlock()
 	handler, err := proxy.New(*upstream)
 	if err != nil {
 		return err
@@ -78,7 +83,7 @@ func run(ctx context.Context, args []string, output io.Writer) (runErr error) {
 	}
 	defer listener.Close()
 	logger := log.New(output, "proxykit: ", log.LstdFlags)
-	if len(installed) > 0 {
+	{
 		origin := *gateway
 		if origin == "" {
 			scheme := "http"
@@ -91,22 +96,32 @@ func run(ctx context.Context, args []string, output io.Writer) (runErr error) {
 		if err != nil {
 			return err
 		}
-		host, err := nodehost.Open(ctx, nodehost.Options{Store: store, Gateway: origin, Worker: worker.Options{NodeBinary: *node, Stderr: output, Config: config}})
+		host, err := nodehost.OpenRuntime(ctx, nodehost.RuntimeOptions{Options: nodehost.Options{Store: store, Gateway: origin, Worker: worker.Options{NodeBinary: *node, Stderr: output, Config: config}}, Drain: *drainTime, Cleanup: *cleanupTime, MaxDraining: *maxDraining})
 		if err != nil {
 			return fmt.Errorf("activate installed extensions: %w", err)
 		}
 		defer func() {
-			drain, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			drain, cancel := context.WithTimeout(context.Background(), *drainTime+2*(*cleanupTime)+time.Second)
 			defer cancel()
 			runErr = errors.Join(runErr, host.Close(drain))
 		}()
-		handler, err = proxy.NewWithEngine(*upstream, host.Engine)
+		handler, err = proxy.NewWithRuntime(*upstream, host)
 		if err != nil {
 			return err
 		}
-		// NewWithEngine's pristine transport has not opened any connections.
-		// Reuse the explicitly owned transport so its resources remain closable.
-		handler.Transport = host.Engine.Transport(transport)
+		// The runtime proxy owns its one stable upstream transport.
+		if closer, ok := handler.Transport.(interface{ CloseIdleConnections() }); ok {
+			defer closer.CloseIdleConnections()
+		}
+		stopControl, err := control.Listen(store, host)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			c, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			runErr = errors.Join(runErr, stopControl(c))
+		}()
 	}
 	handler.ErrorLog = logger
 	// Signal cancellation starts draining; this separate context closes upgraded

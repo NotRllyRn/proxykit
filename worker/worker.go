@@ -72,6 +72,8 @@ type reply struct {
 }
 type pending struct {
 	ch             chan reply
+	settled        chan struct{}
+	callbacks      sync.WaitGroup
 	cancelled      bool
 	ctx            context.Context
 	cancel         context.CancelFunc
@@ -254,6 +256,9 @@ func (p *process) fail(err error) {
 			if c.cancel != nil {
 				c.cancel()
 			}
+			if c.settled != nil {
+				close(c.settled)
+			}
 		}
 		p.pending = map[string]*pending{}
 		p.mu.Unlock()
@@ -400,6 +405,9 @@ func (p *process) receive(b []byte) error {
 			return errors.New("invalid worker error")
 		}
 		delete(p.pending, m.ID)
+		if c.settled != nil {
+			close(c.settled)
+		}
 		if c.cancel != nil {
 			c.cancel()
 		}
@@ -442,6 +450,15 @@ func (w *Worker) Invoke(ctx context.Context, hook string, input json.RawMessage)
 type Callback func(context.Context, json.RawMessage) (json.RawMessage, error)
 
 func (w *Worker) InvokeWithCallback(ctx context.Context, hook string, input json.RawMessage, callback Callback) (json.RawMessage, error) {
+	return w.invoke(ctx, hook, input, callback, false)
+}
+
+// InvokeSettled retains native generation accounting through real Node settlement
+// (or process reaping), even when the caller has already been canceled.
+func (w *Worker) InvokeSettled(ctx context.Context, hook string, input json.RawMessage, callback Callback) (json.RawMessage, error) {
+	return w.invoke(ctx, hook, input, callback, true)
+}
+func (w *Worker) invoke(ctx context.Context, hook string, input json.RawMessage, callback Callback, settle bool) (json.RawMessage, error) {
 	if len(input) > w.options.MaxFrame {
 		return nil, errors.New("input exceeds worker frame bound")
 	}
@@ -460,7 +477,7 @@ func (w *Worker) InvokeWithCallback(ctx context.Context, hook string, input json
 	id := fmt.Sprint(w.next.Add(1))
 	scopectx, scopeCancel := context.WithCancel(ctx)
 	defer scopeCancel()
-	c := &pending{ch: make(chan reply, 1), ctx: scopectx, cancel: scopeCancel, callback: callback}
+	c := &pending{ch: make(chan reply, 1), settled: make(chan struct{}), ctx: scopectx, cancel: scopeCancel, callback: callback}
 	// Prepare outside the admission lock; registration and enqueue below are
 	// one transaction, so Stop cannot overtake an admitted call.
 	deadline, _ := ctx.Deadline()
@@ -497,6 +514,18 @@ func (w *Worker) InvokeWithCallback(ctx context.Context, hook string, input json
 	}
 	p.pending[id] = c
 	p.mu.Unlock()
+	if settle {
+		defer func() {
+			<-c.settled
+			c.callbacks.Wait()
+			p.mu.Lock()
+			failed := p.failure != nil
+			p.mu.Unlock()
+			if failed {
+				<-p.exited
+			}
+		}()
+	}
 	select {
 	case r := <-c.ch:
 		if err := ctx.Err(); err != nil {

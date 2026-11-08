@@ -25,13 +25,23 @@ func installFixture(t *testing.T, store, id, source string) {
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		t.Fatal(err)
 	}
-	manifest := extensions.Manifest{ManifestVersion: 1, ID: id, Version: "1.0.0", Entry: "main.mjs"}
+	manifest := extensions.Manifest{ManifestVersion: 1, APIVersion: 1, ID: id, Version: "1.0.0", Entry: "main.mjs"}
 	m, _ := json.Marshal(manifest)
 	record, _ := json.Marshal(extensions.Installation{Manifest: manifest, Source: "https://github.com/example/repository", Commit: strings.Repeat("a", 40)})
 	for path, b := range map[string][]byte{filepath.Join(dir, "main.mjs"): []byte(source), filepath.Join(dir, "proxykit-extension.json"): m, filepath.Join(store, id, "installation.json"): record} {
 		if err := os.WriteFile(path, b, 0600); err != nil {
 			t.Fatal(err)
 		}
+	}
+	i := extensions.Installer{Store: store, Owned: true}
+	s, e := i.State()
+	if e != nil {
+		t.Fatal(e)
+	}
+	s.Decisions[id] = extensions.Decision{Commit: strings.Repeat("a", 40), Enabled: true}
+	s.Revision++
+	if e = i.SaveState(s); e != nil {
+		t.Fatal(e)
 	}
 }
 func closeHost(t *testing.T, h *Host) {

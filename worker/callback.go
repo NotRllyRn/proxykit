@@ -26,7 +26,9 @@ func (p *process) receiveCallLocked(id, callID string, request json.RawMessage) 
 		return p.enqueueLocked(b)
 	}
 	c.callbackActive = true
+	c.callbacks.Add(1)
 	go func() {
+		defer c.callbacks.Done()
 		output, err := c.callback(c.ctx, append(json.RawMessage(nil), request...))
 		if err == nil && !json.Valid(output) {
 			err = errors.New("invalid callback output")

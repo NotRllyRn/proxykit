@@ -45,7 +45,7 @@ func TestSystemInstalledNodeActivationAndShutdown(t *testing.T) {
 	var archive bytes.Buffer
 	gz := gzip.NewWriter(&archive)
 	tw := tar.NewWriter(gz)
-	for name, body := range map[string]string{"root/proxykit-extension.json": `{"manifestVersion":1,"id":"example-user","version":"1.0.0","entry":"main.mjs"}`, "root/main.mjs": source} {
+	for name, body := range map[string]string{"root/proxykit-extension.json": `{"manifestVersion":1,"apiVersion":1,"id":"example-user","version":"1.0.0","entry":"main.mjs"}`, "root/main.mjs": source} {
 		if err := tw.WriteHeader(&tar.Header{Name: name, Mode: 0600, Size: int64(len(body))}); err != nil {
 			t.Fatal(err)
 		}
@@ -119,11 +119,73 @@ func TestSystemInstalledNodeActivationAndShutdown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	before, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if string(before) != "upstream" {
+		t.Fatalf("plain install executed: %q", before)
+	}
+	manage := func(args ...string) string {
+		t.Helper()
+		c := exec.CommandContext(ctx, binary, append([]string{"extension"}, args...)...)
+		c.Env = command.Env
+		out, e := c.CombinedOutput()
+		if e != nil {
+			t.Fatalf("management %v: %v %s", args, e, out)
+		}
+		return string(out)
+	}
+	manage("enable", "example-user")
+	status := manage("status", "example-user")
+	if !strings.Contains(status, "ACTIVE") || !strings.Contains(status, "generation=2") {
+		t.Fatal(status)
+	}
+	resp, err = client.Get("http://" + listen + "/example")
+	if err != nil {
+		t.Fatal(err)
+	}
 	b, readErr := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if readErr != nil || resp.StatusCode != 200 || string(b) != "upstream installed" {
 		t.Fatalf("HTTP %d %q %v", resp.StatusCode, b, readErr)
 	}
+	manage("disable", "example-user")
+	resp, err = client.Get("http://" + listen + "/example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err = io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil || string(b) != "upstream" {
+		t.Fatal(string(b), err)
+	}
+	// Wait until graceful retirement reaps the prior owner before re-enabling.
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		if _, e := os.Stat(marker); e == nil {
+			status := manage("status")
+			if strings.Contains(status, "draining=[]") && !strings.Contains(status, "cleanup/reaping") {
+				break
+			}
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	manage("enable", "example-user")
+	resp, err = client.Get("http://" + listen + "/example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err = io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil || string(b) != "upstream installed" {
+		t.Fatal(string(b), err)
+	}
+	// A second server must not delete the live socket or mutate this store.
+	second := exec.CommandContext(ctx, binary, "-listen", "127.0.0.1:0", "-upstream", upstream.URL)
+	second.Env = command.Env
+	if out, e := second.CombinedOutput(); e == nil || !strings.Contains(string(out), "store busy") {
+		t.Fatalf("second owner: %v %s", e, out)
+	}
+	manage("status")
 	if err := command.Process.Signal(syscall.SIGTERM); err != nil {
 		t.Fatal(err)
 	}

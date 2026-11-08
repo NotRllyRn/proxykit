@@ -43,6 +43,7 @@ Use Node builtins and relative modules included in that archive. Bundle third-pa
 ```json
 {
   "manifestVersion": 1,
+  "apiVersion": 1,
   "id": "example-extension",
   "version": "1.0.0",
   "entry": "dist/extension.mjs"
@@ -53,7 +54,8 @@ These are the **only** manifest keys. Unknown/duplicate keys fail validation.
 
 | Field | Contract |
 |---|---|
-| `manifestVersion` | Integer `1` |
+| `manifestVersion` | Manifest schema integer `1` |
+| `apiVersion` | Required host/author HTTP API major integer `1`; independent of package version and IPC `v:1`. Missing/unsupported majors are rejected, never inferred from copied SDK files |
 | `id` | `[a-z][a-z0-9-]{0,63}`; stable installation identity |
 | `version` | SemVer-shaped string, at most 128 bytes |
 | `entry` | Safe relative path to an existing regular `.mjs` file; no absolute path or `..` |
@@ -267,7 +269,7 @@ This helper reuses **host-verified** authentication in an integrated authenticat
 
 Default bridge limits include 256 KiB buffered bodies/managed payloads, 32 KiB units, 1 MiB complete IPC frames, worker concurrency 16, native admission 64 and worker timeout 30 seconds. Base64/envelope/headers also consume frame space. Embedded hosts can configure limits; the CLI uses bridge defaults. See [full bounds](../sdk/README.md#bounds-and-lifecycle).
 
-Do not count cancellation as released capacity until underlying work settles or the process is killed. Frozen registrations mean no hot reload. Worker calls are not automatically replayed after crashes. Keep application persistence outside the installation directory; removal/reinstallation replaces code, not a database migration mechanism. Choose atomic persistence, idempotency and recovery appropriate to your effects.
+Do not count cancellation as released capacity until underlying work settles or the process is killed. Registrations are frozen per worker. Activation publishes a new immutable pipeline while reusing unchanged healthy workers; existing roots and all descendants keep their prior pipeline. Worker calls are not automatically replayed after crashes. Keep application persistence outside the installation directory; removal/reinstallation replaces code, not a database migration mechanism. Choose atomic persistence, idempotency and recovery appropriate to your effects.
 
 ## 8. Install, activate and smoke-test
 
@@ -277,13 +279,16 @@ Build ProxyKit once with `go build -o /tmp/proxykit ./cmd/proxykit` in its check
 export PROXYKIT_EXTENSIONS_DIR=/tmp/proxykit-example-extensions
 # Substitute a reviewed repository containing the files described above:
 /tmp/proxykit extension install https://github.com/OWNER/REPOSITORY/tree/v1.0.0 --trust
-/tmp/proxykit extension list
+/tmp/proxykit extension status
+# Either persist enable intent while offline, then start:
+/tmp/proxykit extension enable example-extension
 /tmp/proxykit -listen 127.0.0.1:8080 -upstream http://127.0.0.1:8090
+# Or start disabled, then enable in another terminal without listener restart.
 ```
 
 From another terminal, `curl -i http://127.0.0.1:8080/` should show `X-Example-Extension: enabled` for an upstream 200. Use a repository URL or `/tree/REVISION` with one unambiguous revision segment (a simple tag or commit is suitable). The installer resolves an immutable commit and records provenance. It does not install a subdirectory of a monorepo. No local-directory install or npx workflow is implied by these commands.
 
-Installation alone does not run the code. Start/restart the server with the same store to activate it. Startup validates all records and registrations; failures are not silently skipped. Updates currently require stopping the server, explicit removal, installation and restart; there is no atomic live-update promise. Never edit host-owned `installation.json` or synthesize provenance to bypass the installer.
+Installation alone does not run code: new packages are **disabled**. On a running server, `extension enable ID` validates and publishes the entire candidate pipeline, and `extension disable ID` retires the old one. `install URL --trust --activate` requires online activation; offline it leaves the installation disabled and returns an error. `extension status [ID]` shows persisted intent separately from active/draining/failed/incompatible state; offline runtime fields are unknown. Offline enable/disable persists intent only, with full dependency validation deferred to startup. An unresolved legacy record blocks startup until explicitly disabled or reinstalled; incompatible manifests never execute. Removal requires no active/draining/reaping owner. For replacement: disable, wait for retirement/reaping, remove, install new version, enable. No overlapping stateful owners or transactional migration promise. Never edit host-owned installation/state files to bypass the installer. See [activation contracts and finite drain limits](HOT_ACTIVATION.md).
 
 Before publishing, test:
 
@@ -307,6 +312,7 @@ Unit tests can invoke setup with a fake `on/config/log/cleanup` API to capture h
 | Stream is aborted | Blocking failure after commitment cannot become a replacement response |
 | Recursive call is 502/busy | Shared limits still apply; do not bypass hooks/auth to avoid capacity errors |
 | Process framing fails | Direct stdout output is forbidden; complete message may exceed IPC bound |
-| Installed changes do not appear | Restart with the same extension store; no hot swap |
+| Installed changes do not appear | Install defaults disabled; inspect `extension status`, then explicitly enable using the same store |
+| Manifest API rejected / legacy startup blocked | Publish `apiVersion: 1`; inspect status and explicitly disable incompatible legacy records before restarting |
 
 Publish only when your README states configuration, required Node/ProxyKit compatibility, install URL, ports, data directory, trust implications, test commands and known limitations. Link back to this guide and pin the host/SDK revision you tested. The generic extension API does not provide provider OAuth, model parsing, account rotation, a secret vault, durable tool orchestration or a UI automatically: those are application responsibilities or separate native examples, not callable TypeScript SDK services.

@@ -2,6 +2,7 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -21,19 +22,32 @@ type Proxy struct {
 	// Final responses are unchanged; selected candidates do not replay their 1xx.
 	SuppressInformationalResponses bool
 	execution                      *extension.Engine
+	selector                       GenerationSelector
 }
 
 // ServeHTTP allows an upstream to respond while the client is still uploading.
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if p.execution != nil {
+	engine := p.execution
+	if p.selector != nil {
+		var release func()
 		var err error
-		r, err = p.execution.Bind(r)
+		engine, r, release, err = p.selector.Acquire(r)
+		if err != nil {
+			http.Error(w, "generation unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		defer release()
+	}
+	if engine != nil {
+		var err error
+		r, err = engine.Bind(r)
 		if err != nil {
 			http.Error(w, "invalid managed request", http.StatusUnauthorized)
 			return
 		}
 		var complete func(extension.DeliveryEvidence) error
-		r, complete = p.execution.TrackDelivery(r)
+		r, complete = engine.TrackDelivery(r)
+		r = r.WithContext(context.WithValue(r.Context(), engineKey{}, engine))
 		writer := &deliveryWriter{ResponseWriter: w, suppressInformational: p.SuppressInformationalResponses}
 		w = writer
 		if cn, ok := writer.ResponseWriter.(http.CloseNotifier); ok {
@@ -74,6 +88,40 @@ func NewWithEngine(upstream string, engine *extension.Engine) (*Proxy, error) {
 	}
 	p.execution = engine
 	p.Transport = engine.Transport(p.Transport)
+	return p, nil
+}
+
+// GenerationSelector pins ingress before Bind, authentication and rewriting.
+type GenerationSelector interface {
+	Acquire(*http.Request) (*extension.Engine, *http.Request, func(), error)
+}
+type engineKey struct{}
+type generationTransport struct{ base http.RoundTripper }
+
+func (t generationTransport) CloseIdleConnections() {
+	if c, ok := t.base.(interface{ CloseIdleConnections() }); ok {
+		c.CloseIdleConnections()
+	}
+}
+func (t generationTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	e, ok := r.Context().Value(engineKey{}).(*extension.Engine)
+	if !ok {
+		return nil, fmt.Errorf("missing pinned generation")
+	}
+	return e.Transport(t.base).RoundTrip(r)
+}
+
+// NewWithRuntime keeps one transport/listener while selecting immutable pipelines.
+func NewWithRuntime(upstream string, selector GenerationSelector) (*Proxy, error) {
+	if selector == nil {
+		return nil, fmt.Errorf("nil generation selector")
+	}
+	p, err := New(upstream)
+	if err != nil {
+		return nil, err
+	}
+	p.selector = selector
+	p.Transport = generationTransport{p.Transport}
 	return p, nil
 }
 

@@ -58,7 +58,7 @@ func archive(t *testing.T, entries []item) []byte {
 	return b.Bytes()
 }
 func validItems() []item {
-	return []item{{name: "root/proxykit-extension.json", body: `{"manifestVersion":1,"id":"example-user","version":"1.0.0","entry":"dist/main.mjs"}`}, {name: "root/dist/main.mjs", body: `export default api => {};`}}
+	return []item{{name: "root/proxykit-extension.json", body: `{"manifestVersion":1,"apiVersion":1,"id":"example-user","version":"1.0.0","entry":"dist/main.mjs"}`}, {name: "root/dist/main.mjs", body: `export default api => {};`}}
 }
 func fixture(t *testing.T, data []byte) (Installer, *[]string) {
 	t.Helper()
@@ -130,7 +130,7 @@ func TestRejectArchivesAndRollback(t *testing.T) {
 				t.Fatal("accepted bad archive")
 			}
 			es, err := os.ReadDir(i.Store)
-			if err != nil || len(es) != 0 {
+			if err != nil || len(es) != 1 || es[0].Name() != ".owner-lock" {
 				t.Fatalf("stage/lock leaked: %v %v", es, err)
 			}
 		})
@@ -165,7 +165,7 @@ func TestSourceAndManifestValidation(t *testing.T) {
 			t.Errorf("accepted %s", s)
 		}
 	}
-	for _, m := range []Manifest{{1, "../bad", "1.0.0", "main.mjs"}, {2, "test", "1.0.0", "main.mjs"}, {1, "test", "latest", "main.mjs"}, {1, "test", "1.0.0", "../main.mjs"}, {1, "test", "1.0.0", "C:/main.mjs"}, {1, "test", "1.0.0", "main.ts"}} {
+	for _, m := range []Manifest{{1, 1, "../bad", "1.0.0", "main.mjs"}, {2, 1, "test", "1.0.0", "main.mjs"}, {1, 1, "test", "latest", "main.mjs"}, {1, 1, "test", "1.0.0", "../main.mjs"}, {1, 1, "test", "1.0.0", "C:/main.mjs"}, {1, 1, "test", "1.0.0", "main.ts"}} {
 		if err := m.Validate(); err == nil {
 			t.Errorf("accepted %+v", m)
 		}

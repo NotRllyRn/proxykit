@@ -129,6 +129,9 @@ type Registration struct {
 // Disable only for trusted deployments prepared to lose that bound.
 // UnitBytes is the exception: it must remain positive (negative is rejected).
 type Config struct {
+	// SharedAdmission is an optional host-owned process-wide invocation pool.
+	// Supply the same channel to every live generation; never close it.
+	SharedAdmission                                                                chan struct{}
 	InvocationTimeout, OperationTimeout                                            time.Duration
 	Admission, BodyBytes, UnitBytes, MetadataBytes, LedgerEntries, Attempts, Depth int
 }

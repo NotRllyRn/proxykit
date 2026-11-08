@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -20,7 +21,7 @@ func TestExtensionCLIInstallListRemoveFixture(t *testing.T) {
 	var archive bytes.Buffer
 	gz := gzip.NewWriter(&archive)
 	tw := tar.NewWriter(gz)
-	for name, body := range map[string]string{"root/proxykit-extension.json": `{"manifestVersion":1,"id":"example-user","version":"1.0.0","entry":"main.mjs"}`, "root/main.mjs": `throw new Error('must not execute while installing');`} {
+	for name, body := range map[string]string{"root/proxykit-extension.json": `{"manifestVersion":1,"apiVersion":1,"id":"example-user","version":"1.0.0","entry":"main.mjs"}`, "root/main.mjs": `throw new Error('must not execute while installing');`} {
 		if err := tw.WriteHeader(&tar.Header{Name: name, Mode: 0600, Size: int64(len(body))}); err != nil {
 			t.Fatal(err)
 		}
@@ -53,8 +54,40 @@ func TestExtensionCLIInstallListRemoveFixture(t *testing.T) {
 	if err := runExtensionWithInstaller(ctx, []string{"install", "https://github.com/example/repository", "--trust"}, &out, i); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out.String(), "Restart the server") || !strings.Contains(out.String(), sha) {
+	if !strings.Contains(out.String(), "disabled") || !strings.Contains(out.String(), sha) {
 		t.Fatal(out.String())
+	}
+	state, e := i.State()
+	if e != nil || state.Decisions["example-user"].Enabled {
+		t.Fatal("install enabled", state, e)
+	}
+	out.Reset()
+	if e = runExtensionWithInstaller(ctx, []string{"status", "example-user"}, &out, i); e != nil || !strings.Contains(out.String(), "runtime unknown") || !strings.Contains(out.String(), "INCOMPATIBLE") {
+		t.Fatal(out.String(), e)
+	}
+	// A busy owner with no responding socket is not permission to mutate offline.
+	unlock, e := extensions.Lock(store)
+	if e != nil {
+		t.Fatal(e)
+	}
+	before, _ := os.ReadFile(filepath.Join(store, ".enabled.json"))
+	e = runExtensionWithInstaller(ctx, []string{"enable", "example-user"}, &out, i)
+	unlock()
+	if e == nil || !strings.Contains(e.Error(), "no offline mutation") {
+		t.Fatal(e)
+	}
+	after, _ := os.ReadFile(filepath.Join(store, ".enabled.json"))
+	if string(after) != string(before) {
+		t.Fatal("fallback changed intent")
+	}
+	offline := i
+	offline.Store = filepath.Join(t.TempDir(), "activate")
+	if e = runExtensionWithInstaller(ctx, []string{"install", "https://github.com/example/repository", "--trust", "--activate"}, &out, offline); e == nil || !strings.Contains(e.Error(), "online") {
+		t.Fatal(e)
+	}
+	persisted, e := offline.State()
+	if e != nil || persisted.Decisions["example-user"].Enabled {
+		t.Fatal("offline activation queued", persisted, e)
 	}
 	out.Reset()
 	if err := runExtensionWithInstaller(ctx, []string{"list"}, &out, i); err != nil {
@@ -65,6 +98,9 @@ func TestExtensionCLIInstallListRemoveFixture(t *testing.T) {
 		t.Fatal(out.String(), err)
 	}
 	t.Setenv("PROXYKIT_EXTENSIONS_DIR", store)
+	if err := runExtensionWithInstaller(ctx, []string{"enable", "example-user"}, &out, i); err != nil {
+		t.Fatal(err)
+	}
 	if err := run(ctx, []string{"-listen", "127.0.0.1:0", "-upstream", "http://127.0.0.1:1"}, &out); err == nil || !strings.Contains(err.Error(), "activate installed extensions") {
 		t.Fatal("silently ignored installed extension", err)
 	}

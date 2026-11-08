@@ -27,16 +27,20 @@ Requires Node on PATH when activating Node extensions (tested with Node 24). Pac
 ```sh
 # Replace this placeholder with a repository you have reviewed and trust:
 /tmp/proxykit extension install https://github.com/OWNER/REPOSITORY --trust
-/tmp/proxykit extension list
-# Start/restart with the same extension store to validate and activate hooks:
+/tmp/proxykit extension status
+# Start with the same store (new packages remain disabled):
 /tmp/proxykit -listen 127.0.0.1:8080 -upstream https://example.com
-# Removal also takes effect on restart:
+# In another terminal, activate without restarting the listener:
+/tmp/proxykit extension enable example-extension
+/tmp/proxykit extension status example-extension
+/tmp/proxykit extension disable example-extension
+# Wait until status shows no active/draining/cleanup owner, then:
 /tmp/proxykit extension remove example-extension
 ```
 
-Set `PROXYKIT_EXTENSIONS_DIR` to select the store; otherwise it lives under your OS user configuration directory at `proxykit/extensions`. Installation records the resolved GitHub commit. Invalid packages or hook configurations fail activation rather than being silently ignored. Updating currently requires explicit removal/reinstallation, not a hot swap.
+Set `PROXYKIT_EXTENSIONS_DIR` to select the store; otherwise it lives under your OS user configuration directory at `proxykit/extensions`. Installation records the resolved GitHub commit and defaults to disabled. `install URL --trust --activate` installs and then enables on a running server; offline it installs disabled and returns an online-required error. Offline enable/disable persists intent only. Invalid packages or hook configurations fail activation rather than silently removing security hooks. Unchanged workers retain their ports, store locks and jobs across activation. Replacement requires disable, drain/reap, remove, reinstall and enable—never overlapping stateful versions. See [hot activation, legacy policy and bounds](docs/HOT_ACTIVATION.md).
 
-**Trusted extensions execute arbitrary server-side code with the server's privileges.** `--trust` is an acknowledgment, not a sandbox or security review. Review the repository before installing. See the [SDK and authoring guide](sdk/README.md), [example extension](examples/node-personal-usage/), and [installation/runtime contracts](docs/implementation/distribution.md).
+**Trusted extensions execute arbitrary server-side code with the server's privileges.** `--trust` is an acknowledgment, not a sandbox or security review. Same-UID trusted code can access the local management socket; it is not a boundary against installed code. Review the repository before installing. See the [SDK and authoring guide](sdk/README.md), [example extension](examples/node-personal-usage/), and [installation/runtime contracts](docs/implementation/distribution.md).
 
 ## Develop an extension
 

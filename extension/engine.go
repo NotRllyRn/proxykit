@@ -49,7 +49,9 @@ func New(cfg Config, registrations ...Registration) (*Engine, error) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	e := &Engine{cfg: cfg, hooks: hooks, ctx: ctx, cancel: cancel, capabilities: make(map[string]capability)}
-	if cfg.Admission > 0 {
+	if cfg.SharedAdmission != nil {
+		e.slots = cfg.SharedAdmission
+	} else if cfg.Admission > 0 {
 		e.slots = make(chan struct{}, cfg.Admission)
 	}
 	for i, h := range hooks {

@@ -28,6 +28,7 @@ var commitPattern = regexp.MustCompile(`^[0-9a-fA-F]{40}$`)
 
 type Manifest struct {
 	ManifestVersion int    `json:"manifestVersion"`
+	APIVersion      int    `json:"apiVersion"`
 	ID              string `json:"id"`
 	Version         string `json:"version"`
 	Entry           string `json:"entry"`
@@ -72,6 +73,9 @@ func safePath(s string) bool {
 	return true
 }
 func (m Manifest) Validate() error {
+	if m.APIVersion != 1 {
+		return fmt.Errorf("extension apiVersion %d unsupported or missing; this host requires apiVersion: 1", m.APIVersion)
+	}
 	if m.ManifestVersion != 1 || !safeID.MatchString(m.ID) || !validVersion(m.Version) || !safePath(m.Entry) || !strings.HasSuffix(m.Entry, ".mjs") {
 		return errors.New("invalid v1 manifest: require safe id, semantic version and relative .mjs entry")
 	}
@@ -173,6 +177,7 @@ func strict(data []byte, v any) error {
 // Store must be host-owned and must not be modified concurrently except through this API.
 type Installer struct {
 	Store                     string
+	Owned                     bool // caller holds the store owner lock for the whole operation
 	Client                    *http.Client
 	APIBase, ArchiveBase      string
 	MaxDownload, MaxExtracted int64
@@ -221,24 +226,27 @@ func (i Installer) get(ctx context.Context, endpoint string, max int64) ([]byte,
 	return b, err
 }
 func (i Installer) lock() (func(), error) {
-	if i.Store == "" {
-		return nil, errors.New("extension store required")
+	if i.Owned {
+		return func() {}, nil
 	}
-	if err := os.MkdirAll(i.Store, 0700); err != nil {
-		return nil, err
+	return Lock(i.Store)
+}
+
+func validateStore(store string) error {
+	if store == "" {
+		return errors.New("extension store required")
 	}
-	st, err := os.Lstat(i.Store)
+	if err := os.MkdirAll(store, 0700); err != nil {
+		return err
+	}
+	st, err := os.Lstat(store)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if !st.IsDir() || st.Mode()&os.ModeSymlink != 0 {
-		return nil, errors.New("store must be a real directory")
+		return errors.New("store must be a real directory")
 	}
-	p := filepath.Join(i.Store, ".lock")
-	if err := os.Mkdir(p, 0700); err != nil {
-		return nil, fmt.Errorf("extension store busy (stale .lock requires operator recovery): %w", err)
-	}
-	return func() { _ = os.Remove(p) }, nil
+	return nil
 }
 func (i Installer) Install(ctx context.Context, source string, trust bool) (Installation, error) {
 	if !trust {
@@ -322,6 +330,16 @@ func (i Installer) Install(ctx context.Context, source string, trust bool) (Inst
 		return Installation{}, err
 	}
 	if err = os.Rename(stage, destination); err != nil {
+		return Installation{}, err
+	}
+	state, err := i.State()
+	if err == nil {
+		state.Revision++
+		state.Decisions[m.ID] = Decision{Commit: sha}
+		err = i.SaveState(state)
+	}
+	if err != nil {
+		_ = os.RemoveAll(destination)
 		return Installation{}, err
 	}
 	return result, nil
@@ -518,6 +536,19 @@ func (i Installer) Remove(id string) error {
 	}
 	if !st.IsDir() || st.Mode()&os.ModeSymlink != 0 {
 		return errors.New("installed path is not a real directory")
+	}
+	// Invalidate any old enabled intent before deleting code. Otherwise a crash
+	// during reinstall of the same commit could resurrect a stale true decision.
+	s, err := i.State()
+	if err != nil {
+		return err
+	}
+	s, err = i.Decide(s, id, false)
+	if err != nil {
+		return err
+	}
+	if err = i.SaveState(s); err != nil {
+		return err
 	}
 	return os.RemoveAll(p)
 }

@@ -40,7 +40,8 @@ type Options struct {
 }
 type Host struct {
 	Engine               *extension.Engine
-	workers              []*worker.Worker
+	workers              []*worker.Worker // newly created, owned by this build
+	instances            map[string]*worker.Worker
 	gateway              string
 	bodyLimit, unitLimit int
 	mu                   sync.Mutex
@@ -52,13 +53,23 @@ type installedHook struct {
 	worker     *worker.Worker
 }
 
-// Open validates every installation and descriptor before returning an immutable engine.
-// Any startup failure rolls back all launched processes. No package is silently omitted.
+// Open validates explicit enabled intent and its complete descriptor pipeline
+// before returning an immutable engine. Disabled incompatible records never run;
+// unresolved legacy intent fails closed. Startup failure stops launched workers.
 func Open(ctx context.Context, o Options) (_ *Host, err error) {
-	records, err := (extensions.Installer{Store: o.Store}).List()
+	i := extensions.Installer{Store: o.Store}
+	s, err := i.State()
 	if err != nil {
 		return nil, err
 	}
+	records, err := i.Enabled(s)
+	if err != nil {
+		return nil, err
+	}
+	return buildHost(ctx, o, records, nil, nil)
+}
+
+func buildHost(ctx context.Context, o Options, records []extensions.Installation, reuse map[string]*worker.Worker, created func(extensions.Installation, *worker.Worker)) (_ *Host, err error) {
 	if len(records) > 64 {
 		return nil, errors.New("nodehost: at most 64 installed workers")
 	}
@@ -75,7 +86,7 @@ func Open(ctx context.Context, o Options) (_ *Host, err error) {
 	if o.Engine.BodyBytes < 1 || o.Engine.BodyBytes > 16<<20 || o.Engine.UnitBytes < 1 || o.Engine.UnitBytes > o.Engine.BodyBytes {
 		return nil, errors.New("nodehost: finite body/unit limits required (body at most 16 MiB)")
 	}
-	h := &Host{gateway: strings.TrimSuffix(o.Gateway, "/"), bodyLimit: o.Engine.BodyBytes, unitLimit: o.Engine.UnitBytes, streams: map[string]uint64{}}
+	h := &Host{gateway: strings.TrimSuffix(o.Gateway, "/"), bodyLimit: o.Engine.BodyBytes, unitLimit: o.Engine.UnitBytes, streams: map[string]uint64{}, instances: map[string]*worker.Worker{}}
 	defer func() {
 		if err != nil {
 			cleanup, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -87,14 +98,22 @@ func Open(ctx context.Context, o Options) (_ *Host, err error) {
 	for _, record := range records {
 		options := o.Worker
 		options.Entry = filepath.Join(o.Store, record.Manifest.ID, "package", filepath.FromSlash(record.Manifest.Entry))
-		w, e := worker.New(options)
-		if e != nil {
-			return nil, e
+		w := reuse[record.Manifest.ID]
+		if w == nil {
+			var e error
+			w, e = worker.New(options)
+			if e != nil {
+				return nil, e
+			}
+			h.workers = append(h.workers, w)
+			if created != nil {
+				created(record, w)
+			}
+			if e = w.Start(ctx); e != nil {
+				return nil, fmt.Errorf("start %s: %w", record.Manifest.ID, e)
+			}
 		}
-		h.workers = append(h.workers, w)
-		if e = w.Start(ctx); e != nil {
-			return nil, fmt.Errorf("start %s: %w", record.Manifest.ID, e)
-		}
+		h.instances[record.Manifest.ID] = w
 		for _, d := range w.Hooks() {
 			hooks = append(hooks, installedHook{record.Manifest.ID, d, w})
 			if len(hooks) > 512 {
@@ -237,7 +256,7 @@ func (h *Host) handler(item installedHook) extension.Handler {
 		if stages[d.Stage] != extension.Delivery {
 			callback = h.managed
 		}
-		out, err := item.worker.InvokeWithCallback(ctx, d.ID, b, callback)
+		out, err := item.worker.InvokeSettled(ctx, d.ID, b, callback)
 		if err != nil {
 			return extension.Result{}, err
 		}

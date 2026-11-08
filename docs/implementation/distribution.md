@@ -1,5 +1,7 @@
 # Distribution and trusted Node workers
 
+**Historical implementation record.** The restart-only activation and four-field manifest claims below are superseded by [safe hot activation](../HOT_ACTIVATION.md): required `apiVersion: 1`, disabled installs, explicit enabled decisions, immutable generations and reuse of unchanged workers. IPC `v:1` and the author HTTP handler API are unchanged. Consult that document and [authoring](../EXTENSION_AUTHORING.md) for current behavior, not the older snapshots below.
+
 Status: Group B installer, worker, SDK, installed HTTP activation bridge and CLI reviewed in `c39637d` and integrated as `8f36088`. Parent verification passed the full repository race suite, vet, CLI build and all three SDK tests (including TypeScript) after integration. This document records the v1 wire contract, historical proposal and executable evidence. Group A execution, original snapshots and DeliveryEvidence are reused without changing extension/ or proxy/. Nothing here claims sandboxing or complete R01–R50 coverage.
 
 ## Round 3 activation bridge plan (historical pre-implementation proposal; implemented below)
