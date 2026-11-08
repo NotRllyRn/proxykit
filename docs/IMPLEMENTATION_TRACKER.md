@@ -41,8 +41,20 @@ No extension requirement is marked complete yet. Each manager must return requir
 ### Integrated group results
 
 - **Group D / broker application:** manager commit `b05cbc6` integrated locally as `8f94c53`. Parent inspected the broker, store and application implementations and reran `go test -race -count=1 -timeout 90s ./...` and `go vet ./...` successfully. Package scope covers extension-owned authentication/routing, refresh, catalog/enrollment, atomic activation/outbox and lifecycle. See [the detailed evidence](implementation/brokerapp.md). Host registration, managed transport, attribution and composed acceptance tests remain pending; this is not end-to-end requirement completion. No remote push or release.
-- **Group A / execution:** first implementation passed its manager's test/race/vet/build checks but was not approved or committed. Review requires immutable original upstream metadata/body observations (excluding local responses), plus a distinct proxy-boundary delivery observation rather than treating reader completion as delivery. Fresh Astra-medium manager round `proxykit-group-a-manager-r2` is running against the preserved isolated checkout, with Sol-medium correction/review instructions. Pi child availability initially failed its version check; a direct version check and the new manager launch subsequently succeeded. Do not merge until correction review passes.
-- Groups B and C remain active; bridge integration waits for reviewed contracts rather than coding against moving APIs.
+- **Group A / execution:** corrected and independently approved manager commit `aadae69` integrated as `cafaa06`. Original upstream observations are detached from local/presentation output; `Finish` reader completion and root-only `Delivery` writer evidence are separate. Parent reran repository race tests, vet and build successfully. See [execution contracts](implementation/execution.md). Writer acceptance is not peer acknowledgment. A focused third review is investigating invocation-scoped managed calls, diagnostic sanitization and informational responses before selection.
+- **Group B / distribution/runtime:** reviewed installer, Node worker, SDK and CLI foundation `23ada1c` integrated as `f83dd40`; worker failure/lifecycle and archive boundary corrections included. Parent reran repository race tests and SDK tests (including TypeScript 5.9.3). See [distribution contracts](implementation/distribution.md). Installed hooks are not yet activated by the serving CLI; the bridge group is implementing and testing that connection. Published npm/npx distribution and a dashboard are not claimed.
+- **Group C / optional AI and recall:** manager-reviewed corrected commit `aac1a40` integrated as `0d234d2`. Includes bounded Chat/Messages adapters, tool coordination, candidate selection, usage presence, durable recall/CAS and process-restart tests. See [AI contracts](implementation/ai.md). Parent reran the full repository race suite, vet and build after integration. Injected managed interfaces are not yet proof of actual host composition.
+
+### Active integration work
+
+All groups continue with Astra-medium managers and Sol-medium workers in isolated T3 worktrees; substantive corrections require fresh delegated review rounds.
+
+- `proxykit-group-a-manager-r3`: core lifetime/diagnostics/commitment audit; owns `extension/` and `proxy/` only.
+- `proxykit-group-b-manager-r3`: `nodehost/`, installed-hook activation, SDK/CLI wiring and compiled install-to-HTTP process tests.
+- `proxykit-group-c-manager-r2`: `examples/aihost/`, real managed inference and durable replay composition, optional AI contracts.
+- `proxykit-group-d-manager-r2`: `examples/brokerhost/`, actual host-bound authentication, route credentials, safe fallback and lifecycle.
+
+Reviewed foundations pass `go test -race -count=1 -timeout 120s ./...`, `go vet ./...`, and `go build -o /tmp/proxykit-foundations ./cmd/proxykit`. This does not close the cross-package gates below.
 
 Baseline before implementation: `go test -race -count=1 -timeout 90s ./...`, `go vet ./...` and `go build ./cmd/proxykit` passed on Go 1.27.1 / Linux. Node v24.16.0 is available for worker process tests. This is transport evidence only.
 
@@ -62,3 +74,6 @@ Integration gates after group review:
 - Git URLs, revisions, archive links, executable paths, package IDs and symlinks are attacker-controlled installation inputs. Avoid shell interpolation and ambient Git hooks/config surprises.
 - Node stdout is protocol-owned; extension logs must not corrupt framing. Bound messages and associate out-of-order replies by invocation ID.
 - Installer rollback/update, worker death during a request, unsupported 101 transforms, cancellation after header commitment and required-observer failures need explicit tests.
+- A managed call helper must inherit invocation cancellation even if the extension supplies an independent context; trusted-code status is not a reason to weaken the helper's contract.
+- Cross-owner ledgers must not copy arbitrary exception messages containing credentials. Stable failure categories are safer than guessed secret redaction.
+- Informational HTTP responses can escape before final response selection; speculative paths must account for this without silently breaking ordinary transparent forwarding.
