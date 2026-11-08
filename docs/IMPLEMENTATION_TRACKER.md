@@ -38,6 +38,11 @@ All managers: Pi `codex-broker/gpt-6-astra`, thinking medium. All implementation
 
 No extension requirement is marked complete yet. Each manager must return requirement IDs, concrete tests/commands/results, limitations and its commit IDs. Final evidence needs cross-package integration, process tests, race tests, vet, build and the no-extension socket regressions. R41 untrusted sandboxing is optional and not offered by trusted workers; it must not receive a false implemented checkmark.
 
+### Integrated group results
+
+- **Group D / broker application:** manager commit `b05cbc6` integrated locally as `8f94c53`. Parent inspected the broker, store and application implementations and reran `go test -race -count=1 -timeout 90s ./...` and `go vet ./...` successfully. Package scope covers extension-owned authentication/routing, refresh, catalog/enrollment, atomic activation/outbox and lifecycle. See [the detailed evidence](implementation/brokerapp.md). Host registration, managed transport, attribution and composed acceptance tests remain pending; this is not end-to-end requirement completion. No remote push or release.
+- Groups A, B and C remain active; integration waits for their reviewed results rather than coding against moving contracts.
+
 Baseline before implementation: `go test -race -count=1 -timeout 90s ./...`, `go vet ./...` and `go build ./cmd/proxykit` passed on Go 1.27.1 / Linux. Node v24.16.0 is available for worker process tests. This is transport evidence only.
 
 Integration gates after group review:
