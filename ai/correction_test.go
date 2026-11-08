@@ -7,7 +7,6 @@ import (
 	"math"
 	"strings"
 	"testing"
-	"time"
 )
 
 func TestWireEnvelopeRejectsBeforeOwnedTools(t *testing.T) {
@@ -148,24 +147,30 @@ func TestMalformedKnownWireFields(t *testing.T) {
 		}
 	}
 }
-func TestObservationDeadlinePreventsSuccess(t *testing.T) {
+func TestObservationCancellationPreventsSuccess(t *testing.T) {
 	for _, coordinator := range []bool{false, true} {
 		t.Run(map[bool]string{false: "direct", true: "coordinator"}[coordinator], func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
 			observed := false
-			s := &Session{Limits: Limits{Timeout: 10 * time.Millisecond}, Managed: ManagedFunc(func(context.Context, Request) (Result, error) {
+			s := &Session{Limits: Limits{Timeout: -1}, Managed: ManagedFunc(func(context.Context, Request) (Result, error) {
 				return Result{Response: Response{Text: "original"}}, nil
 			}), Observe: func(ctx context.Context, o Observation) error {
 				observed = o.Error == "" && o.Result.Response.Text == "original"
+				// Cancel at the observation boundary, not on a timer that can expire
+				// before dispatch on a loaded race-test runner. A nil observer return
+				// must not turn a canceled operation into a successful answer.
+				cancel()
 				<-ctx.Done()
 				return nil
 			}}
 			var e error
 			if coordinator {
-				_, e = (Coordinator{Session: s}).Start(context.Background(), baseRequest())
+				_, e = (Coordinator{Session: s}).Start(ctx, baseRequest())
 			} else {
-				_, e = s.Call(context.Background(), baseRequest())
+				_, e = s.Call(ctx, baseRequest())
 			}
-			if !errors.Is(e, context.DeadlineExceeded) || !observed {
+			if !errors.Is(e, context.Canceled) || !observed {
 				t.Fatalf("error %v original observed %v", e, observed)
 			}
 		})
