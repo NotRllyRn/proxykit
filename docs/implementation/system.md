@@ -109,10 +109,11 @@ selected/resumed recording and multi-original rejection tests remain intact.
   unsupported wire fields reject; no state translator is implied. Persisted
   continuation affinity is not rerouted/reclassified. Changed catalog endpoint,
   missing exact route/changed limits or expired lifetime fail closed.
-- Public ingress here is bounded Chat JSON; selected upstream is Chat/Messages
-  JSON. Existing separate AI fixtures cover buffered SSE, but this combined
-  fixture does **not** certify combined SSE, arbitrary client portability or
-  real-provider versions. No R41 sandbox, universal protocol support, forced
+- Public ingress here is bounded Chat JSON. Round 2 adds real-socket Messages
+  SSE split inside an event across writes, fully buffered before selected
+  decode and required original acknowledgement. This is **not** live incremental
+  semantic streaming or arbitrary client portability; no real-provider versions
+  are certified. No R41 sandbox, universal protocol support, forced
   termination, exactly-once effect/delivery or distributed transactional log.
 - Recall reservation quarantine is intentionally retained after uncertain work.
   Policy/catalog updates are rechecked per dispatch, not atomically serialized
@@ -157,4 +158,38 @@ racing inference/sink acknowledgement or setup failure; revocation between an
 admitted dispatch and an external tool effect; and deliberately conflicting
 same-endpoint protocol tuples/evidence mismatch fixtures. These are not certified
 by the successful suite. The source-attribution, SSE, filesystem and portability
-limits above remain unchanged. No push or merge was performed.
+limits above were not certified by round 1. No push or merge was performed.
+
+## Round 2 narrow combined evidence (this checkout)
+
+- `TestCombinedBufferedSplitSSEContinuation` splits upstream Messages SSE
+  inside the `message_start` event across actual flushed socket writes. The
+  first selected call's fsynced original has both mixed tool IDs and upstream
+  usage 7 before the owned recall effect; public handoff exposes only the client
+  tool. A fresh-process continuation sends both private recall and client
+  results, records a second complete original SSE, and delivers independently
+  decorated Chat usage 900. This is buffered decode, not streaming delivery.
+- `TestCombinedShutdownWaitsForRequiredRecorder` cancels active inference while
+  the required sink is blocked, observes upstream cancellation and stopped
+  admission, verifies cleanup has not run before the callback exits, releases
+  the cooperative callback, then sees one fsynced empty batch, one cleanup and
+  quarantined work without effects. Cancellation before response headers may
+  produce no source snapshot; an empty required batch does not invent one.
+- `TestCombinedSameEndpointTupleMismatchRejected` exercises an uncataloged
+  version, another caller's account at the same endpoint, and a cataloged
+  Chat protocol at a Messages endpoint. The first two do not reach upstream;
+  the last reaches the socket with incompatible wire/response, then fails decode
+  before effect or selection. Each remains quarantined on replay. Existing
+  `TestCombinedNestedOriginalsStillReject` still rejects two original sources;
+  `TestCombinedTransportErrorDoesNotSelectOrRetry` confirms a reset socket
+  yields one incomplete error original, no hidden retry or effect.
+- Focused commands passed: `go test ./examples/system -count=1 -timeout=90s`;
+  `go test -race ./examples/system -count=1 -timeout=120s`;
+  `go test ./examples/system -run 'TestCombined(ShutdownWaitsForRequiredRecorder|BufferedSplitSSEContinuation|SameEndpointTupleMismatchRejected|TransportErrorDoesNotSelectOrRetry)$' -count=5 -timeout=120s`.
+
+Round 2 does not establish atomic external-effect revocation, a multi-source
+winner, a sandbox/cache, live provider/client compatibility, incremental
+semantic SSE, exactly-once delivery, power-loss durability or forced Go callback
+termination. Shutdown only waits for cooperative callback exit; it does not
+forcibly kill arbitrary trusted code. The separate worker/nodehost runtime fix
+is outside this change.

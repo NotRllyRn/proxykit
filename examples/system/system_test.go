@@ -325,6 +325,7 @@ type provider struct {
 	loser    map[string]chan struct{}
 	canceled map[string]chan struct{}
 	oversize bool
+	stream   bool // fixture-only: complete Messages SSE split across socket writes
 }
 
 func newProvider() *provider {
@@ -381,6 +382,23 @@ func (p *provider) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	encoded, err := (ai.Adapter{Kind: kind}).Encode(response)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+		return
+	}
+	if path == "messages" && p.stream {
+		encoded, err = (ai.Adapter{Kind: kind}).EncodeStream(response)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		w.Header().Set("Content-Type", "text/event-stream")
+		// Deliberately split inside an event's JSON, not merely between events.
+		cut := bytes.Index(encoded, []byte("message_start")) + len("message_")
+		if cut <= len("message_") || cut >= len(encoded) {
+			panic("missing fixture SSE event")
+		}
+		w.Write(encoded[:cut])
+		w.(http.Flusher).Flush()
+		w.Write(encoded[cut:])
 		return
 	}
 	w.Write(encoded)
