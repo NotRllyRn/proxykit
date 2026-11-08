@@ -94,6 +94,9 @@ type Input struct {
 	Delivery   *DeliveryEvidence // only at Delivery; detached, not a peer acknowledgement
 	// Call executes a fresh request through the ordinary chain with shared root
 	// budgets (not external Delivery). It is nil in Delivery snapshots.
+	// Authority expires at handler return/timeout even with context.Background;
+	// admitted calls are canceled too. Consume/close responses before returning.
+	// Returned Result{Action: Child} instead executes under exchange lifetime.
 	// It never forwards parent upstream credentials or owner metadata.
 	Call func(context.Context, *http.Request) (*http.Response, error)
 }

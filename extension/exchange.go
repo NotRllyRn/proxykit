@@ -49,8 +49,8 @@ func responseMessage(r *http.Response) Message {
 	return Message{Status: r.StatusCode, Header: r.Header.Clone()}
 }
 func (e *Engine) execute(ctx context.Context, r *http.Request, base http.RoundTripper, parent *exchange) (_ *http.Response, executeErr error) {
-	if r == nil || r.URL == nil {
-		return nil, fmt.Errorf("extension: missing request URL")
+	if r == nil {
+		return nil, fmt.Errorf("extension: missing request")
 	}
 	// RoundTripper owns the supplied body even when a local response or an
 	// admission/policy error prevents delegation to the underlying transport.
@@ -63,6 +63,9 @@ func (e *Engine) execute(ctx context.Context, r *http.Request, base http.RoundTr
 	}()
 	if err := ctx.Err(); err != nil {
 		return nil, err
+	}
+	if r.URL == nil {
+		return nil, fmt.Errorf("extension: missing request URL")
 	}
 	if err := e.begin(); err != nil {
 		return nil, err
@@ -415,7 +418,7 @@ func (x *exchange) run(stage Stage, req *http.Request, resp *http.Response, unit
 			}
 		}
 		if err != nil {
-			x.record(h, err.Error())
+			x.record(h, errorOutcome(err))
 			if h.Failure == FailOpen {
 				continue
 			}

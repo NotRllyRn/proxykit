@@ -14,12 +14,16 @@ import (
 // No ReaderFrom: io.Copy must pass through Write for honest accepted-byte counts.
 type deliveryWriter struct {
 	http.ResponseWriter
-	mu       sync.Mutex
-	evidence extension.DeliveryEvidence
+	mu                    sync.Mutex
+	evidence              extension.DeliveryEvidence
+	suppressInformational bool
 }
 
 func (w *deliveryWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 func (w *deliveryWriter) WriteHeader(status int) {
+	if w.suppressInformational && status >= 100 && status < 200 && status != http.StatusSwitchingProtocols {
+		return
+	}
 	w.ResponseWriter.WriteHeader(status)
 	if status >= 200 {
 		w.mu.Lock()

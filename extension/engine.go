@@ -202,6 +202,13 @@ func (e *Engine) invoke(ctx context.Context, h Registration, in Input) (Result, 
 		callctx, cancel = context.WithTimeout(ctx, e.cfg.InvocationTimeout)
 	}
 	defer cancel()
+	// Handler authority ends at return (or timeout), independently of the
+	// caller-supplied context. Returned Child results use exchange authority.
+	scope, endScope := context.WithCancel(callctx)
+	defer endScope()
+	if call := in.Call; call != nil {
+		in.Call = scopedCall(scope, call)
+	}
 	go func() {
 		defer e.wg.Done()
 		if e.slots != nil {
@@ -209,12 +216,14 @@ func (e *Engine) invoke(ctx context.Context, h Registration, in Input) (Result, 
 		}
 		a := answer{}
 		defer func() {
+			endScope()
 			if p := recover(); p != nil {
 				a.err = fmt.Errorf("hook %s panic: %v", h.ID, p)
 			}
 			done <- a
 		}()
-		a.r, a.err = h.Handler(callctx, in)
+		a.r, a.err = h.Handler(scope, in)
+		endScope()
 		// Copy before publishing; retaining and later modifying returned values is
 		// forbidden by the handler contract (as with http.RoundTripper).
 		if a.r.Message != nil {

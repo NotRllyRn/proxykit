@@ -77,26 +77,20 @@ func (e *Engine) Client(ctx context.Context, gateway string) (*http.Client, erro
 	transport.Proxy = nil
 	context.AfterFunc(ctx, transport.CloseIdleConnections)
 	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	client.Transport = roundTripper(func(r *http.Request) (*http.Response, error) {
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
+	call := scopedCall(ctx, func(callctx context.Context, r *http.Request) (*http.Response, error) {
 		if r.URL.Scheme != u.Scheme || r.URL.Host != u.Host {
+			if r.Body != nil {
+				r.Body.Close()
+			}
 			return nil, fmt.Errorf("extension: managed client origin mismatch")
 		}
-		callctx, cancel := context.WithCancel(r.Context())
-		stop := context.AfterFunc(ctx, cancel)
 		r = cloneRequest(r, callctx)
 		clean(r.Header)
 		r.Header.Set(capabilityHeader, token)
-		resp, err := transport.RoundTrip(r)
-		if err != nil {
-			stop()
-			cancel()
-			return nil, err
-		}
-		resp.Body = &releaseBody{ReadCloser: resp.Body, release: func() { stop(); cancel() }}
-		return resp, nil
+		return transport.RoundTrip(r)
+	})
+	client.Transport = roundTripper(func(r *http.Request) (*http.Response, error) {
+		return call(r.Context(), r)
 	})
 	return client, nil
 }

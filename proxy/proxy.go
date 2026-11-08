@@ -15,7 +15,12 @@ import (
 // ReverseProxy exposes the standard native composition points.
 type Proxy struct {
 	*httputil.ReverseProxy
-	execution *extension.Engine
+	// SuppressInformationalResponses opts managed traffic out of upstream 1xx
+	// forwarding (except 101 upgrades), before ResponseStart selects candidates.
+	// Configure before serving. It has no effect on New's unmanaged path.
+	// Final responses are unchanged; selected candidates do not replay their 1xx.
+	SuppressInformationalResponses bool
+	execution                      *extension.Engine
 }
 
 // ServeHTTP allows an upstream to respond while the client is still uploading.
@@ -29,7 +34,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		var complete func(extension.DeliveryEvidence) error
 		r, complete = p.execution.TrackDelivery(r)
-		writer := &deliveryWriter{ResponseWriter: w}
+		writer := &deliveryWriter{ResponseWriter: w, suppressInformational: p.SuppressInformationalResponses}
 		w = writer
 		if cn, ok := writer.ResponseWriter.(http.CloseNotifier); ok {
 			w = &notifyingDeliveryWriter{writer, cn}
