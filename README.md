@@ -103,6 +103,10 @@ Tests cover forwarding and opaque API payloads; SSE and duplex streaming; compre
 
 Local baseline: Go 1.27.1, Linux amd64, Intel i9-13900H, four benchmark CPUs, parallel 32 KiB responses over loopback: **221,310 ns/op, 148.06 MB/s, 48,050 B/op, 161 allocations/op**. These are whole-harness measurements including client, proxy and upstream, not isolated proxy latency, production capacity, bounded-memory proof, or a Go-versus-Node comparison. No claim of maximum achievable speed is made; this is a repeatable starting point without speculative optimization.
 
+## Requirement status
+
+See the [simple 50-requirement status table](docs/REQUIREMENT_STATUS.md) for what is implemented, working as an optional example, partially implemented or not implemented, plus the remaining work. No unfinished item is currently labeled as actively in progress.
+
 ## Project context
 
 Start with the [implementation tracker](docs/IMPLEMENTATION_TRACKER.md) for current integration status and evidence. The [consolidated extension plan](docs/EXTENSION_PLAN.md) retains the design decisions, recovery/re-entry recommendations and open cases.

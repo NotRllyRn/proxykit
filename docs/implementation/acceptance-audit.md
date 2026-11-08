@@ -1,5 +1,7 @@
 # Extension acceptance evidence — independent audit
 
+For a concise current checklist and remaining work, see the [50-requirement status table](../REQUIREMENT_STATUS.md). The baseline matrix below is historical evidence; subsequent audit sections record later integrations and corrections.
+
 Status: partial acceptance, not R01–R50 completion. The matrix preserves the first independent audit at baseline `1aa85ca`, with corrections `e60e121` and `6cfba27`. Installed Node activation was subsequently merged as `8f36088`; its independent audit and combined system results are recorded below. See [current tracker](../IMPLEMENTATION_TRACKER.md).
 
 The audit accepts tested native execution boundaries and bounded application examples. No new blocking defect was established in the declared single-source managed-AI slice. Missing optional capabilities do not justify new mandatory core frameworks.
