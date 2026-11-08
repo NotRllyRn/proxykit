@@ -1,6 +1,6 @@
 # Extension acceptance evidence — independent audit
 
-Status: partial acceptance, not R01–R50 completion. This is the first independent manager/worker audit at baseline `1aa85ca`, with corrections `e60e121` and `6cfba27`. Installed Node activation was subsequently merged as `8f36088`; a separate audit is examining that boundary. Combined broker + AI + recall acceptance is also still running. See [current tracker](../IMPLEMENTATION_TRACKER.md).
+Status: partial acceptance, not R01–R50 completion. The matrix preserves the first independent audit at baseline `1aa85ca`, with corrections `e60e121` and `6cfba27`. Installed Node activation was subsequently merged as `8f36088`; its independent audit and combined system results are recorded below. See [current tracker](../IMPLEMENTATION_TRACKER.md).
 
 The audit accepts tested native execution boundaries and bounded application examples. No new blocking defect was established in the declared single-source managed-AI slice. Missing optional capabilities do not justify new mandatory core frameworks.
 
@@ -84,3 +84,26 @@ Mixed labels do not equate explicit rejection with feature implementation. Paths
 - Preserve opaque endpoints, HTTP/1 full duplex, HTTP/2 duplex/trailers, WebSocket pass-through and managed duplex/trailers regressions.
 
 The audit manager independently passed focused cache/affinity, selected/resumed recording failure, nested-source rejection and admission-publication tests across `ai`, `examples/aihost` and `extension`. This audit is evidence for ongoing integration, not final certification.
+
+## Subsequent installed-boundary audit
+
+Independent Astra-medium manager and Sol-medium worker reviewed baseline `e074b34` (installed bridge `8f36088`). They accept narrow installed activation: production install command logic against local GitHub fixtures, a compiled serving CLI, actual upstream/Node output and SIGTERM cleanup. Installation itself is in-process, not a compiled CLI install subprocess.
+
+**Open P2:** `worker/runtime.mjs:90–91` truncates exception text to 512 JavaScript code units, not the negotiated encoded frame size. A hook throwing `Error('😀'.repeat(512))` with `MaxFrame: 1024` causes `output frame exceeds bound`, EOF and persistent worker unavailability. The same probe at the default 1 MiB emits a correlated `HOOK_ERROR` and a later invocation succeeds. The correction must preserve correlation and worker usability for multibyte/escaped errors down to the supported 256-byte minimum; a manager/worker correction is active.
+
+Installed evidence closes the missing execution seam for R36/R39 and the installed portion of R43, with qualifications:
+
+- JSON IPC/copies and original/effective fixtures support detachment, but there is no comprehensive installed late-mutation stress fixture.
+- Credential translation excludes credentials from later snapshots; a positive upstream Authorization assertion is being added.
+- Worker tests cover managed-call cancellation, scope expiry, retained capacity and explicit restart. These are not all compiled-CLI end-to-end scenarios. Installed hosts do not automatically restart/replay workers.
+- Native admission and worker cancellation-lifetime tests complement installed one-slot tests; they are not one combined cancellation-lifetime stress proof.
+- Registration is frozen and activation restart-only; replacement during an active stream/nested call is not directly tested.
+- Compiled SIGTERM and installed startup rollback are proven; worker shutdown tests add bounded process/lifecycle evidence.
+
+Reviewer independently passed the four-package race suite (`nodehost`, `worker`, `extensions`, `cmd/proxykit`), all three SDK tests with TypeScript and no skips, and focused native admission/cancellation regressions. An attempted 20-repeat native selection exhausted its 120-second overall timeout; it is not counted as passing. The single-count rerun passed. The independent worker also passed focused callback/schema/upgrade regressions and vet.
+
+## Subsequent combined-system integration
+
+Reviewed commit `38a9476`, integrated as `9c4415f`, supplies actual `brokerapp.Host` + AI + recall + synchronous durable independent recorder composition. [System evidence](system.md) names exact socket/process tests. This closes the previously missing application-composition seam for R43 and strengthens route/credential/provenance evidence across the matrix; it does not change unsupported classifications into implementation claims.
+
+Parent independently passed all 11 packages with `go test -race -count=1 -timeout=180s ./...`, then `go vet ./...` and `go build ./...`. Follow-up fixtures are active for combined buffered SSE, shutdown/cancellation and negative protocol/route evidence. General multi-source winner attribution, hidden transport retry, atomic revocation with arbitrary effects, live semantic continuation, sandbox and distributed/exactly-once guarantees remain unclaimed.
