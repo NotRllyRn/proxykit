@@ -25,7 +25,7 @@ func (e *Engine) Bind(r *http.Request) (*http.Request, error) {
 	if existing, ok := r.Context().Value(ingressKey{}).(ingress); ok && existing.engine == e {
 		return r, nil
 	}
-	in := ingress{engine: e, requested: requestMessage(r)}
+	in := ingress{engine: e, requested: requestMessage(r), requestHasTrailers: len(r.Trailer) > 0}
 	if token != "" {
 		e.mu.Lock()
 		cap, ok := e.capabilities[token]

@@ -9,6 +9,8 @@ export type LedgerEntry = { identity: Identity; hook: string; stage: Stage; outc
 export type DeliveryEvidence = { status: number; bytes: number; writeError: string; flushError: string; readError: string; returned: boolean; aborted: boolean; hijacked: boolean };
 export type HTTPInput = {
   v: 1; stage: Stage; identity: Identity; requested: Message; request: Message; response: Message;
+  /** Original incoming Go request had trailer keys; not header/metadata-derived or final values. */
+  readonly requestHasTrailers: boolean;
   metadata: Record<string,string>; ledger: LedgerEntry[]; truncated: boolean; provenance: Identity[];
   auth: { subject: string; claims: Record<string,string> }; error: string;
   delivery?: DeliveryEvidence;

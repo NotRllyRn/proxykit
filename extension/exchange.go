@@ -22,10 +22,11 @@ type rootState struct {
 }
 type ingressKey struct{}
 type ingress struct {
-	engine    *Engine
-	scope     context.Context
-	requested Message
-	parent    *exchange
+	engine             *Engine
+	scope              context.Context
+	requested          Message
+	requestHasTrailers bool
+	parent             *exchange
 }
 type exchange struct {
 	engine                       *Engine
@@ -34,6 +35,7 @@ type exchange struct {
 	auth                         Authentication
 	requested, request, response Message
 	source                       Message // detached upstream metadata; never effective/local output
+	requestHasTrailers           bool
 	metadata                     map[string]map[string]string
 	credentials                  http.Header
 	provenance                   []Identity
@@ -99,13 +101,19 @@ func (e *Engine) execute(ctx context.Context, r *http.Request, base http.RoundTr
 	if in.scope != nil {
 		stopScope = context.AfterFunc(in.scope, cancel)
 	}
+	requestHasTrailers := len(r.Trailer) > 0
 	if parent == nil {
+		// Bind captures ingress (including HTTP reentry) before gateway rewriting.
+		// Explicit native children use their own request, not an inherited Bind.
+		if in.engine == e {
+			requestHasTrailers = in.requestHasTrailers
+		}
 		parent = in.parent
 	}
 	if parent != nil {
 		stopParent = context.AfterFunc(parent.ctx, cancel)
 	}
-	x = &exchange{engine: e, ctx: ctx, base: base, request: requestMessage(r), requested: requestMessage(r), metadata: map[string]map[string]string{}}
+	x = &exchange{engine: e, ctx: ctx, base: base, request: requestMessage(r), requested: requestMessage(r), requestHasTrailers: requestHasTrailers, metadata: map[string]map[string]string{}}
 	if parent != nil {
 		x.root = parent.root
 		x.id.Parent = parent.id.Exchange
@@ -286,7 +294,7 @@ func (x *exchange) input(h Registration) Input {
 	x.root.mu.Unlock()
 	a := x.auth
 	a.Claims = copyMap(a.Claims)
-	return Input{Identity: x.id, Requested: cloneMessage(x.requested), Request: cloneMessage(x.request), Response: cloneMessage(x.response), Metadata: copyMap(x.metadata[h.Owner]), Ledger: ledger, Truncated: truncated, Provenance: append([]Identity(nil), x.provenance...), Auth: a, Err: x.terminal, Call: func(ctx context.Context, r *http.Request) (*http.Response, error) {
+	return Input{Identity: x.id, Requested: cloneMessage(x.requested), RequestHasTrailers: x.requestHasTrailers, Request: cloneMessage(x.request), Response: cloneMessage(x.response), Metadata: copyMap(x.metadata[h.Owner]), Ledger: ledger, Truncated: truncated, Provenance: append([]Identity(nil), x.provenance...), Auth: a, Err: x.terminal, Call: func(ctx context.Context, r *http.Request) (*http.Response, error) {
 		return x.engine.execute(ctx, r, x.base, x)
 	}}
 }

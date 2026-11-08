@@ -81,17 +81,20 @@ type Authentication struct {
 	Claims  map[string]string
 }
 type Input struct {
-	Identity   Identity
-	Requested  Message // original request facts, with no retained body
-	Request    Message
-	Response   Message
-	Metadata   map[string]string // only this registration's owner namespace
-	Ledger     []Entry
-	Truncated  bool
-	Provenance []Identity
-	Auth       Authentication
-	Err        error             // transport/read error for terminal observers
-	Delivery   *DeliveryEvidence // only at Delivery; detached, not a peer acknowledgement
+	Identity  Identity
+	Requested Message // original request facts, with no retained body
+	// RequestHasTrailers reports len(originalRequest.Trailer) > 0 at ingress,
+	// not a header/metadata claim or a promise of final trailer values.
+	RequestHasTrailers bool
+	Request            Message
+	Response           Message
+	Metadata           map[string]string // only this registration's owner namespace
+	Ledger             []Entry
+	Truncated          bool
+	Provenance         []Identity
+	Auth               Authentication
+	Err                error             // transport/read error for terminal observers
+	Delivery           *DeliveryEvidence // only at Delivery; detached, not a peer acknowledgement
 	// Call executes a fresh request through the ordinary chain with shared root
 	// budgets (not external Delivery). It is nil in Delivery snapshots.
 	// Authority expires at handler return/timeout even with context.Background;

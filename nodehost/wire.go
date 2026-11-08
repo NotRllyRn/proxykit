@@ -63,20 +63,21 @@ type Stream struct {
 	End      bool   `json:"end"`
 }
 type Input struct {
-	V          int               `json:"v"`
-	Stage      string            `json:"stage"`
-	Identity   Identity          `json:"identity"`
-	Requested  Message           `json:"requested"`
-	Request    Message           `json:"request"`
-	Response   Message           `json:"response"`
-	Metadata   map[string]string `json:"metadata"`
-	Ledger     []Entry           `json:"ledger"`
-	Truncated  bool              `json:"truncated"`
-	Provenance []Identity        `json:"provenance"`
-	Auth       Authentication    `json:"auth"`
-	Error      string            `json:"error"`
-	Delivery   *Delivery         `json:"delivery,omitempty"`
-	Stream     *Stream           `json:"stream,omitempty"`
+	V                  int               `json:"v"`
+	Stage              string            `json:"stage"`
+	Identity           Identity          `json:"identity"`
+	Requested          Message           `json:"requested"`
+	RequestHasTrailers bool              `json:"requestHasTrailers"`
+	Request            Message           `json:"request"`
+	Response           Message           `json:"response"`
+	Metadata           map[string]string `json:"metadata"`
+	Ledger             []Entry           `json:"ledger"`
+	Truncated          bool              `json:"truncated"`
+	Provenance         []Identity        `json:"provenance"`
+	Auth               Authentication    `json:"auth"`
+	Error              string            `json:"error"`
+	Delivery           *Delivery         `json:"delivery,omitempty"`
+	Stream             *Stream           `json:"stream,omitempty"`
 }
 
 func errorText(err error) string {
@@ -98,7 +99,7 @@ func message(m extension.Message, body bool) Message {
 	return out
 }
 func snapshot(in extension.Input, h worker.HookDescriptor) Input {
-	out := Input{V: 1, Stage: h.Stage, Identity: identity(in.Identity), Requested: message(in.Requested, false), Request: message(in.Request, h.BodyMode == "buffered" && stages[h.Stage] < extension.ResponseStart), Response: message(in.Response, h.BodyMode != "none" && stages[h.Stage] >= extension.ResponseStart), Metadata: in.Metadata, Ledger: []Entry{}, Provenance: []Identity{}, Truncated: in.Truncated, Auth: Authentication{in.Auth.Subject, in.Auth.Claims}, Error: errorText(in.Err)}
+	out := Input{V: 1, Stage: h.Stage, Identity: identity(in.Identity), Requested: message(in.Requested, false), RequestHasTrailers: in.RequestHasTrailers, Request: message(in.Request, h.BodyMode == "buffered" && stages[h.Stage] < extension.ResponseStart), Response: message(in.Response, h.BodyMode != "none" && stages[h.Stage] >= extension.ResponseStart), Metadata: in.Metadata, Ledger: []Entry{}, Provenance: []Identity{}, Truncated: in.Truncated, Auth: Authentication{in.Auth.Subject, in.Auth.Claims}, Error: errorText(in.Err)}
 	for _, e := range in.Ledger {
 		out.Ledger = append(out.Ledger, Entry{identity(e.Identity), e.Hook, stageNames[e.Stage], e.Outcome, e.RequestedURL, e.ServedURL, e.Status})
 	}

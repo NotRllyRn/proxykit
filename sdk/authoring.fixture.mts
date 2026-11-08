@@ -4,7 +4,12 @@ const unit: StreamUnit = streamUnit('example-stream', 0, new Uint8Array([1, 2]),
 const json: JSONValue = unit;
 void json;
 const httpSetup = defineHTTP(api => {
-  api.on({ id: 'request', stage: 'request', bodyMode: 'buffered', failure: 'block', order: -2 }, i => replace(i.request));
+  api.on({ id: 'request', stage: 'request', bodyMode: 'buffered', failure: 'block', order: -2 }, i => {
+    const hasTrailers: boolean = i.requestHasTrailers; void hasTrailers;
+    // @ts-expect-error Original trailer presence is a read-only host fact.
+    i.requestHasTrailers = false;
+    return replace(i.request);
+  });
   api.on({ id: 'resolve', stage: 'resolve', bodyMode: 'none', after: ['request'] }, () => ({ ...pass(), credentials: { Authorization: ['Bearer example'] } }));
   api.on({ id: 'upstream', stage: 'upstream', bodyMode: 'none' }, () => respond({ method: '', url: '', status: 200, header: {}, body: '' }));
   api.on({ id: 'observe', stage: 'observe', bodyMode: 'none' }, i => { const root: string = i.identity.root; void root; return pass(); });
