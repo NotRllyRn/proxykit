@@ -17,6 +17,7 @@ import (
 )
 
 var ErrConflict = errors.New("recall revision conflict")
+var ErrUncertain = errors.New("recall execution uncertain; operator reconciliation required")
 
 type Key struct{ Tenant, Conversation string }
 type State struct {
@@ -27,6 +28,8 @@ type State struct {
 	Original, Working []ai.Message
 	Turn              *ai.Turn
 	Affinity          ai.Affinity
+	Budget            *ai.Budget
+	InFlight          bool // durable reservation; never automatically retried after crash/error
 }
 type Store struct {
 	Dir      string
@@ -82,6 +85,9 @@ func (s Store) Read(ctx context.Context, k Key) (State, error) {
 // file. The private directory and filesystem must support flock, atomic rename,
 // file fsync and directory fsync. Do not use NFS or multiple hosts.
 func (s Store) update(ctx context.Context, k Key, expected uint64, fn func(*State) error) (State, error) {
+	return s.updateReserved(ctx, k, expected, false, fn)
+}
+func (s Store) updateReserved(ctx context.Context, k Key, expected uint64, reserved bool, fn func(*State) error) (State, error) {
 	p, err := s.path(k)
 	if err != nil {
 		return State{}, err
@@ -100,6 +106,9 @@ func (s Store) update(ctx context.Context, k Key, expected uint64, fn func(*Stat
 	}
 	if st.Revision != expected {
 		return State{}, ErrConflict
+	}
+	if st.InFlight && !reserved {
+		return State{}, ErrUncertain
 	}
 	if st.Revision == ^uint64(0) {
 		return State{}, errors.New("revision exhausted")
@@ -204,7 +213,9 @@ func (s Store) Reduce(ctx context.Context, k Key, rev uint64, owner string, redu
 		return nil
 	})
 }
-func (s Store) SaveTurn(ctx context.Context, k Key, rev uint64, t ai.Turn) (State, error) {
+
+// SaveTurn checkpoints quiescent state only; use Run to reserve before effects.
+func (s Store) SaveTurn(ctx context.Context, k Key, rev uint64, t ai.Turn, budget ai.Budget) (State, error) {
 	if t.Identity.Tenant != k.Tenant || t.Identity.Conversation != k.Conversation {
 		return State{}, errors.New("turn identity mismatch")
 	}
@@ -212,7 +223,7 @@ func (s Store) SaveTurn(ctx context.Context, k Key, rev uint64, t ai.Turn) (Stat
 		return State{}, err
 	}
 	t = copyJSON(t)
-	return s.update(ctx, k, rev, func(st *State) error { st.Turn = &t; st.Working = t.Working; return nil })
+	return s.update(ctx, k, rev, func(st *State) error { st.Turn = &t; st.Working = t.Working; st.Budget = &budget; return nil })
 }
 
 // Continue serializes CAS/replay admission across processes before invoking the
@@ -220,16 +231,61 @@ func (s Store) SaveTurn(ctx context.Context, k Key, rev uint64, t ai.Turn) (Stat
 // effect is still ambiguous: tools must implement their own idempotency using
 // tenant/conversation plus ai.ToolCallID. No exactly-once effect claim is made.
 func (s Store) Continue(ctx context.Context, k Key, rev uint64, c ai.Coordinator, req ai.Request, replay []ai.Message) (State, error) {
-	return s.update(ctx, k, rev, func(st *State) error {
-		if st.Turn == nil {
-			return errors.New("no pending continuation")
+	return s.Run(ctx, k, rev, func(st State) (ai.Turn, ai.Budget, error) {
+		if st.Turn == nil || c.Session == nil {
+			return ai.Turn{}, ai.Budget{}, errors.New("no pending continuation/session")
+		}
+		if st.Budget == nil {
+			return ai.Turn{}, ai.Budget{}, errors.New("missing authoritative continuation budget")
+		}
+		if err := c.Session.RestoreBudget(*st.Budget); err != nil {
+			return ai.Turn{}, ai.Budget{}, err
+		}
+		if !st.Budget.Deadline.IsZero() {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithDeadline(ctx, st.Budget.Deadline)
+			defer cancel()
 		}
 		turn, err := c.Resume(ctx, req, *st.Turn, replay)
 		if err != nil {
-			return err
+			return turn, ai.Budget{}, err
 		}
+		budget, err := c.Session.Budget()
+		budget.Deadline = st.Budget.Deadline
+		return turn, budget, err
+	})
+}
+
+// Run reserves the revision durably BEFORE running any inference or effects.
+// Concurrent/stale requests cannot pass admission. A callback error, cancellation,
+// persistence failure or process crash leaves a poisoned reservation: explicit
+// operator reconciliation is safer than resetting limits or repeating effects.
+// The callback may restore st.Budget into a fresh Session. Archive/Reduce must
+// happen before Run; mutation is blocked while execution is reserved.
+func (s Store) Run(ctx context.Context, k Key, rev uint64, fn func(State) (ai.Turn, ai.Budget, error)) (State, error) {
+	if fn == nil {
+		return State{}, errors.New("missing execution")
+	}
+	reserved, err := s.update(ctx, k, rev, func(st *State) error { st.InFlight = true; return nil })
+	if err != nil {
+		return State{}, err
+	}
+	turn, budget, err := fn(copyJSON(reserved))
+	if err != nil {
+		return reserved, err
+	}
+	if turn.Identity.Tenant != k.Tenant || turn.Identity.Conversation != k.Conversation {
+		return reserved, errors.New("turn identity mismatch")
+	}
+	return s.updateReserved(ctx, k, reserved.Revision, true, func(st *State) error {
+		if !st.InFlight {
+			return ErrConflict
+		}
+		st.InFlight = false
 		st.Turn = &turn
 		st.Working = turn.Working
+		st.Budget = &budget
+		st.Affinity.Bound = turn.Served
 		return nil
 	})
 }

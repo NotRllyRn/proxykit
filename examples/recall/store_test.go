@@ -175,7 +175,11 @@ func TestCombinedCoordinatorReplayRestartRerouteObserver(t *testing.T) {
 	if executions != 2 || len(turn.Pending) != 1 {
 		t.Fatal("mixed handoff")
 	}
-	st, e = s.SaveTurn(ctx, key(), st.Revision, turn)
+	budget, e := managed.Budget()
+	if e != nil {
+		t.Fatal(e)
+	}
+	st, e = s.SaveTurn(ctx, key(), st.Revision, turn, budget)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -186,7 +190,7 @@ func TestCombinedCoordinatorReplayRestartRerouteObserver(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	if got.Turn == nil || got.Turn.Response.Text != "final after restart" || len(got.Turn.Pending) != 0 || got.Revision != st.Revision+1 {
+	if got.Turn == nil || got.Turn.Response.Text != "final after restart" || len(got.Turn.Pending) != 0 || got.Revision != st.Revision+2 {
 		t.Fatalf("bad restart: %+v", got)
 	}
 	if !reflect.DeepEqual(got.Archive[0], messages()) {
@@ -320,7 +324,9 @@ func TestRecallFreshProcess(t *testing.T) {
 		}
 		r.Target = b.Route
 		replay := append(append([]ai.Message(nil), st.Turn.Public...), ai.Message{Role: "tool", ToolID: "shell-a", Text: "client result"})
-		c := ai.Coordinator{Session: session, Tools: map[string]ai.Tool{"search": func(context.Context, ai.Identity, json.RawMessage) (string, error) {
+		// Continue restores its durable budget into an unused scoped Session.
+		continuation := &ai.Session{Managed: session.Managed, Observe: session.Observe}
+		c := ai.Coordinator{Session: continuation, Tools: map[string]ai.Tool{"search": func(context.Context, ai.Identity, json.RawMessage) (string, error) {
 			t.Fatal("replayed internal tool")
 			return "", nil
 		}}}

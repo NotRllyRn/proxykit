@@ -19,6 +19,9 @@ func ToolCallID(ctx context.Context) string { id, _ := ctx.Value(toolCallKey{}).
 type Coordinator struct {
 	Session *Session
 	Tools   map[string]Tool
+	// Validate checks every selected call before ANY tool effect. Applications
+	// use this for declared-tool membership and strict owned argument schemas.
+	Validate func(ToolCall) error
 }
 
 // Turn is private durable state. Public is exactly the client-visible transcript;
@@ -27,6 +30,7 @@ type Coordinator struct {
 type Turn struct {
 	Lineage         Lineage
 	Identity        Identity
+	Served          Route // authoritative last managed destination, persisted at handoff
 	Public, Working []Message
 	Pending         []ToolCall
 	Results         []Message
@@ -131,6 +135,7 @@ func (c Coordinator) run(ctx context.Context, req Request, t Turn) (Turn, error)
 		if err != nil {
 			return t, err
 		}
+		t.Served = result.Served
 		r := result.Response
 		if err := Portable(r); err != nil {
 			return t, err
@@ -145,6 +150,13 @@ func (c Coordinator) run(ctx context.Context, req Request, t Turn) (Turn, error)
 		next := append(clone(t.Working), Message{Role: "assistant", Text: r.Text, Calls: clone(r.Calls)})
 		if err := ValidateMessages(append(clone(next), toolPlaceholders(r.Calls)...)); err != nil {
 			return t, err
+		}
+		if c.Validate != nil {
+			for _, call := range r.Calls {
+				if err := c.Validate(clone(call)); err != nil {
+					return t, err
+				}
+			}
 		}
 		t.Working = next
 		results, err := c.execute(ctx, req.Identity, r.Calls, l)

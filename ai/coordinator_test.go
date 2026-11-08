@@ -112,7 +112,7 @@ func TestCoordinatorLimitsCancellationAndDuplicateIDs(t *testing.T) {
 			return Result{Response: Response{Calls: []ToolCall{{"same", "search", json.RawMessage(`{}`)}, {"same", "search", json.RawMessage(`{}`)}}}}, nil
 		})}
 		executed := false
-		c := Coordinator{s, map[string]Tool{"search": func(context.Context, Identity, json.RawMessage) (string, error) { executed = true; return "", nil }}}
+		c := Coordinator{Session: s, Tools: map[string]Tool{"search": func(context.Context, Identity, json.RawMessage) (string, error) { executed = true; return "", nil }}}
 		if _, e := c.Start(context.Background(), baseRequest()); e == nil || executed {
 			t.Fatal("duplicate IDs executed")
 		}
@@ -123,7 +123,7 @@ func TestCoordinatorLimitsCancellationAndDuplicateIDs(t *testing.T) {
 			i++
 			return Result{Response: Response{Calls: []ToolCall{{"one", "search", json.RawMessage(`{}`)}}}}, nil
 		})}
-		c := Coordinator{s, map[string]Tool{"search": func(context.Context, Identity, json.RawMessage) (string, error) { return "ok", nil }}}
+		c := Coordinator{Session: s, Tools: map[string]Tool{"search": func(context.Context, Identity, json.RawMessage) (string, error) { return "ok", nil }}}
 		if _, e := c.Start(context.Background(), baseRequest()); !errors.Is(e, ErrLimit) || i != 1 {
 			t.Fatal(e, i)
 		}
@@ -146,7 +146,7 @@ func TestCoordinatorLimitsCancellationAndDuplicateIDs(t *testing.T) {
 			inference.Add(1)
 			return Result{Response: Response{Calls: []ToolCall{{"a", "search", json.RawMessage(`{}`)}, {"b", "search", json.RawMessage(`{}`)}, {"c", "search", json.RawMessage(`{}`)}}}}, nil
 		})}
-		c := Coordinator{s, map[string]Tool{"search": func(ctx context.Context, _ Identity, _ json.RawMessage) (string, error) {
+		c := Coordinator{Session: s, Tools: map[string]Tool{"search": func(ctx context.Context, _ Identity, _ json.RawMessage) (string, error) {
 			n := active.Add(1)
 			for old := peak.Load(); n > old; old = peak.Load() {
 				if peak.CompareAndSwap(old, n) {
