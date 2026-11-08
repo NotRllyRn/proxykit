@@ -66,7 +66,9 @@ Worker cleanup runs only after no current/draining generation references it and
 old generation work has settled. There is no automatic worker restart, call replay,
 dependency removal, state migration or overlapping replacement. For changed code:
 **disable → wait for no draining/cleanup/reaping owner → remove → install → enable**.
-A healthy identical worker can be re-enabled/reused during drain; different code or
+A healthy identical worker can be re-enabled/reused during drain; candidate
+preparation reserves reused workers as owners until publication or abort, so
+retirement cannot begin their cleanup during setup. Different code or
 configuration under a still-owned ID is rejected. Resource migration and partial
 setup cleanup remain the author's responsibility. Arbitrary setup side effects
 are not a transaction: register cleanup promptly and unwind partial acquisition.
@@ -96,7 +98,13 @@ Workers still reaping (including aborted candidates) retain registry ownership a
 
 Server shutdown stops HTTP ingress (existing server HTTP drain is 10s), closes
 upgraded connections and retires runtime generations. Runtime teardown uses bounded
-drain/cleanup; ownership remains held through teardown. Abnormal process exit
+drain/cleanup; ownership remains held through teardown. Runtime shutdown immediately
+rejects new management admission and cancels in-flight setup/install contexts;
+a caller deadline does not wait for the serialized transaction to settle. Teardown
+continues owning that transaction after a timed-out `Close`, including actual
+reaping of aborted-candidate workers after bounded `Stop` returns; no preparing
+candidate can publish after shutdown begins. Embedders must still wait for eventual
+`Close` completion before releasing the store lock. Abnormal process exit
 releases the OS lock. `SIGKILL` cannot run author cleanup or undo setup side effects.
 
 ## Ownership, control and persistence
@@ -135,7 +143,12 @@ Do not edit installed files, provenance or state by hand.
 `nodehost/runtime_test.go` exercises repeated stateful PID/port/lock/job reuse,
 required-dependency rollback, setup and injected persistence rollback, native and
 ordinary-HTTP descendants across activation, SSE drain, upgrade lifetime, shared
-admission, forced retirement and required worker failure. `extensions/state_test.go`
+admission, forced retirement and required worker failure.
+`nodehost/runtime_lifecycle_test.go` gates setup and installer settlement to exercise
+re-enable/retirement ownership, abort collection, context-aware queued admission,
+shutdown cancellation, caller deadlines and eventual teardown without publication.
+A blocked stderr copier also verifies retained ownership until actual process
+reaping, not merely bounded cleanup return. `extensions/state_test.go`
 covers API rejection, incompatible/legacy inventory and cross-process ownership /
 crash release. `control/control_test.go` covers private paths, stale sockets, strict
 commands and ownership. The compiled CLI system test verifies disabled install,

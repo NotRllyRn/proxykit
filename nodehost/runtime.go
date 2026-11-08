@@ -37,20 +37,23 @@ type instance struct {
 // Runtime owns immutable pipelines, not a listener. Operations serialize before
 // preparation; mu gates only ingress selection, state commit and publication.
 type Runtime struct {
-	txn        sync.Mutex
-	mu         sync.Mutex
-	options    RuntimeOptions
-	installer  extensions.Installer
-	current    *generation
-	draining   map[uint64]*generation
-	instances  map[string]*instance
-	failures   map[string]string
-	next       uint64
-	closed     bool
-	retired    sync.WaitGroup
-	forced     uint64
-	detail     string
-	cleanupErr error
+	txn          chan struct{}
+	stop         context.Context
+	cancel       context.CancelFunc
+	shutdownDone chan struct{}
+	mu           sync.Mutex
+	options      RuntimeOptions
+	installer    extensions.Installer
+	current      *generation
+	draining     map[uint64]*generation
+	instances    map[string]*instance
+	failures     map[string]string
+	next         uint64
+	closed       bool
+	retired      sync.WaitGroup
+	forced       uint64
+	detail       string
+	cleanupErr   error
 }
 
 func OpenRuntime(ctx context.Context, o RuntimeOptions) (*Runtime, error) {
@@ -74,7 +77,13 @@ func OpenRuntime(ctx context.Context, o RuntimeOptions) (*Runtime, error) {
 		return nil, errors.New("live runtime requires finite shared admission")
 	}
 	o.Engine.SharedAdmission = make(chan struct{}, n)
-	m := &Runtime{options: o, installer: extensions.Installer{Store: o.Store, Owned: true}, draining: map[uint64]*generation{}, instances: map[string]*instance{}, failures: map[string]string{}}
+	stop, cancel := context.WithCancel(context.Background())
+	m := &Runtime{txn: make(chan struct{}, 1), stop: stop, cancel: cancel, shutdownDone: make(chan struct{}), options: o, installer: extensions.Installer{Store: o.Store, Owned: true}, draining: map[uint64]*generation{}, instances: map[string]*instance{}, failures: map[string]string{}}
+	defer func() {
+		if m.current == nil {
+			cancel()
+		}
+	}()
 	s, e := m.installer.State()
 	if e != nil {
 		return nil, e
@@ -136,9 +145,44 @@ func (m *Runtime) Acquire(r *http.Request) (*extension.Engine, *http.Request, fu
 	return g.host.Engine, r.WithContext(ctx), release, nil
 }
 
+// admit serializes management work without making queued callers wait forever.
+func (m *Runtime) admit(ctx context.Context) error {
+	if m.stop.Err() != nil {
+		return extension.ErrClosed
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	select {
+	case <-m.stop.Done():
+		return extension.ErrClosed
+	case <-ctx.Done():
+		return ctx.Err()
+	case m.txn <- struct{}{}:
+		if m.stop.Err() != nil {
+			<-m.txn
+			return extension.ErrClosed
+		}
+		if err := ctx.Err(); err != nil {
+			<-m.txn
+			return err
+		}
+		return nil
+	}
+}
+func (m *Runtime) operationContext(ctx context.Context) (context.Context, func()) {
+	ctx, cancel := context.WithCancel(ctx)
+	stop := context.AfterFunc(m.stop, cancel)
+	return ctx, func() { stop(); cancel() }
+}
+
 func (m *Runtime) Change(ctx context.Context, id string, enabled bool) (err error) {
-	m.txn.Lock()
-	defer m.txn.Unlock()
+	if err = m.admit(ctx); err != nil {
+		return err
+	}
+	defer func() { <-m.txn }()
+	ctx, cancel := m.operationContext(ctx)
+	defer cancel()
 	defer func() {
 		m.mu.Lock()
 		defer m.mu.Unlock()
@@ -199,6 +243,13 @@ func (m *Runtime) Change(ctx context.Context, id string, enabled bool) (err erro
 		m.mu.Unlock()
 		return errors.New("activation busy: live worker limit")
 	}
+	// Reserve reused workers before retirement can observe them as orphaned.
+	reserved := map[string]*instance{}
+	for id := range reuse {
+		w := m.instances[id]
+		w.preparing = true
+		reserved[id] = w
+	}
 	m.mu.Unlock()
 	prepared := map[string]*instance{}
 	defer func() {
@@ -206,14 +257,18 @@ func (m *Runtime) Change(ctx context.Context, id string, enabled bool) (err erro
 			return
 		}
 		m.mu.Lock()
-		defer m.mu.Unlock()
+		for _, w := range reserved {
+			w.preparing = false
+		}
 		for id, w := range prepared {
 			w.preparing = false
 			w.stopping = true
-			if w.worker.Reaped() {
+			if w.worker.Reaped() && m.instances[id] == w {
 				delete(m.instances, id)
 			}
 		}
+		m.mu.Unlock()
+		m.cleanupUnused()
 	}()
 	h, e := buildHost(ctx, m.options.Options, records, reuse, func(r extensions.Installation, w *worker.Worker) {
 		m.mu.Lock()
@@ -232,8 +287,20 @@ func (m *Runtime) Change(ctx context.Context, id string, enabled bool) (err erro
 	}
 	m.mu.Lock()
 	e = ctx.Err()
+	if m.closed {
+		e = extension.ErrClosed
+	}
 	if e == nil {
-		for _, w := range h.instances {
+		for id, w := range h.instances {
+			live := m.instances[id]
+			expected := reserved[id]
+			if expected == nil {
+				expected = prepared[id]
+			}
+			if live == nil || live != expected || live.worker != w || live.stopping {
+				e = fmt.Errorf("%s: worker ownership changed during preparation", id)
+				break
+			}
 			if e = w.Health(); e != nil {
 				break
 			}
@@ -248,6 +315,9 @@ func (m *Runtime) Change(ctx context.Context, id string, enabled bool) (err erro
 		return e
 	}
 	for _, w := range prepared {
+		w.preparing = false
+	}
+	for _, w := range reserved {
 		w.preparing = false
 	}
 	old := m.current
@@ -315,6 +385,16 @@ wait:
 	// until actual process reaping is confirmed, even if bounded cleanup expires.
 	m.mu.Lock()
 	g.settled = true
+	m.mu.Unlock()
+	m.cleanupUnused()
+	m.mu.Lock()
+	delete(m.draining, g.id)
+	m.mu.Unlock()
+}
+
+// Collect workers after either generation settlement or candidate abort.
+func (m *Runtime) cleanupUnused() {
+	m.mu.Lock()
 	var orphan map[string]*instance = map[string]*instance{}
 	for id, w := range m.instances {
 		used := m.current != nil && m.current.host.instances[id] == w.worker
@@ -342,16 +422,15 @@ wait:
 				m.cleanupErr = errors.Join(m.cleanupErr, fmt.Errorf("cleanup %s: %w", id, e))
 			}
 			if w.worker.Reaped() {
-				delete(m.instances, id)
+				if m.instances[id] == w {
+					delete(m.instances, id)
+				}
 			} else {
 				m.failures[id] = "worker still reaping; removal/replacement blocked"
 			}
 		}(id, w)
 	}
 	wg.Wait()
-	m.mu.Lock()
-	delete(m.draining, g.id)
-	m.mu.Unlock()
 }
 
 // Caller holds mu. Failed candidates and orphan cleanup retain ownership until
@@ -365,8 +444,10 @@ func (m *Runtime) pruneReapedLocked() {
 }
 
 func (m *Runtime) Remove(id string) error {
-	m.txn.Lock()
-	defer m.txn.Unlock()
+	if err := m.admit(context.Background()); err != nil {
+		return err
+	}
+	defer func() { <-m.txn }()
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.closed {
@@ -379,8 +460,12 @@ func (m *Runtime) Remove(id string) error {
 	return m.installer.Remove(id)
 }
 func (m *Runtime) Install(ctx context.Context, source string, trust bool) (extensions.Installation, error) {
-	m.txn.Lock()
-	defer m.txn.Unlock()
+	if err := m.admit(ctx); err != nil {
+		return extensions.Installation{}, err
+	}
+	defer func() { <-m.txn }()
+	ctx, cancel := m.operationContext(ctx)
+	defer cancel()
 	m.mu.Lock()
 	closed := m.closed
 	m.mu.Unlock()
@@ -390,22 +475,44 @@ func (m *Runtime) Install(ctx context.Context, source string, trust bool) (exten
 	return m.installer.Install(ctx, source, trust)
 }
 func (m *Runtime) Close(ctx context.Context) error {
-	m.txn.Lock()
 	m.mu.Lock()
 	if !m.closed {
 		m.closed = true
-		g := m.current
-		m.current = nil
-		m.draining[g.id] = g
-		m.retired.Add(1)
-		go m.retire(g)
+		m.cancel()
+		// Teardown retains the transaction even if this caller times out.
+		// All retirement additions finish before Wait; no candidate can publish.
+		go func() {
+			m.txn <- struct{}{}
+			defer func() { <-m.txn }()
+			m.mu.Lock()
+			g := m.current
+			m.current = nil
+			m.draining[g.id] = g
+			m.retired.Add(1)
+			m.mu.Unlock()
+			go m.retire(g)
+			m.retired.Wait()
+			// Bounded Stop may return before actual process reaping. Keep
+			// shutdown ownership until every registry owner has really exited,
+			// including workers from an aborted preparing transaction.
+			ticker := time.NewTicker(5 * time.Millisecond)
+			defer ticker.Stop()
+			for {
+				m.mu.Lock()
+				m.pruneReapedLocked()
+				done := len(m.instances) == 0
+				m.mu.Unlock()
+				if done {
+					break
+				}
+				<-ticker.C
+			}
+			close(m.shutdownDone)
+		}()
 	}
 	m.mu.Unlock()
-	m.txn.Unlock()
-	done := make(chan struct{})
-	go func() { m.retired.Wait(); close(done) }()
 	select {
-	case <-done:
+	case <-m.shutdownDone:
 		m.mu.Lock()
 		defer m.mu.Unlock()
 		return m.cleanupErr
@@ -435,8 +542,10 @@ type StatusRow struct {
 }
 
 func (m *Runtime) Status() (RuntimeStatus, error) {
-	m.txn.Lock()
-	defer m.txn.Unlock()
+	if err := m.admit(context.Background()); err != nil {
+		return RuntimeStatus{}, err
+	}
+	defer func() { <-m.txn }()
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.pruneReapedLocked()
