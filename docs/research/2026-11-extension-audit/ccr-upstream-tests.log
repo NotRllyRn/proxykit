@@ -1,0 +1,343 @@
+TAP version 13
+# Subtest: plugin backend returns 500 for synchronous throws and continues serving requests
+ok 1 - plugin backend returns 500 for synchronous throws and continues serving requests
+  ---
+  duration_ms: 1712.56138
+  type: 'test'
+  ...
+# Subtest: plugin backend still returns 500 for asynchronous handler rejections
+ok 2 - plugin backend still returns 500 for asynchronous handler rejections
+  ---
+  duration_ms: 327.8347
+  type: 'test'
+  ...
+# Subtest: plugin service skips failed plugins and rolls back their registrations
+ok 3 - plugin service skips failed plugins and rolls back their registrations
+  ---
+  duration_ms: 1134.80256
+  type: 'test'
+  ...
+# Subtest: plugin service does not fail startup when every enabled plugin fails
+ok 4 - plugin service does not fail startup when every enabled plugin fails
+  ---
+  duration_ms: 38.73413
+  type: 'test'
+  ...
+# Subtest: built-in OpenRouter discount routing only runs for enabled provider models
+ok 5 - built-in OpenRouter discount routing only runs for enabled provider models
+  ---
+  duration_ms: 252.208629
+  type: 'test'
+  ...
+# Subtest: plugin gateway route failures are contained to the plugin response
+ok 6 - plugin gateway route failures are contained to the plugin response
+  ---
+  duration_ms: 61.349732
+  type: 'test'
+  ...
+# Subtest: managed compact profile enables archive only for that profile API key
+ok 7 - managed compact profile enables archive only for that profile API key
+  ---
+  duration_ms: 249.916267
+  type: 'test'
+  ...
+# Subtest: compact stores an immutable full request and appends one handoff task
+ok 8 - compact stores an immutable full request and appends one handoff task
+  ---
+  duration_ms: 86.476743
+  type: 'test'
+  ...
+# Subtest: history ask replays the exact snapshot with only one appended natural-language task
+ok 9 - history ask replays the exact snapshot with only one appended natural-language task
+  ---
+  duration_ms: 112.009709
+  type: 'test'
+  ...
+# Subtest: each compact generation remains independently addressable
+ok 10 - each compact generation remains independently addressable
+  ---
+  duration_ms: 121.882235
+  type: 'test'
+  ...
+# Subtest: latest archive token searches parent generations when the current compact snapshot is insufficient
+ok 11 - latest archive token searches parent generations when the current compact snapshot is insufficient
+  ---
+  duration_ms: 97.620665
+  type: 'test'
+  ...
+# Subtest: archive token grants access only to its exact archive
+ok 12 - archive token grants access only to its exact archive
+  ---
+  duration_ms: 191.116046
+  type: 'test'
+  ...
+# Subtest: snapshots survive a new service instance
+ok 13 - snapshots survive a new service instance
+  ---
+  duration_ms: 93.305841
+  type: 'test'
+  ...
+# Subtest: retention removes whole oldest snapshots without overwriting newer generations
+ok 14 - retention removes whole oldest snapshots without overwriting newer generations
+  ---
+  duration_ms: 139.619218
+  type: 'test'
+  ...
+# Subtest: OpenAI Responses and Anthropic use protocol-native appended messages
+ok 15 - OpenAI Responses and Anthropic use protocol-native appended messages
+  ---
+  duration_ms: 208.315747
+  type: 'test'
+  ...
+# Subtest: Anthropic compact continuation injects the archive tool for Claude Code
+ok 16 - Anthropic compact continuation injects the archive tool for Claude Code
+  ---
+  duration_ms: 51.211946
+  type: 'test'
+  ...
+# Subtest: Anthropic archive tool calls are converted into tool results for continuation
+ok 17 - Anthropic archive tool calls are converted into tool results for continuation
+  ---
+  duration_ms: 31.496923
+  type: 'test'
+  ...
+# Subtest: Anthropic streaming archive tool calls are parsed from SSE deltas
+ok 18 - Anthropic streaming archive tool calls are parsed from SSE deltas
+  ---
+  duration_ms: 43.01503
+  type: 'test'
+  ...
+# Subtest: Responses streaming archive tool calls are parsed from SSE deltas
+ok 19 - Responses streaming archive tool calls are parsed from SSE deltas
+  ---
+  duration_ms: 23.464537
+  type: 'test'
+  ...
+# Subtest: compact handoff strips protocol-specific tool and schema constraints
+ok 20 - compact handoff strips protocol-specific tool and schema constraints
+  ---
+  duration_ms: 58.799533
+  type: 'test'
+  ...
+# Subtest: Codex /responses/compact prepares a Responses handoff and Codex compact JSON response
+ok 21 - Codex /responses/compact prepares a Responses handoff and Codex compact JSON response
+  ---
+  duration_ms: 262.129068
+  type: 'test'
+  ...
+# Subtest: Codex Responses compaction trigger prepares a compact SSE response item
+ok 22 - Codex Responses compaction trigger prepares a compact SSE response item
+  ---
+  duration_ms: 117.413639
+  type: 'test'
+  ...
+# Subtest: Codex CLI compaction item exposes archive access that can recall omitted context
+ok 23 - Codex CLI compaction item exposes archive access that can recall omitted context
+  ---
+  duration_ms: 146.699636
+  type: 'test'
+  ...
+# Subtest: Claude Code auto compact handoff exposes archive access that can recall omitted context
+ok 24 - Claude Code auto compact handoff exposes archive access that can recall omitted context
+  ---
+  duration_ms: 93.73443
+  type: 'test'
+  ...
+# Subtest: only explicit or structural compact signals create archives
+ok 25 - only explicit or structural compact signals create archives
+  ---
+  duration_ms: 81.516911
+  type: 'test'
+  ...
+# Subtest: Claude Code auto compact handoff keeps the trailing tool_result paired with its tool_use
+ok 26 - Claude Code auto compact handoff keeps the trailing tool_result paired with its tool_use
+  ---
+  duration_ms: 37.744475
+  type: 'test'
+  ...
+# Subtest: \#1823 compact preserves parallel tool results, error flags and multimodal result payloads
+ok 27 - \#1823 compact preserves parallel tool results, error flags and multimodal result payloads
+  ---
+  duration_ms: 45.917596
+  type: 'test'
+  ...
+# Subtest: compact refuses unresolved tool-call boundaries instead of trimming them
+ok 28 - compact refuses unresolved tool-call boundaries instead of trimming them
+  ---
+  duration_ms: 46.96143
+  type: 'test'
+  ...
+# Subtest: history replay reports upstream and tool-call failures without fallback
+ok 29 - history replay reports upstream and tool-call failures without fallback
+  ---
+  duration_ms: 76.82474
+  type: 'test'
+  ...
+# Subtest: compact responses deterministically include archive access for JSON and SSE
+ok 30 - compact responses deterministically include archive access for JSON and SSE
+  ---
+  duration_ms: 66.791231
+  type: 'test'
+  ...
+# Subtest: context archive MCP server points at the built-in gateway endpoint
+ok 31 - context archive MCP server points at the built-in gateway endpoint
+  ---
+  duration_ms: 12.422088
+  type: 'test'
+  ...
+# Subtest: plugin permissions gate dynamic gateway route registration
+ok 32 - plugin permissions gate dynamic gateway route registration
+  ---
+  duration_ms: 394.998464
+  type: 'test'
+  ...
+# Subtest: plugins without permissions declarations are rejected
+ok 33 - plugins without permissions declarations are rejected
+  ---
+  duration_ms: 14.360185
+  type: 'test'
+  ...
+# Subtest: plugin permissions gate configured browser apps
+ok 34 - plugin permissions gate configured browser apps
+  ---
+  duration_ms: 38.591511
+  type: 'test'
+  ...
+# Subtest: known bundled plugins without persisted permissions receive scoped defaults
+not ok 35 - known bundled plugins without persisted permissions receive scoped defaults
+  ---
+  duration_ms: 61.822677
+  type: 'test'
+  location: '/tmp/proxykit-audit-ccr/.test-dist/core/test/unit/agents/plugin-permissions.test.js:2798:30'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + []
+    - [
+    -   'claude-design'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'claude-design'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/tmp/proxykit-audit-ccr/.test-dist/core/test/unit/agents/plugin-permissions.test.js:2829:27)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Claude browser plugins are skipped outside CCR Desktop
+ok 36 - Claude browser plugins are skipped outside CCR Desktop
+  ---
+  duration_ms: 28.966779
+  type: 'test'
+  ...
+# Subtest: app-only plugin surface can execute trusted JavaScript and register apps
+ok 37 - app-only plugin surface can execute trusted JavaScript and register apps
+  ---
+  duration_ms: 64.145657
+  type: 'test'
+  ...
+# Subtest: plugin surfaces gate dynamic gateway registration
+ok 38 - plugin surfaces gate dynamic gateway registration
+  ---
+  duration_ms: 72.630843
+  type: 'test'
+  ...
+# Subtest: plugin modules are reloaded from the same path after gateway restart
+ok 39 - plugin modules are reloaded from the same path after gateway restart
+  ---
+  duration_ms: 72.227782
+  type: 'test'
+  ...
+# Subtest: gateway restart reports disabled reason to removed plugin stop hooks
+ok 40 - gateway restart reports disabled reason to removed plugin stop hooks
+  ---
+  duration_ms: 530.053113
+  type: 'test'
+  ...
+# Subtest: provider plugins use compiled runtime and capability identities
+ok 41 - provider plugins use compiled runtime and capability identities
+  ---
+  duration_ms: 386.723119
+  type: 'test'
+  ...
+# Subtest: Codex OAuth plugins retain the default base URL after runtime identity normalization
+ok 42 - Codex OAuth plugins retain the default base URL after runtime identity normalization
+  ---
+  duration_ms: 105.133404
+  type: 'test'
+  ...
+# Subtest: Codex OAuth plugins prefer live login credentials over imported snapshots
+ok 43 - Codex OAuth plugins prefer live login credentials over imported snapshots
+  ---
+  duration_ms: 121.085824
+  type: 'test'
+  ...
+# Subtest: Codex local providers synthesize OAuth plugins when persisted plugins are missing
+ok 44 - Codex local providers synthesize OAuth plugins when persisted plugins are missing
+  ---
+  duration_ms: 145.24713
+  type: 'test'
+  ...
+# Subtest: Codex local provider fallback respects disabled OAuth plugins
+ok 45 - Codex local provider fallback respects disabled OAuth plugins
+  ---
+  duration_ms: 83.076634
+  type: 'test'
+  ...
+# Subtest: credential-free fallback headers use the provider runtime identity
+ok 46 - credential-free fallback headers use the provider runtime identity
+  ---
+  duration_ms: 49.59486
+  type: 'test'
+  ...
+# Subtest: Grok local agent auth hook refreshes live login state before authenticating upstream requests
+ok 47 - Grok local agent auth hook refreshes live login state before authenticating upstream requests
+  ---
+  duration_ms: 175.722089
+  type: 'test'
+  ...
+# Subtest: Claude Code local agent auth hook re-reads the on-disk access token on every request
+ok 48 - Claude Code local agent auth hook re-reads the on-disk access token on every request
+  ---
+  duration_ms: 676.943885
+  type: 'test'
+  ...
+# Subtest: Grok local agent request hook removes unsupported Responses tools and stale tool choice
+ok 49 - Grok local agent request hook removes unsupported Responses tools and stale tool choice
+  ---
+  duration_ms: 38.374194
+  type: 'test'
+  ...
+# Subtest: core gateway config installs the local agent dynamic auth runtime hook when OAuth plugins are present
+ok 50 - core gateway config installs the local agent dynamic auth runtime hook when OAuth plugins are present
+  ---
+  duration_ms: 170.439326
+  type: 'test'
+  ...
+# Subtest: core gateway config removes Grok unsupported Responses options through declarative request transforms
+ok 51 - core gateway config removes Grok unsupported Responses options through declarative request transforms
+  ---
+  duration_ms: 125.527336
+  type: 'test'
+  ...
+# Subtest: local agent OAuth plugin detector only matches managed OAuth imports
+ok 52 - local agent OAuth plugin detector only matches managed OAuth imports
+  ---
+  duration_ms: 0.964982
+  type: 'test'
+  ...
+1..52
+# tests 52
+# suites 0
+# pass 51
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8395.5508

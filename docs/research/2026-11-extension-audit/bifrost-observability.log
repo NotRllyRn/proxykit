@@ -1,0 +1,8 @@
+=== RUN   TestCompleteAndFlushTrace_BoundsInjectsPerPlugin
+--- PASS: TestCompleteAndFlushTrace_BoundsInjectsPerPlugin (0.30s)
+=== RUN   TestSetObservabilityPlugins_HonoursDeclaredLimits
+--- PASS: TestSetObservabilityPlugins_HonoursDeclaredLimits (0.00s)
+=== RUN   TestCompleteAndFlushTrace_InjectTimeoutReleasesSlot
+--- PASS: TestCompleteAndFlushTrace_InjectTimeoutReleasesSlot (0.10s)
+PASS
+ok  	github.com/maximhq/bifrost/framework/tracing	0.568s

@@ -1,0 +1,3187 @@
+{
+  "results": [
+    {
+      "name": "audit-normal",
+      "pass": true,
+      "status": 200,
+      "body": "{\"id\": \"mock\", \"object\": \"chat.completion\", \"model\": \"audit-model\", \"choices\": [{\"index\": 0, \"message\": {\"role\": \"assistant\", \"content\": \"mock text\"}, \"finish_reason\": \"stop\"}], \"usage\": {\"prompt_tokens\": 7, \"completion_tokens\": 3, \"total_tokens\": 10}}",
+      "upstream_calls": 1
+    },
+    {
+      "name": "audit-deny",
+      "pass": true,
+      "status": 403,
+      "body": "{\"error\":\"audit denial\"}",
+      "upstream_calls": 0
+    },
+    {
+      "name": "audit-error",
+      "pass": true,
+      "status": 200,
+      "body": "{\"id\": \"mock\", \"object\": \"chat.completion\", \"model\": \"audit-model\", \"choices\": [{\"index\": 0, \"message\": {\"role\": \"assistant\", \"content\": \"mock text\"}, \"finish_reason\": \"stop\"}], \"usage\": {\"prompt_tokens\": 7, \"completion_tokens\": 3, \"total_tokens\": 10}}",
+      "upstream_calls": 1
+    },
+    {
+      "name": "audit-stop",
+      "pass": true,
+      "status": 403,
+      "body": "blocked",
+      "upstream_calls": 0
+    },
+    {
+      "name": "audit-rewrite",
+      "pass": true,
+      "status": 200,
+      "body": "{\"id\": \"audit\", \"object\": \"chat.completion\", \"model\": \"audit-model\", \"choices\": [{\"index\": 0, \"message\": {\"role\": \"assistant\", \"content\": \"rewritten\"}, \"finish_reason\": \"stop\"}], \"usage\": {\"prompt_tokens\": 999, \"completion_tokens\": 999, \"total_tokens\": 1998}}",
+      "upstream_calls": 1
+    },
+    {
+      "name": "audit-drop",
+      "pass": true,
+      "status": 200,
+      "body": "data: [DONE]\n\n",
+      "upstream_calls": 1
+    },
+    {
+      "name": "audit-nested",
+      "pass": true,
+      "status": 200,
+      "body": "{\"id\": \"mock\", \"object\": \"chat.completion\", \"model\": \"audit-model\", \"choices\": [{\"index\": 0, \"message\": {\"role\": \"assistant\", \"content\": \"mock text\"}, \"finish_reason\": \"stop\"}], \"usage\": {\"prompt_tokens\": 7, \"completion_tokens\": 3, \"total_tokens\": 10}}",
+      "upstream_calls": 2
+    },
+    {
+      "name": "audit-missing",
+      "pass": true,
+      "status": 200,
+      "body": "{\"id\": \"mock\", \"object\": \"chat.completion\", \"model\": \"audit-model\", \"choices\": [{\"index\": 0, \"message\": {\"role\": \"assistant\", \"content\": \"mock text\"}, \"finish_reason\": \"stop\"}]}",
+      "upstream_calls": 1
+    },
+    {
+      "name": "audit-failover",
+      "pass": true,
+      "status": 200,
+      "body": "{\"id\": \"mock\", \"object\": \"chat.completion\", \"model\": \"audit-model\", \"choices\": [{\"index\": 0, \"message\": {\"role\": \"assistant\", \"content\": \"mock text\"}, \"finish_reason\": \"stop\"}], \"usage\": {\"prompt_tokens\": 7, \"completion_tokens\": 3, \"total_tokens\": 10}}",
+      "upstream_calls": 2
+    },
+    {
+      "name": "POST /v0/management/audit/start",
+      "pass": true,
+      "status": 401,
+      "body": "{\"error\":\"missing management key\"}"
+    },
+    {
+      "name": "POST /v0/management/audit/start",
+      "pass": true,
+      "status": 200,
+      "body": "{\"audit\":true}"
+    },
+    {
+      "name": "GET /v0/resource/plugins/audit/status",
+      "pass": true,
+      "status": 200,
+      "body": "{\"audit\":true}"
+    },
+    {
+      "name": "POST /v0/resource/plugins/audit/status",
+      "pass": true,
+      "status": 404,
+      "body": ""
+    },
+    {
+      "name": "POST /api/private/v1/public-enrollments",
+      "pass": true,
+      "status": 404,
+      "body": ""
+    },
+    {
+      "name": "usage observed",
+      "pass": true,
+      "records": [
+        {
+          "RequestID": "77563b2c-e189-43e4-900b-b70a1cc7f3a7",
+          "TraceID": "01a1b7e1-00f8-76f2-8c14-c2c03749f53a",
+          "SelectionID": "",
+          "Provider": "openai-compatible-audit-upstream",
+          "BaseURL": "http://127.0.0.1:33865/v1",
+          "ExecutorType": "OpenAICompatExecutor",
+          "Model": "audit-model",
+          "Alias": "audit-model",
+          "APIKey": "Example user",
+          "IsNativeKey": false,
+          "AccessProvider": "plugin:audit:audit-auth",
+          "SessionID": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "ParentSessionID": "",
+          "AuthID": "openai-compatibility:audit-upstream:56d3f59da1a1",
+          "AuthIndex": "61a3ff951ed82037",
+          "AuthType": "apikey",
+          "Source": "synthetic-upstream-key",
+          "ReasoningEffort": "",
+          "ServiceTier": "auto",
+          "EffectiveServiceTier": "",
+          "ResponseServiceTier": "",
+          "ResponseModel": "audit-model",
+          "Generate": true,
+          "Stream": false,
+          "RequestedAt": "2026-11-07T21:18:58.85178708Z",
+          "Latency": 27388704,
+          "TTFT": 26919805,
+          "Failed": false,
+          "Failure": {
+            "StatusCode": 0,
+            "Body": ""
+          },
+          "Detail": {
+            "InputTokens": 7,
+            "OutputTokens": 3,
+            "ReasoningTokens": 0,
+            "CachedTokens": 0,
+            "CacheReadTokens": 0,
+            "CacheCreationTokens": 0,
+            "TotalTokens": 10
+          },
+          "ResponseHeaders": {
+            "Content-Length": [
+              "252"
+            ],
+            "Content-Type": [
+              "application/json"
+            ],
+            "Date": [
+              "Sat, 07 Nov 2026 21:18:58 GMT"
+            ],
+            "Server": [
+              "BaseHTTP/0.6 Python/3.13.5"
+            ]
+          }
+        },
+        {
+          "RequestID": "e24faf16-6cd0-4279-965c-96d7bdc25d3b",
+          "TraceID": "01a1b7e1-014e-7c2c-bdfe-ce5865a50b31",
+          "SelectionID": "",
+          "Provider": "openai-compatible-audit-upstream",
+          "BaseURL": "http://127.0.0.1:33865/v1",
+          "ExecutorType": "OpenAICompatExecutor",
+          "Model": "audit-model",
+          "Alias": "audit-model",
+          "APIKey": "Example user",
+          "IsNativeKey": false,
+          "AccessProvider": "plugin:audit:audit-auth",
+          "SessionID": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "ParentSessionID": "",
+          "AuthID": "openai-compatibility:audit-upstream:e115ba4397bc",
+          "AuthIndex": "1391da1703b7d1e0",
+          "AuthType": "apikey",
+          "Source": "synthetic-upstream-key-two",
+          "ReasoningEffort": "",
+          "ServiceTier": "auto",
+          "EffectiveServiceTier": "",
+          "ResponseServiceTier": "",
+          "ResponseModel": "audit-model",
+          "Generate": true,
+          "Stream": false,
+          "RequestedAt": "2026-11-07T21:18:58.89932173Z",
+          "Latency": 3908124,
+          "TTFT": 3543195,
+          "Failed": false,
+          "Failure": {
+            "StatusCode": 0,
+            "Body": ""
+          },
+          "Detail": {
+            "InputTokens": 7,
+            "OutputTokens": 3,
+            "ReasoningTokens": 0,
+            "CachedTokens": 0,
+            "CacheReadTokens": 0,
+            "CacheCreationTokens": 0,
+            "TotalTokens": 10
+          },
+          "ResponseHeaders": {
+            "Content-Length": [
+              "252"
+            ],
+            "Content-Type": [
+              "application/json"
+            ],
+            "Date": [
+              "Sat, 07 Nov 2026 21:18:58 GMT"
+            ],
+            "Server": [
+              "BaseHTTP/0.6 Python/3.13.5"
+            ]
+          }
+        },
+        {
+          "RequestID": "28044e8e-c6b0-41c9-965a-4a2aa4fc5b65",
+          "TraceID": "01a1b7e1-0174-7486-af57-e4650b55c880",
+          "SelectionID": "",
+          "Provider": "openai-compatible-audit-upstream",
+          "BaseURL": "http://127.0.0.1:33865/v1",
+          "ExecutorType": "OpenAICompatExecutor",
+          "Model": "audit-model",
+          "Alias": "audit-model",
+          "APIKey": "Example user",
+          "IsNativeKey": false,
+          "AccessProvider": "plugin:audit:audit-auth",
+          "SessionID": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "ParentSessionID": "",
+          "AuthID": "openai-compatibility:audit-upstream:56d3f59da1a1",
+          "AuthIndex": "61a3ff951ed82037",
+          "AuthType": "apikey",
+          "Source": "synthetic-upstream-key",
+          "ReasoningEffort": "",
+          "ServiceTier": "auto",
+          "EffectiveServiceTier": "",
+          "ResponseServiceTier": "",
+          "ResponseModel": "audit-model",
+          "Generate": true,
+          "Stream": false,
+          "RequestedAt": "2026-11-07T21:18:58.934308129Z",
+          "Latency": 13160663,
+          "TTFT": 12793063,
+          "Failed": false,
+          "Failure": {
+            "StatusCode": 0,
+            "Body": ""
+          },
+          "Detail": {
+            "InputTokens": 7,
+            "OutputTokens": 3,
+            "ReasoningTokens": 0,
+            "CachedTokens": 0,
+            "CacheReadTokens": 0,
+            "CacheCreationTokens": 0,
+            "TotalTokens": 10
+          },
+          "ResponseHeaders": {
+            "Content-Length": [
+              "252"
+            ],
+            "Content-Type": [
+              "application/json"
+            ],
+            "Date": [
+              "Sat, 07 Nov 2026 21:18:58 GMT"
+            ],
+            "Server": [
+              "BaseHTTP/0.6 Python/3.13.5"
+            ]
+          }
+        },
+        {
+          "RequestID": "582ade8e-cbca-4871-a86e-c9641f8957c4",
+          "TraceID": "01a1b7e1-0188-70a4-a37f-4b1c42abecca",
+          "SelectionID": "",
+          "Provider": "openai-compatible-audit-upstream",
+          "BaseURL": "http://127.0.0.1:33865/v1",
+          "ExecutorType": "OpenAICompatExecutor",
+          "Model": "audit-model",
+          "Alias": "audit-model",
+          "APIKey": "Example user",
+          "IsNativeKey": false,
+          "AccessProvider": "plugin:audit:audit-auth",
+          "SessionID": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "ParentSessionID": "",
+          "AuthID": "openai-compatibility:audit-upstream:e115ba4397bc",
+          "AuthIndex": "1391da1703b7d1e0",
+          "AuthType": "apikey",
+          "Source": "synthetic-upstream-key-two",
+          "ReasoningEffort": "",
+          "ServiceTier": "auto",
+          "EffectiveServiceTier": "",
+          "ResponseServiceTier": "",
+          "ResponseModel": "audit-model",
+          "Generate": true,
+          "Stream": true,
+          "RequestedAt": "2026-11-07T21:18:58.957740951Z",
+          "Latency": 6993640,
+          "TTFT": 3097210,
+          "Failed": false,
+          "Failure": {
+            "StatusCode": 0,
+            "Body": ""
+          },
+          "Detail": {
+            "InputTokens": 7,
+            "OutputTokens": 3,
+            "ReasoningTokens": 0,
+            "CachedTokens": 0,
+            "CacheReadTokens": 0,
+            "CacheCreationTokens": 0,
+            "TotalTokens": 10
+          },
+          "ResponseHeaders": {
+            "Content-Type": [
+              "text/event-stream"
+            ],
+            "Date": [
+              "Sat, 07 Nov 2026 21:18:58 GMT"
+            ],
+            "Server": [
+              "BaseHTTP/0.6 Python/3.13.5"
+            ]
+          }
+        },
+        {
+          "RequestID": "1eee8765-e0a6-48f7-9ecb-f0e689a9a3a9",
+          "TraceID": "01a1b7e1-01a0-7428-b9ce-0245f00aa32a",
+          "SelectionID": "",
+          "Provider": "openai-compatible-audit-upstream",
+          "BaseURL": "http://127.0.0.1:33865/v1",
+          "ExecutorType": "OpenAICompatExecutor",
+          "Model": "audit-model",
+          "Alias": "audit-model",
+          "APIKey": "Example user",
+          "IsNativeKey": false,
+          "AccessProvider": "plugin:audit:audit-auth",
+          "SessionID": "derived:ctx:v1:06f34b4764b5c8244b382cb1fd0d3adbd5b522994b1cd7ce4562ed282051609a",
+          "ParentSessionID": "",
+          "AuthID": "openai-compatibility:audit-upstream:56d3f59da1a1",
+          "AuthIndex": "61a3ff951ed82037",
+          "AuthType": "apikey",
+          "Source": "synthetic-upstream-key",
+          "ReasoningEffort": "",
+          "ServiceTier": "auto",
+          "EffectiveServiceTier": "",
+          "ResponseServiceTier": "",
+          "ResponseModel": "audit-model",
+          "Generate": true,
+          "Stream": false,
+          "RequestedAt": "2026-11-07T21:18:58.978557921Z",
+          "Latency": 9920465,
+          "TTFT": 4227912,
+          "Failed": false,
+          "Failure": {
+            "StatusCode": 0,
+            "Body": ""
+          },
+          "Detail": {
+            "InputTokens": 7,
+            "OutputTokens": 3,
+            "ReasoningTokens": 0,
+            "CachedTokens": 0,
+            "CacheReadTokens": 0,
+            "CacheCreationTokens": 0,
+            "TotalTokens": 10
+          },
+          "ResponseHeaders": {
+            "Content-Length": [
+              "252"
+            ],
+            "Content-Type": [
+              "application/json"
+            ],
+            "Date": [
+              "Sat, 07 Nov 2026 21:18:58 GMT"
+            ],
+            "Server": [
+              "BaseHTTP/0.6 Python/3.13.5"
+            ]
+          }
+        },
+        {
+          "RequestID": "f8721119-de5a-47dc-a4d9-bc4936e6d6af",
+          "TraceID": "01a1b7e1-01a0-7428-b9ce-0245f00aa32a",
+          "SelectionID": "",
+          "Provider": "openai-compatible-audit-upstream",
+          "BaseURL": "http://127.0.0.1:33865/v1",
+          "ExecutorType": "OpenAICompatExecutor",
+          "Model": "audit-model",
+          "Alias": "audit-model",
+          "APIKey": "Example user",
+          "IsNativeKey": false,
+          "AccessProvider": "plugin:audit:audit-auth",
+          "SessionID": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "ParentSessionID": "",
+          "AuthID": "openai-compatibility:audit-upstream:e115ba4397bc",
+          "AuthIndex": "1391da1703b7d1e0",
+          "AuthType": "apikey",
+          "Source": "synthetic-upstream-key-two",
+          "ReasoningEffort": "",
+          "ServiceTier": "auto",
+          "EffectiveServiceTier": "",
+          "ResponseServiceTier": "",
+          "ResponseModel": "audit-model",
+          "Generate": true,
+          "Stream": false,
+          "RequestedAt": "2026-11-07T21:18:58.994966294Z",
+          "Latency": 14288772,
+          "TTFT": 13797623,
+          "Failed": false,
+          "Failure": {
+            "StatusCode": 0,
+            "Body": ""
+          },
+          "Detail": {
+            "InputTokens": 7,
+            "OutputTokens": 3,
+            "ReasoningTokens": 0,
+            "CachedTokens": 0,
+            "CacheReadTokens": 0,
+            "CacheCreationTokens": 0,
+            "TotalTokens": 10
+          },
+          "ResponseHeaders": {
+            "Content-Length": [
+              "252"
+            ],
+            "Content-Type": [
+              "application/json"
+            ],
+            "Date": [
+              "Sat, 07 Nov 2026 21:18:59 GMT"
+            ],
+            "Server": [
+              "BaseHTTP/0.6 Python/3.13.5"
+            ]
+          }
+        },
+        {
+          "RequestID": "97b5c6b3-b869-4681-8f89-4f45a647e417",
+          "TraceID": "01a1b7e1-01d4-7e73-91d7-410cd1629cae",
+          "SelectionID": "",
+          "Provider": "openai-compatible-audit-upstream",
+          "BaseURL": "http://127.0.0.1:33865/v1",
+          "ExecutorType": "OpenAICompatExecutor",
+          "Model": "audit-model",
+          "Alias": "audit-model",
+          "APIKey": "Example user",
+          "IsNativeKey": false,
+          "AccessProvider": "plugin:audit:audit-auth",
+          "SessionID": "derived:ctx:v1:dada292fe799eb45df2c6b154956e87fddc0a616ff5163d6437c451dd2a07789",
+          "ParentSessionID": "",
+          "AuthID": "openai-compatibility:audit-upstream:56d3f59da1a1",
+          "AuthIndex": "61a3ff951ed82037",
+          "AuthType": "apikey",
+          "Source": "synthetic-upstream-key",
+          "ReasoningEffort": "",
+          "ServiceTier": "auto",
+          "EffectiveServiceTier": "",
+          "ResponseServiceTier": "",
+          "ResponseModel": "audit-model",
+          "Generate": true,
+          "Stream": false,
+          "RequestedAt": "2026-11-07T21:18:59.032559634Z",
+          "Latency": 15640660,
+          "TTFT": 15238625,
+          "Failed": false,
+          "Failure": {
+            "StatusCode": 0,
+            "Body": ""
+          },
+          "Detail": {
+            "InputTokens": 0,
+            "OutputTokens": 0,
+            "ReasoningTokens": 0,
+            "CachedTokens": 0,
+            "CacheReadTokens": 0,
+            "CacheCreationTokens": 0,
+            "TotalTokens": 0
+          },
+          "ResponseHeaders": {
+            "Content-Length": [
+              "177"
+            ],
+            "Content-Type": [
+              "application/json"
+            ],
+            "Date": [
+              "Sat, 07 Nov 2026 21:18:59 GMT"
+            ],
+            "Server": [
+              "BaseHTTP/0.6 Python/3.13.5"
+            ]
+          }
+        },
+        {
+          "RequestID": "999ad496-55d1-4ef7-8fdd-3fcdf0514ad6",
+          "TraceID": "01a1b7e1-01f1-715f-8767-374aa81099ae",
+          "SelectionID": "",
+          "Provider": "openai-compatible-audit-upstream",
+          "BaseURL": "http://127.0.0.1:33865/v1",
+          "ExecutorType": "OpenAICompatExecutor",
+          "Model": "audit-model",
+          "Alias": "audit-model",
+          "APIKey": "Example user",
+          "IsNativeKey": false,
+          "AccessProvider": "plugin:audit:audit-auth",
+          "SessionID": "derived:ctx:v1:130556daa0e32ec2f57b289164591da0e5d2b288dc9ef044bf8826f0af3c83de",
+          "ParentSessionID": "",
+          "AuthID": "openai-compatibility:audit-upstream:e115ba4397bc",
+          "AuthIndex": "1391da1703b7d1e0",
+          "AuthType": "apikey",
+          "Source": "synthetic-upstream-key-two",
+          "ReasoningEffort": "",
+          "ServiceTier": "auto",
+          "EffectiveServiceTier": "",
+          "ResponseServiceTier": "",
+          "ResponseModel": "",
+          "Generate": true,
+          "Stream": false,
+          "RequestedAt": "2026-11-07T21:18:59.059201895Z",
+          "Latency": 15184100,
+          "TTFT": 14841814,
+          "Failed": true,
+          "Failure": {
+            "StatusCode": 429,
+            "Body": "{\"error\":{\"message\":\"synthetic quota exhausted\"}}"
+          },
+          "Detail": {
+            "InputTokens": 0,
+            "OutputTokens": 0,
+            "ReasoningTokens": 0,
+            "CachedTokens": 0,
+            "CacheReadTokens": 0,
+            "CacheCreationTokens": 0,
+            "TotalTokens": 0
+          },
+          "ResponseHeaders": {
+            "Content-Length": [
+              "49"
+            ],
+            "Content-Type": [
+              "application/json"
+            ],
+            "Date": [
+              "Sat, 07 Nov 2026 21:18:59 GMT"
+            ],
+            "Server": [
+              "BaseHTTP/0.6 Python/3.13.5"
+            ]
+          }
+        },
+        {
+          "RequestID": "03a69f52-d8c8-4dc2-a9e1-e682488ba9e5",
+          "TraceID": "01a1b7e1-01f1-715f-8767-374aa81099ae",
+          "SelectionID": "",
+          "Provider": "openai-compatible-audit-upstream",
+          "BaseURL": "http://127.0.0.1:33865/v1",
+          "ExecutorType": "OpenAICompatExecutor",
+          "Model": "audit-model",
+          "Alias": "audit-model",
+          "APIKey": "Example user",
+          "IsNativeKey": false,
+          "AccessProvider": "plugin:audit:audit-auth",
+          "SessionID": "derived:ctx:v1:130556daa0e32ec2f57b289164591da0e5d2b288dc9ef044bf8826f0af3c83de",
+          "ParentSessionID": "",
+          "AuthID": "openai-compatibility:audit-upstream:56d3f59da1a1",
+          "AuthIndex": "61a3ff951ed82037",
+          "AuthType": "apikey",
+          "Source": "synthetic-upstream-key",
+          "ReasoningEffort": "",
+          "ServiceTier": "auto",
+          "EffectiveServiceTier": "",
+          "ResponseServiceTier": "",
+          "ResponseModel": "audit-model",
+          "Generate": true,
+          "Stream": false,
+          "RequestedAt": "2026-11-07T21:18:59.087608173Z",
+          "Latency": 6311313,
+          "TTFT": 5885712,
+          "Failed": false,
+          "Failure": {
+            "StatusCode": 0,
+            "Body": ""
+          },
+          "Detail": {
+            "InputTokens": 7,
+            "OutputTokens": 3,
+            "ReasoningTokens": 0,
+            "CachedTokens": 0,
+            "CacheReadTokens": 0,
+            "CacheCreationTokens": 0,
+            "TotalTokens": 10
+          },
+          "ResponseHeaders": {
+            "Content-Length": [
+              "252"
+            ],
+            "Content-Type": [
+              "application/json"
+            ],
+            "Date": [
+              "Sat, 07 Nov 2026 21:18:59 GMT"
+            ],
+            "Server": [
+              "BaseHTTP/0.6 Python/3.13.5"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "stream suppression leaves host terminator",
+      "pass": true
+    },
+    {
+      "name": "presentation rewrite applied",
+      "pass": true
+    }
+  ],
+  "upstream": [
+    {
+      "path": "/v1/chat/completions",
+      "body": {
+        "model": "audit-model",
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Example user message"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/v1/chat/completions",
+      "body": {
+        "model": "audit-model",
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Example user message"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/v1/chat/completions",
+      "body": {
+        "model": "audit-model",
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Example user message"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/v1/chat/completions",
+      "body": {
+        "model": "audit-model",
+        "stream": true,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Example user message"
+          }
+        ],
+        "stream_options": {
+          "include_usage": true
+        }
+      }
+    },
+    {
+      "path": "/v1/chat/completions",
+      "body": {
+        "model": "audit-model",
+        "messages": [
+          {
+            "role": "user",
+            "content": "nested example"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/v1/chat/completions",
+      "body": {
+        "model": "audit-model",
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Example user message"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/v1/chat/completions",
+      "body": {
+        "model": "audit-model",
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "audit-missing"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/v1/chat/completions",
+      "body": {
+        "model": "audit-model",
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "audit-failover"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/v1/chat/completions",
+      "body": {
+        "model": "audit-model",
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "audit-failover"
+          }
+        ]
+      }
+    }
+  ],
+  "rpc": [
+    {
+      "method": "plugin.register",
+      "request": {
+        "config_yaml": "ZW5hYmxlZDogdHJ1ZQpwcmlvcml0eTogMTAK",
+        "schema_version": 10,
+        "multi_auth_providers": true
+      }
+    },
+    {
+      "method": "plugin.reconfigure",
+      "request": {
+        "config_yaml": "ZW5hYmxlZDogdHJ1ZQpwcmlvcml0eTogMTAK",
+        "schema_version": 10,
+        "multi_auth_providers": true
+      }
+    },
+    {
+      "method": "plugin.reconfigure",
+      "request": {
+        "config_yaml": "ZW5hYmxlZDogdHJ1ZQpwcmlvcml0eTogMTAK",
+        "schema_version": 10,
+        "multi_auth_providers": true
+      }
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "management.register",
+      "request": {
+        "Plugin": {
+          "Name": "audit",
+          "Version": "1.0",
+          "Author": "Example user",
+          "GitHubRepository": "https://github.com/router-for-me/CLIProxyAPI",
+          "Logo": "",
+          "ConfigFields": null
+        },
+        "BasePath": "/v0/management",
+        "ResourceBasePath": "/v0/resource/plugins/audit"
+      }
+    },
+    {
+      "method": "plugin.reconfigure",
+      "request": {
+        "config_yaml": "ZW5hYmxlZDogdHJ1ZQpwcmlvcml0eTogMTAK",
+        "schema_version": 10,
+        "multi_auth_providers": true
+      }
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "management.register",
+      "request": {
+        "Plugin": {
+          "Name": "audit",
+          "Version": "1.0",
+          "Author": "Example user",
+          "GitHubRepository": "https://github.com/router-for-me/CLIProxyAPI",
+          "Logo": "",
+          "ConfigFields": null
+        },
+        "BasePath": "/v0/management",
+        "ResourceBasePath": "/v0/resource/plugins/audit"
+      }
+    },
+    {
+      "method": "frontend_auth.authenticate",
+      "request": {
+        "Method": "POST",
+        "Path": "/v1/chat/completions",
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-normal"
+          ]
+        },
+        "Query": null,
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "DecodedBody": null
+      }
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "request.intercept_before",
+      "request": {
+        "RequestID": "fdeb123e-ea94-462a-b697-1362c7f28c1e",
+        "TraceID": "01a1b7e1-00f8-76f2-8c14-c2c03749f53a",
+        "SourceFormat": "openai",
+        "ToFormat": "",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-normal"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "1"
+      }
+    },
+    {
+      "method": "request.intercept_after",
+      "request": {
+        "RequestID": "fdeb123e-ea94-462a-b697-1362c7f28c1e",
+        "TraceID": "01a1b7e1-00f8-76f2-8c14-c2c03749f53a",
+        "SourceFormat": "openai",
+        "ToFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-normal"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "canonical_session_id": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "derived_session_id": "ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "selected_auth_id": "openai-compatibility:audit-upstream:56d3f59da1a1",
+          "selected_auth_index": "61a3ff951ed82037",
+          "service_tier": "auto",
+          "session_affinity_model": "audit-model",
+          "session_affinity_provider": "mixed"
+        },
+        "host_callback_id": "2"
+      }
+    },
+    {
+      "method": "response.intercept_after",
+      "request": {
+        "RequestID": "fdeb123e-ea94-462a-b697-1362c7f28c1e",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "RequestHeaders": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-normal"
+          ]
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "252"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:58 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        },
+        "OriginalRequest": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "RequestBody": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "Body": "eyJpZCI6ICJtb2NrIiwgIm9iamVjdCI6ICJjaGF0LmNvbXBsZXRpb24iLCAibW9kZWwiOiAiYXVkaXQtbW9kZWwiLCAiY2hvaWNlcyI6IFt7ImluZGV4IjogMCwgIm1lc3NhZ2UiOiB7InJvbGUiOiAiYXNzaXN0YW50IiwgImNvbnRlbnQiOiAibW9jayB0ZXh0In0sICJmaW5pc2hfcmVhc29uIjogInN0b3AifV0sICJ1c2FnZSI6IHsicHJvbXB0X3Rva2VucyI6IDcsICJjb21wbGV0aW9uX3Rva2VucyI6IDMsICJ0b3RhbF90b2tlbnMiOiAxMH19",
+        "StatusCode": 200,
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "3"
+      }
+    },
+    {
+      "method": "usage.handle",
+      "request": {
+        "RequestID": "77563b2c-e189-43e4-900b-b70a1cc7f3a7",
+        "TraceID": "01a1b7e1-00f8-76f2-8c14-c2c03749f53a",
+        "SelectionID": "",
+        "Provider": "openai-compatible-audit-upstream",
+        "BaseURL": "http://127.0.0.1:33865/v1",
+        "ExecutorType": "OpenAICompatExecutor",
+        "Model": "audit-model",
+        "Alias": "audit-model",
+        "APIKey": "Example user",
+        "IsNativeKey": false,
+        "AccessProvider": "plugin:audit:audit-auth",
+        "SessionID": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+        "ParentSessionID": "",
+        "AuthID": "openai-compatibility:audit-upstream:56d3f59da1a1",
+        "AuthIndex": "61a3ff951ed82037",
+        "AuthType": "apikey",
+        "Source": "synthetic-upstream-key",
+        "ReasoningEffort": "",
+        "ServiceTier": "auto",
+        "EffectiveServiceTier": "",
+        "ResponseServiceTier": "",
+        "ResponseModel": "audit-model",
+        "Generate": true,
+        "Stream": false,
+        "RequestedAt": "2026-11-07T21:18:58.85178708Z",
+        "Latency": 27388704,
+        "TTFT": 26919805,
+        "Failed": false,
+        "Failure": {
+          "StatusCode": 0,
+          "Body": ""
+        },
+        "Detail": {
+          "InputTokens": 7,
+          "OutputTokens": 3,
+          "ReasoningTokens": 0,
+          "CachedTokens": 0,
+          "CacheReadTokens": 0,
+          "CacheCreationTokens": 0,
+          "TotalTokens": 10
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "252"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:58 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        }
+      }
+    },
+    {
+      "method": "request.complete",
+      "request": {
+        "RequestID": "fdeb123e-ea94-462a-b697-1362c7f28c1e",
+        "TraceID": "01a1b7e1-00f8-76f2-8c14-c2c03749f53a",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Outcome": "succeeded",
+        "StatusCode": 200,
+        "Error": "",
+        "StartedAt": "2026-11-07T21:18:58.831679008Z",
+        "CompletedAt": "2026-11-07T21:18:58.880398328Z",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "4"
+      }
+    },
+    {
+      "method": "frontend_auth.authenticate",
+      "request": {
+        "Method": "POST",
+        "Path": "/v1/chat/completions",
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-deny"
+          ]
+        },
+        "Query": null,
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "DecodedBody": null
+      }
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "frontend_auth.authenticate",
+      "request": {
+        "Method": "POST",
+        "Path": "/v1/chat/completions",
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-error"
+          ]
+        },
+        "Query": null,
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "DecodedBody": null
+      }
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "request.intercept_before",
+      "request": {
+        "RequestID": "97c8f254-eb1d-4876-8b8a-0423819a163f",
+        "TraceID": "01a1b7e1-014e-7c2c-bdfe-ce5865a50b31",
+        "SourceFormat": "openai",
+        "ToFormat": "",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-error"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "5"
+      }
+    },
+    {
+      "method": "request.intercept_after",
+      "request": {
+        "RequestID": "97c8f254-eb1d-4876-8b8a-0423819a163f",
+        "TraceID": "01a1b7e1-014e-7c2c-bdfe-ce5865a50b31",
+        "SourceFormat": "openai",
+        "ToFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-error"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "canonical_session_id": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "derived_session_id": "ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "selected_auth_id": "openai-compatibility:audit-upstream:e115ba4397bc",
+          "selected_auth_index": "1391da1703b7d1e0",
+          "service_tier": "auto",
+          "session_affinity_model": "audit-model",
+          "session_affinity_provider": "mixed"
+        },
+        "host_callback_id": "6"
+      }
+    },
+    {
+      "method": "response.intercept_after",
+      "request": {
+        "RequestID": "97c8f254-eb1d-4876-8b8a-0423819a163f",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "RequestHeaders": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-error"
+          ]
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "252"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:58 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        },
+        "OriginalRequest": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "RequestBody": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "Body": "eyJpZCI6ICJtb2NrIiwgIm9iamVjdCI6ICJjaGF0LmNvbXBsZXRpb24iLCAibW9kZWwiOiAiYXVkaXQtbW9kZWwiLCAiY2hvaWNlcyI6IFt7ImluZGV4IjogMCwgIm1lc3NhZ2UiOiB7InJvbGUiOiAiYXNzaXN0YW50IiwgImNvbnRlbnQiOiAibW9jayB0ZXh0In0sICJmaW5pc2hfcmVhc29uIjogInN0b3AifV0sICJ1c2FnZSI6IHsicHJvbXB0X3Rva2VucyI6IDcsICJjb21wbGV0aW9uX3Rva2VucyI6IDMsICJ0b3RhbF90b2tlbnMiOiAxMH19",
+        "StatusCode": 200,
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "7"
+      }
+    },
+    {
+      "method": "usage.handle",
+      "request": {
+        "RequestID": "e24faf16-6cd0-4279-965c-96d7bdc25d3b",
+        "TraceID": "01a1b7e1-014e-7c2c-bdfe-ce5865a50b31",
+        "SelectionID": "",
+        "Provider": "openai-compatible-audit-upstream",
+        "BaseURL": "http://127.0.0.1:33865/v1",
+        "ExecutorType": "OpenAICompatExecutor",
+        "Model": "audit-model",
+        "Alias": "audit-model",
+        "APIKey": "Example user",
+        "IsNativeKey": false,
+        "AccessProvider": "plugin:audit:audit-auth",
+        "SessionID": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+        "ParentSessionID": "",
+        "AuthID": "openai-compatibility:audit-upstream:e115ba4397bc",
+        "AuthIndex": "1391da1703b7d1e0",
+        "AuthType": "apikey",
+        "Source": "synthetic-upstream-key-two",
+        "ReasoningEffort": "",
+        "ServiceTier": "auto",
+        "EffectiveServiceTier": "",
+        "ResponseServiceTier": "",
+        "ResponseModel": "audit-model",
+        "Generate": true,
+        "Stream": false,
+        "RequestedAt": "2026-11-07T21:18:58.89932173Z",
+        "Latency": 3908124,
+        "TTFT": 3543195,
+        "Failed": false,
+        "Failure": {
+          "StatusCode": 0,
+          "Body": ""
+        },
+        "Detail": {
+          "InputTokens": 7,
+          "OutputTokens": 3,
+          "ReasoningTokens": 0,
+          "CachedTokens": 0,
+          "CacheReadTokens": 0,
+          "CacheCreationTokens": 0,
+          "TotalTokens": 10
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "252"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:58 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        }
+      }
+    },
+    {
+      "method": "request.complete",
+      "request": {
+        "RequestID": "97c8f254-eb1d-4876-8b8a-0423819a163f",
+        "TraceID": "01a1b7e1-014e-7c2c-bdfe-ce5865a50b31",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Outcome": "succeeded",
+        "StatusCode": 200,
+        "Error": "",
+        "StartedAt": "2026-11-07T21:18:58.897391834Z",
+        "CompletedAt": "2026-11-07T21:18:58.904144673Z",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "8"
+      }
+    },
+    {
+      "method": "frontend_auth.authenticate",
+      "request": {
+        "Method": "POST",
+        "Path": "/v1/chat/completions",
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-stop"
+          ]
+        },
+        "Query": null,
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "DecodedBody": null
+      }
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "request.intercept_before",
+      "request": {
+        "RequestID": "74400429-7052-4951-88d9-abf8a379ccd9",
+        "TraceID": "01a1b7e1-0164-7242-94c5-63c4019e0745",
+        "SourceFormat": "openai",
+        "ToFormat": "",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-stop"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "9"
+      }
+    },
+    {
+      "method": "management.register",
+      "request": {
+        "Plugin": {
+          "Name": "audit",
+          "Version": "1.0",
+          "Author": "Example user",
+          "GitHubRepository": "https://github.com/router-for-me/CLIProxyAPI",
+          "Logo": "",
+          "ConfigFields": null
+        },
+        "BasePath": "/v0/management",
+        "ResourceBasePath": "/v0/resource/plugins/audit"
+      }
+    },
+    {
+      "method": "plugin.reconfigure",
+      "request": {
+        "config_yaml": "ZW5hYmxlZDogdHJ1ZQpwcmlvcml0eTogMTAK",
+        "schema_version": 10,
+        "multi_auth_providers": true
+      }
+    },
+    {
+      "method": "request.complete",
+      "request": {
+        "RequestID": "74400429-7052-4951-88d9-abf8a379ccd9",
+        "TraceID": "01a1b7e1-0164-7242-94c5-63c4019e0745",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Outcome": "rejected",
+        "StatusCode": 403,
+        "Error": "",
+        "StartedAt": "2026-11-07T21:18:58.916809752Z",
+        "CompletedAt": "2026-11-07T21:18:58.91730862Z",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "10"
+      }
+    },
+    {
+      "method": "frontend_auth.authenticate",
+      "request": {
+        "Method": "POST",
+        "Path": "/v1/chat/completions",
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-rewrite"
+          ]
+        },
+        "Query": null,
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "DecodedBody": null
+      }
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "request.intercept_before",
+      "request": {
+        "RequestID": "6d6fc1ef-c028-4139-900c-f49d514bcd07",
+        "TraceID": "01a1b7e1-0174-7486-af57-e4650b55c880",
+        "SourceFormat": "openai",
+        "ToFormat": "",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-rewrite"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "11"
+      }
+    },
+    {
+      "method": "request.intercept_after",
+      "request": {
+        "RequestID": "6d6fc1ef-c028-4139-900c-f49d514bcd07",
+        "TraceID": "01a1b7e1-0174-7486-af57-e4650b55c880",
+        "SourceFormat": "openai",
+        "ToFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-rewrite"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "canonical_session_id": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "derived_session_id": "ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "selected_auth_id": "openai-compatibility:audit-upstream:56d3f59da1a1",
+          "selected_auth_index": "61a3ff951ed82037",
+          "service_tier": "auto",
+          "session_affinity_model": "audit-model",
+          "session_affinity_provider": "mixed"
+        },
+        "host_callback_id": "12"
+      }
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "management.register",
+      "request": {
+        "Plugin": {
+          "Name": "audit",
+          "Version": "1.0",
+          "Author": "Example user",
+          "GitHubRepository": "https://github.com/router-for-me/CLIProxyAPI",
+          "Logo": "",
+          "ConfigFields": null
+        },
+        "BasePath": "/v0/management",
+        "ResourceBasePath": "/v0/resource/plugins/audit"
+      }
+    },
+    {
+      "method": "usage.handle",
+      "request": {
+        "RequestID": "28044e8e-c6b0-41c9-965a-4a2aa4fc5b65",
+        "TraceID": "01a1b7e1-0174-7486-af57-e4650b55c880",
+        "SelectionID": "",
+        "Provider": "openai-compatible-audit-upstream",
+        "BaseURL": "http://127.0.0.1:33865/v1",
+        "ExecutorType": "OpenAICompatExecutor",
+        "Model": "audit-model",
+        "Alias": "audit-model",
+        "APIKey": "Example user",
+        "IsNativeKey": false,
+        "AccessProvider": "plugin:audit:audit-auth",
+        "SessionID": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+        "ParentSessionID": "",
+        "AuthID": "openai-compatibility:audit-upstream:56d3f59da1a1",
+        "AuthIndex": "61a3ff951ed82037",
+        "AuthType": "apikey",
+        "Source": "synthetic-upstream-key",
+        "ReasoningEffort": "",
+        "ServiceTier": "auto",
+        "EffectiveServiceTier": "",
+        "ResponseServiceTier": "",
+        "ResponseModel": "audit-model",
+        "Generate": true,
+        "Stream": false,
+        "RequestedAt": "2026-11-07T21:18:58.934308129Z",
+        "Latency": 13160663,
+        "TTFT": 12793063,
+        "Failed": false,
+        "Failure": {
+          "StatusCode": 0,
+          "Body": ""
+        },
+        "Detail": {
+          "InputTokens": 7,
+          "OutputTokens": 3,
+          "ReasoningTokens": 0,
+          "CachedTokens": 0,
+          "CacheReadTokens": 0,
+          "CacheCreationTokens": 0,
+          "TotalTokens": 10
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "252"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:58 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        }
+      }
+    },
+    {
+      "method": "response.intercept_after",
+      "request": {
+        "RequestID": "6d6fc1ef-c028-4139-900c-f49d514bcd07",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "RequestHeaders": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-rewrite"
+          ]
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "252"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:58 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        },
+        "OriginalRequest": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "RequestBody": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "Body": "eyJpZCI6ICJtb2NrIiwgIm9iamVjdCI6ICJjaGF0LmNvbXBsZXRpb24iLCAibW9kZWwiOiAiYXVkaXQtbW9kZWwiLCAiY2hvaWNlcyI6IFt7ImluZGV4IjogMCwgIm1lc3NhZ2UiOiB7InJvbGUiOiAiYXNzaXN0YW50IiwgImNvbnRlbnQiOiAibW9jayB0ZXh0In0sICJmaW5pc2hfcmVhc29uIjogInN0b3AifV0sICJ1c2FnZSI6IHsicHJvbXB0X3Rva2VucyI6IDcsICJjb21wbGV0aW9uX3Rva2VucyI6IDMsICJ0b3RhbF90b2tlbnMiOiAxMH19",
+        "StatusCode": 200,
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "13"
+      }
+    },
+    {
+      "method": "request.complete",
+      "request": {
+        "RequestID": "6d6fc1ef-c028-4139-900c-f49d514bcd07",
+        "TraceID": "01a1b7e1-0174-7486-af57-e4650b55c880",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Outcome": "succeeded",
+        "StatusCode": 200,
+        "Error": "",
+        "StartedAt": "2026-11-07T21:18:58.932933651Z",
+        "CompletedAt": "2026-11-07T21:18:58.948594122Z",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "14"
+      }
+    },
+    {
+      "method": "frontend_auth.authenticate",
+      "request": {
+        "Method": "POST",
+        "Path": "/v1/chat/completions",
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "107"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-drop"
+          ]
+        },
+        "Query": null,
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiB0cnVlLCAibWVzc2FnZXMiOiBbeyJyb2xlIjogInVzZXIiLCAiY29udGVudCI6ICJFeGFtcGxlIHVzZXIgbWVzc2FnZSJ9XX0=",
+        "DecodedBody": null
+      }
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "request.intercept_before",
+      "request": {
+        "RequestID": "6bce35a4-c4b8-4866-9c0a-45e6e1a88927",
+        "TraceID": "01a1b7e1-0188-70a4-a37f-4b1c42abecca",
+        "SourceFormat": "openai",
+        "ToFormat": "",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": true,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "107"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-drop"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiB0cnVlLCAibWVzc2FnZXMiOiBbeyJyb2xlIjogInVzZXIiLCAiY29udGVudCI6ICJFeGFtcGxlIHVzZXIgbWVzc2FnZSJ9XX0=",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "15"
+      }
+    },
+    {
+      "method": "request.intercept_after",
+      "request": {
+        "RequestID": "6bce35a4-c4b8-4866-9c0a-45e6e1a88927",
+        "TraceID": "01a1b7e1-0188-70a4-a37f-4b1c42abecca",
+        "SourceFormat": "openai",
+        "ToFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": true,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "107"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-drop"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiB0cnVlLCAibWVzc2FnZXMiOiBbeyJyb2xlIjogInVzZXIiLCAiY29udGVudCI6ICJFeGFtcGxlIHVzZXIgbWVzc2FnZSJ9XX0=",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "canonical_session_id": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "derived_session_id": "ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "selected_auth_id": "openai-compatibility:audit-upstream:e115ba4397bc",
+          "selected_auth_index": "1391da1703b7d1e0",
+          "service_tier": "auto",
+          "session_affinity_model": "audit-model",
+          "session_affinity_provider": "mixed"
+        },
+        "host_callback_id": "16"
+      }
+    },
+    {
+      "method": "response.intercept_stream_chunk",
+      "request": {
+        "RequestID": "6bce35a4-c4b8-4866-9c0a-45e6e1a88927",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "RequestHeaders": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "107"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-drop"
+          ]
+        },
+        "ResponseHeaders": {
+          "Content-Type": [
+            "text/event-stream"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:58 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        },
+        "OriginalRequest": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiB0cnVlLCAibWVzc2FnZXMiOiBbeyJyb2xlIjogInVzZXIiLCAiY29udGVudCI6ICJFeGFtcGxlIHVzZXIgbWVzc2FnZSJ9XX0=",
+        "RequestBody": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiB0cnVlLCAibWVzc2FnZXMiOiBbeyJyb2xlIjogInVzZXIiLCAiY29udGVudCI6ICJFeGFtcGxlIHVzZXIgbWVzc2FnZSJ9XX0=",
+        "Body": null,
+        "HistoryChunks": null,
+        "ChunkIndex": -1,
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "17"
+      }
+    },
+    {
+      "method": "response.intercept_stream_chunk",
+      "request": {
+        "RequestID": "6bce35a4-c4b8-4866-9c0a-45e6e1a88927",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "RequestHeaders": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "107"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-drop"
+          ]
+        },
+        "ResponseHeaders": {
+          "Content-Type": [
+            "text/event-stream"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:58 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        },
+        "OriginalRequest": null,
+        "RequestBody": null,
+        "Body": "eyJpZCI6ICJtb2NrIiwgIm9iamVjdCI6ICJjaGF0LmNvbXBsZXRpb24uY2h1bmsiLCAibW9kZWwiOiAiYXVkaXQtbW9kZWwiLCAiY2hvaWNlcyI6IFt7ImluZGV4IjogMCwgImRlbHRhIjogeyJyb2xlIjogImFzc2lzdGFudCIsICJjb250ZW50IjogIm1vY2sgdGV4dCJ9LCAiZmluaXNoX3JlYXNvbiI6IG51bGx9XX0=",
+        "HistoryChunks": null,
+        "ChunkIndex": 0,
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "18"
+      }
+    },
+    {
+      "method": "response.intercept_stream_chunk",
+      "request": {
+        "RequestID": "6bce35a4-c4b8-4866-9c0a-45e6e1a88927",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "RequestHeaders": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "107"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-drop"
+          ]
+        },
+        "ResponseHeaders": {
+          "Content-Type": [
+            "text/event-stream"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:58 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        },
+        "OriginalRequest": null,
+        "RequestBody": null,
+        "Body": "eyJpZCI6ICJtb2NrIiwgIm9iamVjdCI6ICJjaGF0LmNvbXBsZXRpb24uY2h1bmsiLCAibW9kZWwiOiAiYXVkaXQtbW9kZWwiLCAiY2hvaWNlcyI6IFt7ImluZGV4IjogMCwgImRlbHRhIjoge30sICJmaW5pc2hfcmVhc29uIjogInN0b3AifV0sICJ1c2FnZSI6IHsicHJvbXB0X3Rva2VucyI6IDcsICJjb21wbGV0aW9uX3Rva2VucyI6IDMsICJ0b3RhbF90b2tlbnMiOiAxMH19",
+        "HistoryChunks": null,
+        "ChunkIndex": 1,
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "19"
+      }
+    },
+    {
+      "method": "usage.handle",
+      "request": {
+        "RequestID": "582ade8e-cbca-4871-a86e-c9641f8957c4",
+        "TraceID": "01a1b7e1-0188-70a4-a37f-4b1c42abecca",
+        "SelectionID": "",
+        "Provider": "openai-compatible-audit-upstream",
+        "BaseURL": "http://127.0.0.1:33865/v1",
+        "ExecutorType": "OpenAICompatExecutor",
+        "Model": "audit-model",
+        "Alias": "audit-model",
+        "APIKey": "Example user",
+        "IsNativeKey": false,
+        "AccessProvider": "plugin:audit:audit-auth",
+        "SessionID": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+        "ParentSessionID": "",
+        "AuthID": "openai-compatibility:audit-upstream:e115ba4397bc",
+        "AuthIndex": "1391da1703b7d1e0",
+        "AuthType": "apikey",
+        "Source": "synthetic-upstream-key-two",
+        "ReasoningEffort": "",
+        "ServiceTier": "auto",
+        "EffectiveServiceTier": "",
+        "ResponseServiceTier": "",
+        "ResponseModel": "audit-model",
+        "Generate": true,
+        "Stream": true,
+        "RequestedAt": "2026-11-07T21:18:58.957740951Z",
+        "Latency": 6993640,
+        "TTFT": 3097210,
+        "Failed": false,
+        "Failure": {
+          "StatusCode": 0,
+          "Body": ""
+        },
+        "Detail": {
+          "InputTokens": 7,
+          "OutputTokens": 3,
+          "ReasoningTokens": 0,
+          "CachedTokens": 0,
+          "CacheReadTokens": 0,
+          "CacheCreationTokens": 0,
+          "TotalTokens": 10
+        },
+        "ResponseHeaders": {
+          "Content-Type": [
+            "text/event-stream"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:58 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        }
+      }
+    },
+    {
+      "method": "request.complete",
+      "request": {
+        "RequestID": "6bce35a4-c4b8-4866-9c0a-45e6e1a88927",
+        "TraceID": "01a1b7e1-0188-70a4-a37f-4b1c42abecca",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": true,
+        "Outcome": "succeeded",
+        "StatusCode": 200,
+        "Error": "",
+        "StartedAt": "2026-11-07T21:18:58.952622645Z",
+        "CompletedAt": "2026-11-07T21:18:58.966419629Z",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "20"
+      }
+    },
+    {
+      "method": "frontend_auth.authenticate",
+      "request": {
+        "Method": "POST",
+        "Path": "/v1/chat/completions",
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-nested"
+          ]
+        },
+        "Query": null,
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "DecodedBody": null
+      }
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "request.intercept_before",
+      "request": {
+        "RequestID": "286ea0d8-56fd-465e-921e-4a6b5aef0835",
+        "TraceID": "01a1b7e1-01a0-7428-b9ce-0245f00aa32a",
+        "SourceFormat": "openai",
+        "ToFormat": "",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-nested"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "21"
+      }
+    },
+    {
+      "method": "audit.nested.result",
+      "request": {
+        "ok": true,
+        "result": {
+          "status_code": 200,
+          "headers": {
+            "Content-Type": [
+              "application/json"
+            ],
+            "Date": [
+              "Sat, 07 Nov 2026 21:18:58 GMT"
+            ],
+            "Server": [
+              "BaseHTTP/0.6 Python/3.13.5"
+            ]
+          },
+          "body": "eyJpZCI6ICJtb2NrIiwgIm9iamVjdCI6ICJjaGF0LmNvbXBsZXRpb24iLCAibW9kZWwiOiAiYXVkaXQtbW9kZWwiLCAiY2hvaWNlcyI6IFt7ImluZGV4IjogMCwgIm1lc3NhZ2UiOiB7InJvbGUiOiAiYXNzaXN0YW50IiwgImNvbnRlbnQiOiAibW9jayB0ZXh0In0sICJmaW5pc2hfcmVhc29uIjogInN0b3AifV0sICJ1c2FnZSI6IHsicHJvbXB0X3Rva2VucyI6IDcsICJjb21wbGV0aW9uX3Rva2VucyI6IDMsICJ0b3RhbF90b2tlbnMiOiAxMH19"
+        }
+      }
+    },
+    {
+      "method": "request.intercept_after",
+      "request": {
+        "RequestID": "286ea0d8-56fd-465e-921e-4a6b5aef0835",
+        "TraceID": "01a1b7e1-01a0-7428-b9ce-0245f00aa32a",
+        "SourceFormat": "openai",
+        "ToFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-nested"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "canonical_session_id": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "derived_session_id": "ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "selected_auth_id": "openai-compatibility:audit-upstream:e115ba4397bc",
+          "selected_auth_index": "1391da1703b7d1e0",
+          "service_tier": "auto",
+          "session_affinity_model": "audit-model",
+          "session_affinity_provider": "mixed"
+        },
+        "host_callback_id": "22"
+      }
+    },
+    {
+      "method": "usage.handle",
+      "request": {
+        "RequestID": "1eee8765-e0a6-48f7-9ecb-f0e689a9a3a9",
+        "TraceID": "01a1b7e1-01a0-7428-b9ce-0245f00aa32a",
+        "SelectionID": "",
+        "Provider": "openai-compatible-audit-upstream",
+        "BaseURL": "http://127.0.0.1:33865/v1",
+        "ExecutorType": "OpenAICompatExecutor",
+        "Model": "audit-model",
+        "Alias": "audit-model",
+        "APIKey": "Example user",
+        "IsNativeKey": false,
+        "AccessProvider": "plugin:audit:audit-auth",
+        "SessionID": "derived:ctx:v1:06f34b4764b5c8244b382cb1fd0d3adbd5b522994b1cd7ce4562ed282051609a",
+        "ParentSessionID": "",
+        "AuthID": "openai-compatibility:audit-upstream:56d3f59da1a1",
+        "AuthIndex": "61a3ff951ed82037",
+        "AuthType": "apikey",
+        "Source": "synthetic-upstream-key",
+        "ReasoningEffort": "",
+        "ServiceTier": "auto",
+        "EffectiveServiceTier": "",
+        "ResponseServiceTier": "",
+        "ResponseModel": "audit-model",
+        "Generate": true,
+        "Stream": false,
+        "RequestedAt": "2026-11-07T21:18:58.978557921Z",
+        "Latency": 9920465,
+        "TTFT": 4227912,
+        "Failed": false,
+        "Failure": {
+          "StatusCode": 0,
+          "Body": ""
+        },
+        "Detail": {
+          "InputTokens": 7,
+          "OutputTokens": 3,
+          "ReasoningTokens": 0,
+          "CachedTokens": 0,
+          "CacheReadTokens": 0,
+          "CacheCreationTokens": 0,
+          "TotalTokens": 10
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "252"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:58 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        }
+      }
+    },
+    {
+      "method": "usage.handle",
+      "request": {
+        "RequestID": "f8721119-de5a-47dc-a4d9-bc4936e6d6af",
+        "TraceID": "01a1b7e1-01a0-7428-b9ce-0245f00aa32a",
+        "SelectionID": "",
+        "Provider": "openai-compatible-audit-upstream",
+        "BaseURL": "http://127.0.0.1:33865/v1",
+        "ExecutorType": "OpenAICompatExecutor",
+        "Model": "audit-model",
+        "Alias": "audit-model",
+        "APIKey": "Example user",
+        "IsNativeKey": false,
+        "AccessProvider": "plugin:audit:audit-auth",
+        "SessionID": "derived:ctx:v1:77b9190858f271279c666f26354eac8683882017db01649bbccf2499a4581f7e",
+        "ParentSessionID": "",
+        "AuthID": "openai-compatibility:audit-upstream:e115ba4397bc",
+        "AuthIndex": "1391da1703b7d1e0",
+        "AuthType": "apikey",
+        "Source": "synthetic-upstream-key-two",
+        "ReasoningEffort": "",
+        "ServiceTier": "auto",
+        "EffectiveServiceTier": "",
+        "ResponseServiceTier": "",
+        "ResponseModel": "audit-model",
+        "Generate": true,
+        "Stream": false,
+        "RequestedAt": "2026-11-07T21:18:58.994966294Z",
+        "Latency": 14288772,
+        "TTFT": 13797623,
+        "Failed": false,
+        "Failure": {
+          "StatusCode": 0,
+          "Body": ""
+        },
+        "Detail": {
+          "InputTokens": 7,
+          "OutputTokens": 3,
+          "ReasoningTokens": 0,
+          "CachedTokens": 0,
+          "CacheReadTokens": 0,
+          "CacheCreationTokens": 0,
+          "TotalTokens": 10
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "252"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:59 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        }
+      }
+    },
+    {
+      "method": "response.intercept_after",
+      "request": {
+        "RequestID": "286ea0d8-56fd-465e-921e-4a6b5aef0835",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "RequestHeaders": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "108"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-nested"
+          ]
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "252"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:59 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        },
+        "OriginalRequest": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "RequestBody": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiRXhhbXBsZSB1c2VyIG1lc3NhZ2UifV19",
+        "Body": "eyJpZCI6ICJtb2NrIiwgIm9iamVjdCI6ICJjaGF0LmNvbXBsZXRpb24iLCAibW9kZWwiOiAiYXVkaXQtbW9kZWwiLCAiY2hvaWNlcyI6IFt7ImluZGV4IjogMCwgIm1lc3NhZ2UiOiB7InJvbGUiOiAiYXNzaXN0YW50IiwgImNvbnRlbnQiOiAibW9jayB0ZXh0In0sICJmaW5pc2hfcmVhc29uIjogInN0b3AifV0sICJ1c2FnZSI6IHsicHJvbXB0X3Rva2VucyI6IDcsICJjb21wbGV0aW9uX3Rva2VucyI6IDMsICJ0b3RhbF90b2tlbnMiOiAxMH19",
+        "StatusCode": 200,
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "23"
+      }
+    },
+    {
+      "method": "request.complete",
+      "request": {
+        "RequestID": "286ea0d8-56fd-465e-921e-4a6b5aef0835",
+        "TraceID": "01a1b7e1-01a0-7428-b9ce-0245f00aa32a",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Outcome": "succeeded",
+        "StatusCode": 200,
+        "Error": "",
+        "StartedAt": "2026-11-07T21:18:58.976903191Z",
+        "CompletedAt": "2026-11-07T21:18:59.01495762Z",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "24"
+      }
+    },
+    {
+      "method": "frontend_auth.authenticate",
+      "request": {
+        "Method": "POST",
+        "Path": "/v1/chat/completions",
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "101"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-missing"
+          ]
+        },
+        "Query": null,
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiYXVkaXQtbWlzc2luZyJ9XX0=",
+        "DecodedBody": null
+      }
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "request.intercept_before",
+      "request": {
+        "RequestID": "ef5c4576-b21f-4d27-9623-d2619a32340d",
+        "TraceID": "01a1b7e1-01d4-7e73-91d7-410cd1629cae",
+        "SourceFormat": "openai",
+        "ToFormat": "",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "101"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-missing"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiYXVkaXQtbWlzc2luZyJ9XX0=",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "25"
+      }
+    },
+    {
+      "method": "request.intercept_after",
+      "request": {
+        "RequestID": "ef5c4576-b21f-4d27-9623-d2619a32340d",
+        "TraceID": "01a1b7e1-01d4-7e73-91d7-410cd1629cae",
+        "SourceFormat": "openai",
+        "ToFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "101"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-missing"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiYXVkaXQtbWlzc2luZyJ9XX0=",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "canonical_session_id": "derived:ctx:v1:dada292fe799eb45df2c6b154956e87fddc0a616ff5163d6437c451dd2a07789",
+          "derived_session_id": "ctx:v1:dada292fe799eb45df2c6b154956e87fddc0a616ff5163d6437c451dd2a07789",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "selected_auth_id": "openai-compatibility:audit-upstream:56d3f59da1a1",
+          "selected_auth_index": "61a3ff951ed82037",
+          "service_tier": "auto",
+          "session_affinity_model": "audit-model",
+          "session_affinity_provider": "mixed"
+        },
+        "host_callback_id": "26"
+      }
+    },
+    {
+      "method": "usage.handle",
+      "request": {
+        "RequestID": "97b5c6b3-b869-4681-8f89-4f45a647e417",
+        "TraceID": "01a1b7e1-01d4-7e73-91d7-410cd1629cae",
+        "SelectionID": "",
+        "Provider": "openai-compatible-audit-upstream",
+        "BaseURL": "http://127.0.0.1:33865/v1",
+        "ExecutorType": "OpenAICompatExecutor",
+        "Model": "audit-model",
+        "Alias": "audit-model",
+        "APIKey": "Example user",
+        "IsNativeKey": false,
+        "AccessProvider": "plugin:audit:audit-auth",
+        "SessionID": "derived:ctx:v1:dada292fe799eb45df2c6b154956e87fddc0a616ff5163d6437c451dd2a07789",
+        "ParentSessionID": "",
+        "AuthID": "openai-compatibility:audit-upstream:56d3f59da1a1",
+        "AuthIndex": "61a3ff951ed82037",
+        "AuthType": "apikey",
+        "Source": "synthetic-upstream-key",
+        "ReasoningEffort": "",
+        "ServiceTier": "auto",
+        "EffectiveServiceTier": "",
+        "ResponseServiceTier": "",
+        "ResponseModel": "audit-model",
+        "Generate": true,
+        "Stream": false,
+        "RequestedAt": "2026-11-07T21:18:59.032559634Z",
+        "Latency": 15640660,
+        "TTFT": 15238625,
+        "Failed": false,
+        "Failure": {
+          "StatusCode": 0,
+          "Body": ""
+        },
+        "Detail": {
+          "InputTokens": 0,
+          "OutputTokens": 0,
+          "ReasoningTokens": 0,
+          "CachedTokens": 0,
+          "CacheReadTokens": 0,
+          "CacheCreationTokens": 0,
+          "TotalTokens": 0
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "177"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:59 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        }
+      }
+    },
+    {
+      "method": "response.intercept_after",
+      "request": {
+        "RequestID": "ef5c4576-b21f-4d27-9623-d2619a32340d",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "RequestHeaders": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "101"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-missing"
+          ]
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "177"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:59 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        },
+        "OriginalRequest": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiYXVkaXQtbWlzc2luZyJ9XX0=",
+        "RequestBody": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiYXVkaXQtbWlzc2luZyJ9XX0=",
+        "Body": "eyJpZCI6ICJtb2NrIiwgIm9iamVjdCI6ICJjaGF0LmNvbXBsZXRpb24iLCAibW9kZWwiOiAiYXVkaXQtbW9kZWwiLCAiY2hvaWNlcyI6IFt7ImluZGV4IjogMCwgIm1lc3NhZ2UiOiB7InJvbGUiOiAiYXNzaXN0YW50IiwgImNvbnRlbnQiOiAibW9jayB0ZXh0In0sICJmaW5pc2hfcmVhc29uIjogInN0b3AifV19",
+        "StatusCode": 200,
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "27"
+      }
+    },
+    {
+      "method": "request.complete",
+      "request": {
+        "RequestID": "ef5c4576-b21f-4d27-9623-d2619a32340d",
+        "TraceID": "01a1b7e1-01d4-7e73-91d7-410cd1629cae",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Outcome": "succeeded",
+        "StatusCode": 200,
+        "Error": "",
+        "StartedAt": "2026-11-07T21:18:59.029665395Z",
+        "CompletedAt": "2026-11-07T21:18:59.051012698Z",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "28"
+      }
+    },
+    {
+      "method": "frontend_auth.authenticate",
+      "request": {
+        "Method": "POST",
+        "Path": "/v1/chat/completions",
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "102"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-failover"
+          ]
+        },
+        "Query": null,
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiYXVkaXQtZmFpbG92ZXIifV19",
+        "DecodedBody": null
+      }
+    },
+    {
+      "method": "frontend_auth.identifier",
+      "request": {}
+    },
+    {
+      "method": "request.intercept_before",
+      "request": {
+        "RequestID": "04699838-9246-4181-aee5-aa85b2037127",
+        "TraceID": "01a1b7e1-01f1-715f-8767-374aa81099ae",
+        "SourceFormat": "openai",
+        "ToFormat": "",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "102"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-failover"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiYXVkaXQtZmFpbG92ZXIifV19",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "29"
+      }
+    },
+    {
+      "method": "request.intercept_after",
+      "request": {
+        "RequestID": "04699838-9246-4181-aee5-aa85b2037127",
+        "TraceID": "01a1b7e1-01f1-715f-8767-374aa81099ae",
+        "SourceFormat": "openai",
+        "ToFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "102"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-failover"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiYXVkaXQtZmFpbG92ZXIifV19",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "canonical_session_id": "derived:ctx:v1:130556daa0e32ec2f57b289164591da0e5d2b288dc9ef044bf8826f0af3c83de",
+          "derived_session_id": "ctx:v1:130556daa0e32ec2f57b289164591da0e5d2b288dc9ef044bf8826f0af3c83de",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "selected_auth_id": "openai-compatibility:audit-upstream:e115ba4397bc",
+          "selected_auth_index": "1391da1703b7d1e0",
+          "service_tier": "auto",
+          "session_affinity_model": "audit-model",
+          "session_affinity_provider": "mixed"
+        },
+        "host_callback_id": "30"
+      }
+    },
+    {
+      "method": "usage.handle",
+      "request": {
+        "RequestID": "999ad496-55d1-4ef7-8fdd-3fcdf0514ad6",
+        "TraceID": "01a1b7e1-01f1-715f-8767-374aa81099ae",
+        "SelectionID": "",
+        "Provider": "openai-compatible-audit-upstream",
+        "BaseURL": "http://127.0.0.1:33865/v1",
+        "ExecutorType": "OpenAICompatExecutor",
+        "Model": "audit-model",
+        "Alias": "audit-model",
+        "APIKey": "Example user",
+        "IsNativeKey": false,
+        "AccessProvider": "plugin:audit:audit-auth",
+        "SessionID": "derived:ctx:v1:130556daa0e32ec2f57b289164591da0e5d2b288dc9ef044bf8826f0af3c83de",
+        "ParentSessionID": "",
+        "AuthID": "openai-compatibility:audit-upstream:e115ba4397bc",
+        "AuthIndex": "1391da1703b7d1e0",
+        "AuthType": "apikey",
+        "Source": "synthetic-upstream-key-two",
+        "ReasoningEffort": "",
+        "ServiceTier": "auto",
+        "EffectiveServiceTier": "",
+        "ResponseServiceTier": "",
+        "ResponseModel": "",
+        "Generate": true,
+        "Stream": false,
+        "RequestedAt": "2026-11-07T21:18:59.059201895Z",
+        "Latency": 15184100,
+        "TTFT": 14841814,
+        "Failed": true,
+        "Failure": {
+          "StatusCode": 429,
+          "Body": "{\"error\":{\"message\":\"synthetic quota exhausted\"}}"
+        },
+        "Detail": {
+          "InputTokens": 0,
+          "OutputTokens": 0,
+          "ReasoningTokens": 0,
+          "CachedTokens": 0,
+          "CacheReadTokens": 0,
+          "CacheCreationTokens": 0,
+          "TotalTokens": 0
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "49"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:59 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        }
+      }
+    },
+    {
+      "method": "request.intercept_after",
+      "request": {
+        "RequestID": "04699838-9246-4181-aee5-aa85b2037127",
+        "TraceID": "01a1b7e1-01f1-715f-8767-374aa81099ae",
+        "SourceFormat": "openai",
+        "ToFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "102"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-failover"
+          ]
+        },
+        "Body": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiYXVkaXQtZmFpbG92ZXIifV19",
+        "CallerScope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "canonical_session_id": "derived:ctx:v1:130556daa0e32ec2f57b289164591da0e5d2b288dc9ef044bf8826f0af3c83de",
+          "derived_session_id": "ctx:v1:130556daa0e32ec2f57b289164591da0e5d2b288dc9ef044bf8826f0af3c83de",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "selected_auth_id": "openai-compatibility:audit-upstream:56d3f59da1a1",
+          "selected_auth_index": "61a3ff951ed82037",
+          "service_tier": "auto",
+          "session_affinity_model": "audit-model",
+          "session_affinity_provider": "mixed"
+        },
+        "host_callback_id": "31"
+      }
+    },
+    {
+      "method": "response.intercept_after",
+      "request": {
+        "RequestID": "04699838-9246-4181-aee5-aa85b2037127",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "RequestHeaders": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "102"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ],
+          "X-Audit-Mode": [
+            "audit-failover"
+          ]
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "252"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:59 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        },
+        "OriginalRequest": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiYXVkaXQtZmFpbG92ZXIifV19",
+        "RequestBody": "eyJtb2RlbCI6ICJhdWRpdC1tb2RlbCIsICJzdHJlYW0iOiBmYWxzZSwgIm1lc3NhZ2VzIjogW3sicm9sZSI6ICJ1c2VyIiwgImNvbnRlbnQiOiAiYXVkaXQtZmFpbG92ZXIifV19",
+        "Body": "eyJpZCI6ICJtb2NrIiwgIm9iamVjdCI6ICJjaGF0LmNvbXBsZXRpb24iLCAibW9kZWwiOiAiYXVkaXQtbW9kZWwiLCAiY2hvaWNlcyI6IFt7ImluZGV4IjogMCwgIm1lc3NhZ2UiOiB7InJvbGUiOiAiYXNzaXN0YW50IiwgImNvbnRlbnQiOiAibW9jayB0ZXh0In0sICJmaW5pc2hfcmVhc29uIjogInN0b3AifV0sICJ1c2FnZSI6IHsicHJvbXB0X3Rva2VucyI6IDcsICJjb21wbGV0aW9uX3Rva2VucyI6IDMsICJ0b3RhbF90b2tlbnMiOiAxMH19",
+        "StatusCode": 200,
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "32"
+      }
+    },
+    {
+      "method": "usage.handle",
+      "request": {
+        "RequestID": "03a69f52-d8c8-4dc2-a9e1-e682488ba9e5",
+        "TraceID": "01a1b7e1-01f1-715f-8767-374aa81099ae",
+        "SelectionID": "",
+        "Provider": "openai-compatible-audit-upstream",
+        "BaseURL": "http://127.0.0.1:33865/v1",
+        "ExecutorType": "OpenAICompatExecutor",
+        "Model": "audit-model",
+        "Alias": "audit-model",
+        "APIKey": "Example user",
+        "IsNativeKey": false,
+        "AccessProvider": "plugin:audit:audit-auth",
+        "SessionID": "derived:ctx:v1:130556daa0e32ec2f57b289164591da0e5d2b288dc9ef044bf8826f0af3c83de",
+        "ParentSessionID": "",
+        "AuthID": "openai-compatibility:audit-upstream:56d3f59da1a1",
+        "AuthIndex": "61a3ff951ed82037",
+        "AuthType": "apikey",
+        "Source": "synthetic-upstream-key",
+        "ReasoningEffort": "",
+        "ServiceTier": "auto",
+        "EffectiveServiceTier": "",
+        "ResponseServiceTier": "",
+        "ResponseModel": "audit-model",
+        "Generate": true,
+        "Stream": false,
+        "RequestedAt": "2026-11-07T21:18:59.087608173Z",
+        "Latency": 6311313,
+        "TTFT": 5885712,
+        "Failed": false,
+        "Failure": {
+          "StatusCode": 0,
+          "Body": ""
+        },
+        "Detail": {
+          "InputTokens": 7,
+          "OutputTokens": 3,
+          "ReasoningTokens": 0,
+          "CachedTokens": 0,
+          "CacheReadTokens": 0,
+          "CacheCreationTokens": 0,
+          "TotalTokens": 10
+        },
+        "ResponseHeaders": {
+          "Content-Length": [
+            "252"
+          ],
+          "Content-Type": [
+            "application/json"
+          ],
+          "Date": [
+            "Sat, 07 Nov 2026 21:18:59 GMT"
+          ],
+          "Server": [
+            "BaseHTTP/0.6 Python/3.13.5"
+          ]
+        }
+      }
+    },
+    {
+      "method": "request.complete",
+      "request": {
+        "RequestID": "04699838-9246-4181-aee5-aa85b2037127",
+        "TraceID": "01a1b7e1-01f1-715f-8767-374aa81099ae",
+        "SourceFormat": "openai",
+        "Model": "audit-model",
+        "RequestedModel": "audit-model",
+        "Stream": false,
+        "Outcome": "succeeded",
+        "StatusCode": 200,
+        "Error": "",
+        "StartedAt": "2026-11-07T21:18:59.057781804Z",
+        "CompletedAt": "2026-11-07T21:18:59.094836018Z",
+        "Metadata": {
+          "caller_scope": "7962a63e817dbad8780cb5a2215a2c50927d1ce43670ffe396cb2e6003a5b330",
+          "generate": true,
+          "request_path": "/v1/chat/completions",
+          "requested_model": "audit-model",
+          "service_tier": "auto"
+        },
+        "host_callback_id": "33"
+      }
+    },
+    {
+      "method": "management.handle",
+      "request": {
+        "Method": "POST",
+        "Path": "/v0/management/audit/start",
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Authorization": [
+            "Bearer example-management-key"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "Content-Length": [
+            "0"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ]
+        },
+        "Query": null,
+        "Body": "",
+        "host_callback_id": "34"
+      }
+    },
+    {
+      "method": "management.handle",
+      "request": {
+        "Method": "GET",
+        "Path": "/v0/resource/plugins/audit/status",
+        "Headers": {
+          "Accept-Encoding": [
+            "identity"
+          ],
+          "Connection": [
+            "close"
+          ],
+          "User-Agent": [
+            "Python-urllib/3.13"
+          ]
+        },
+        "Query": null,
+        "Body": null,
+        "host_callback_id": "35"
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "evidence_id": "ev_7fef79a03e4c39c4184a10094b08488bb0ebb63d4425a33a5d0ff0b9bcdd4bbe",
+  "operation": "analyze_javascript_application",
+  "limitations": [
+    "Alias selection expansion was conservatively bounded (maximum 512 additional selector states); selected paths remain unknown.",
+    "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+    "Getter expansion was conservatively bounded (maximum 512 scheduled states or a growing receiver cycle).",
+    "Graph coverage is incomplete; unavailable facts remain explicit and must not be read as absence.",
+    "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+    "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+    "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+    "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code."
+  ],
+  "relationship_coverage": null,
+  "subject": {
+    "name": "ai-gateway",
+    "digest": {
+      "sha256": "299ee905cc422a57a3edf5f5a052927b126488c86f9860ba216800edbca9cc45"
+    },
+    "local_path": "/tmp/proxykit-audit-ccr/node_modules/@the-next-ai/ai-gateway",
+    "format": "directory",
+    "architecture": null
+  },
+  "provider": {
+    "id": "rea-javascript-application",
+    "name": "REA JavaScript application analyzer",
+    "version": "1"
+  },
+  "confidence": "derived",
+  "complete_evidence_sha256": "2b49d9edc217aaa70a7285f5be4bc5b4af29d55a3b04a2dacc1038860b3c4a9e",
+  "note": "Summary of the full temporary REA evidence. Static observations only. Full evidence (148 MB) is not copied into the repository. Runtime evidence is separate in ccr-probe-results.json."
+}

@@ -1,0 +1,24 @@
+=== RUN   TestExecuteRequestWithRetries_StopsAfterInjectedToolRan
+--- PASS: TestExecuteRequestWithRetries_StopsAfterInjectedToolRan (0.00s)
+=== RUN   TestScenarioPinnedRuleOnStreams
+=== RUN   TestScenarioPinnedRuleOnStreams/(a)_a_500_before_the_first_chunk_falls_back_to_b1
+=== RUN   TestScenarioPinnedRuleOnStreams/(b)_a_failure_after_the_first_chunk_reaches_the_caller
+--- PASS: TestScenarioPinnedRuleOnStreams (2.86s)
+    --- PASS: TestScenarioPinnedRuleOnStreams/(a)_a_500_before_the_first_chunk_falls_back_to_b1 (2.84s)
+    --- PASS: TestScenarioPinnedRuleOnStreams/(b)_a_failure_after_the_first_chunk_reaches_the_caller (0.01s)
+=== RUN   TestScenarioZeroRetriesStillWalksDeadKeys
+=== RUN   TestScenarioZeroRetriesStillWalksDeadKeys/(a)_a1_answers_429
+=== RUN   TestScenarioZeroRetriesStillWalksDeadKeys/(b)_a1_answers_401
+--- PASS: TestScenarioZeroRetriesStillWalksDeadKeys (0.51s)
+    --- PASS: TestScenarioZeroRetriesStillWalksDeadKeys/(a)_a1_answers_429 (0.01s)
+    --- PASS: TestScenarioZeroRetriesStillWalksDeadKeys/(b)_a1_answers_401 (0.50s)
+=== RUN   TestScenarioExhaustedFallbacksReportEachAttempt
+=== RUN   TestScenarioExhaustedFallbacksReportEachAttempt/stream=false
+=== RUN   TestScenarioExhaustedFallbacksReportEachAttempt/stream=true
+--- PASS: TestScenarioExhaustedFallbacksReportEachAttempt (0.04s)
+    --- PASS: TestScenarioExhaustedFallbacksReportEachAttempt/stream=false (0.02s)
+    --- PASS: TestScenarioExhaustedFallbacksReportEachAttempt/stream=true (0.02s)
+=== RUN   TestResponsesRequest_GatewayToolSearch
+--- PASS: TestResponsesRequest_GatewayToolSearch (2.58s)
+PASS
+ok  	github.com/maximhq/bifrost/core	6.982s

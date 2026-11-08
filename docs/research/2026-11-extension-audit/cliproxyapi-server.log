@@ -1,0 +1,33 @@
+CLIProxyAPI Version: dev, Commit: none, BuiltAt: unknown
+[2026-11-07 21:18:57] [--------] [info ] [host.go:409] pluginhost: plugin loaded plugin_id=audit path=/tmp/cpa-audit/plugins/audit.so
+[2026-11-07 21:18:57] [--------] [info ] [host.go:432] pluginhost: plugin registered plugin_id=audit plugin_name=audit version=1.0 path=/tmp/cpa-audit/plugins/audit.so
+[2026-11-07 21:18:58] [--------] [info ] [main.go:641] CLIProxyAPI Version: dev, Commit: none, BuiltAt: unknown
+[2026-11-07 21:18:58] [--------] [info ] [main.go:752] Local model mode: using embedded catalogs unless an explicit catalog source is configured
+[2026-11-07 21:18:58] [--------] [info ] [antigravity_version.go:72] periodic antigravity version refresh started (interval=3h0m0s)
+[2026-11-07 21:18:58] [--------] [info ] [service_lifecycle.go:106] core auth auto-refresh started (interval=15m0s)
+[2026-11-07 21:18:58] [--------] [info ] [server_management.go:22] management routes registered after secret key configuration
+API server started successfully on: 127.0.0.1:42521
+[2026-11-07 21:18:58] [--------] [info ] [gin_logger.go:113] 200 |            0s |       127.0.0.1 | GET     "/"
+[2026-11-07 21:18:58] [3749f53a] [info ] [gin_logger.go:113] 200 |          72ms |       127.0.0.1 | POST    "/v1/chat/completions"
+[2026-11-07 21:18:58] [26e96613] [warn ] [gin_logger.go:111] 403 |           2ms |       127.0.0.1 | POST    "/v1/chat/completions"
+[2026-11-07 21:18:58] [--------] [warn ] [adapters_interceptors.go:35] pluginhost: request interceptor audit failed: audit policy error
+[2026-11-07 21:18:58] [65a50b31] [info ] [gin_logger.go:113] 200 |           9ms |       127.0.0.1 | POST    "/v1/chat/completions"
+[2026-11-07 21:18:58] [019e0745] [warn ] [gin_logger.go:111] 403 |           2ms |       127.0.0.1 | POST    "/v1/chat/completions"
+server clients and configuration updated: 2 clients (0 auth entries + 0 Gemini API keys + 0 Interactions API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 0 Vertex-compat + 2 OpenAI-compat)
+[2026-11-07 21:18:58] [0b55c880] [info ] [gin_logger.go:113] 200 |          16ms |       127.0.0.1 | POST    "/v1/chat/completions"
+[2026-11-07 21:18:58] [--------] [info ] [clients.go:224] full client load complete - 2 clients (0 auth files + 0 Gemini API keys + 0 Vertex API keys + 0 Claude API keys + 0 Codex keys + 0 xAI keys + 0 Meta API keys + 2 OpenAI-compat)
+[2026-11-07 21:18:58] [--------] [info ] [service_lifecycle.go:230] file watcher started for config and auth directory changes
+[2026-11-07 21:18:58] [42abecca] [info ] [gin_logger.go:113] 200 |          17ms |       127.0.0.1 | POST    "/v1/chat/completions"
+[2026-11-07 21:18:59] [f00aa32a] [info ] [gin_logger.go:113] 200 |          38ms |       127.0.0.1 | POST    "/v1/chat/completions"
+[2026-11-07 21:18:59] [--------] [info ] [antigravity_version.go:97] fetched latest antigravity version version=2.29.0
+[2026-11-07 21:18:59] [d1629cae] [info ] [gin_logger.go:113] 200 |          22ms |       127.0.0.1 | POST    "/v1/chat/completions"
+[2026-11-07 21:18:59] [a81099ae] [warn ] [conductor_execution.go:2046] 429 |          15ms | upstream execution failed: provider=openai-compatible-audit-upstream model=audit-model auth=api_key=synt...-two err={"error":{"message":"synthetic quota exhausted"}}
+[2026-11-07 21:18:59] [a81099ae] [info ] [gin_logger.go:113] 200 |          37ms |       127.0.0.1 | POST    "/v1/chat/completions"
+[2026-11-07 21:18:59] [--------] [warn ] [gin_logger.go:111] 401 |            0s |       127.0.0.1 | POST    "/v0/management/audit/start"
+[2026-11-07 21:18:59] [--------] [info ] [xai_version.go:108] updated Grok CLI client version from npm version=1.0.77
+[2026-11-07 21:18:59] [--------] [info ] [xai_version.go:79] periodic Grok CLI version refresh started (interval=3h0m0s)
+[2026-11-07 21:19:00] [--------] [info ] [gin_logger.go:113] 200 |        1.068s |       127.0.0.1 | POST    "/v0/management/audit/start"
+[2026-11-07 21:19:00] [--------] [info ] [gin_logger.go:113] 200 |            0s |       127.0.0.1 | GET     "/v0/resource/plugins/audit/status"
+[2026-11-07 21:19:00] [--------] [warn ] [gin_logger.go:111] 404 |           1ms |       127.0.0.1 | POST    "/v0/resource/plugins/audit/status"
+[2026-11-07 21:19:00] [--------] [warn ] [gin_logger.go:111] 404 |           1ms |       127.0.0.1 | POST    "/api/private/v1/public-enrollments"
+[2026-11-07 21:19:00] [--------] [info ] [host.go:783] pluginhost: plugin unloaded plugin_id=audit plugin_name=audit version=1.0 path=/tmp/cpa-audit/plugins/audit.so

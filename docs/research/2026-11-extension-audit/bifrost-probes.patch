@@ -1,0 +1,255 @@
+diff --git a/core/bifrost_test.go b/core/bifrost_test.go
+index c9ea7d2..b3fd320 100644
+--- a/core/bifrost_test.go
++++ b/core/bifrost_test.go
+@@ -9351,3 +9351,48 @@ func TestVideo_ListResumesFromNativeCursor(t *testing.T) {
+ 		t.Fatalf("cursor = %+v (%v), want the third key", decoded, decodeErr)
+ 	}
+ }
++
++// ProxyKit audit: synthetic pipeline probes, temporary checkout only.
++type auditPolicyPlugin struct {
++	fakeRoutingPlugin
++	events *[]string
++	fail   bool
++	deny   bool
++}
++
++func (p *auditPolicyPlugin) PreLLMHook(_ *schemas.BifrostContext, r *schemas.BifrostRequest) (*schemas.BifrostRequest, *schemas.LLMPluginShortCircuit, error) {
++	*p.events = append(*p.events, "pre:"+p.name)
++	if p.deny {
++		return r, &schemas.LLMPluginShortCircuit{Error: &schemas.BifrostError{Error: &schemas.ErrorField{Message: "policy denied"}, AllowFallbacks: schemas.Ptr(false)}}, nil
++	}
++	if p.fail {
++		r.ChatRequest.Model = "mutation-survives-error"
++		return r, nil, fmt.Errorf("policy unavailable")
++	}
++	return r, nil, nil
++}
++func (p *auditPolicyPlugin) PostLLMHook(_ *schemas.BifrostContext, r *schemas.BifrostResponse, e *schemas.BifrostError) (*schemas.BifrostResponse, *schemas.BifrostError, error) {
++	*p.events = append(*p.events, "post:"+p.name)
++	return r, e, nil
++}
++func TestProxyKitAuditPolicyErrorAndShortCircuit(t *testing.T) {
++	for _, deny := range []bool{false, true} {
++		t.Run(fmt.Sprint("deny=", deny), func(t *testing.T) {
++			events := []string{}
++			p := &PluginPipeline{logger: NewDefaultLogger(schemas.LogLevelError), tracer: &schemas.NoOpTracer{}, llmPlugins: []schemas.LLMPlugin{&auditPolicyPlugin{fakeRoutingPlugin: fakeRoutingPlugin{name: "policy"}, events: &events, fail: !deny, deny: deny}, &auditPolicyPlugin{fakeRoutingPlugin: fakeRoutingPlugin{name: "observer"}, events: &events}}}
++			ctx := schemas.NewBifrostContext(context.Background(), schemas.NoDeadline)
++			req, sc, count := p.RunLLMPreHooks(ctx, &schemas.BifrostRequest{ChatRequest: &schemas.BifrostChatRequest{Model: "original"}})
++			p.RunPostLLMHooks(ctx, nil, nil, count)
++			if deny {
++				if sc == nil || count != 1 || strings.Join(events, ",") != "pre:policy,post:policy" {
++					t.Fatalf("sc=%v count=%d events=%v", sc, count, events)
++				}
++			} else {
++				if sc != nil || count != 2 || req.ChatRequest.Model != "mutation-survives-error" || strings.Join(events, ",") != "pre:policy,pre:observer,post:observer,post:policy" {
++					t.Fatalf("sc=%v count=%d model=%s events=%v", sc, count, req.ChatRequest.Model, events)
++				}
++			}
++			t.Logf("short-circuit=%t hook count=%d model=%s order=%v", sc != nil, count, req.ChatRequest.Model, events)
++		})
++	}
++}
+diff --git a/core/mcp/agent_test.go b/core/mcp/agent_test.go
+index 932cd2e..9c5b9b3 100644
+--- a/core/mcp/agent_test.go
++++ b/core/mcp/agent_test.go
+@@ -1022,3 +1022,141 @@ func TestExecutedToolSummaryNamesMedia(t *testing.T) {
+ 		}
+ 	}
+ }
++
++// ProxyKit audit probes: temporary checkout only, synthetic local callbacks.
++type auditMixedManager struct{ MockAutoClientManager }
++
++func (m *auditMixedManager) GetClientForTool(ctx context.Context, name string) (*schemas.MCPClientState, *schemas.MCPDiscovery) {
++	if name == "client_tool" {
++		return nil, nil
++	}
++	return m.MockAutoClientManager.GetClientForTool(ctx, name)
++}
++func auditCall(id, name string) schemas.ChatAssistantMessageToolCall {
++	return schemas.ChatAssistantMessageToolCall{ID: schemas.Ptr(id), Function: schemas.ChatAssistantMessageToolCallFunction{Name: schemas.Ptr(name), Arguments: "{}"}}
++}
++func auditResponse(calls ...schemas.ChatAssistantMessageToolCall) *schemas.BifrostChatResponse {
++	return &schemas.BifrostChatResponse{Choices: []schemas.BifrostResponseChoice{{FinishReason: schemas.Ptr("tool_calls"), ChatNonStreamResponseChoice: &schemas.ChatNonStreamResponseChoice{Message: &schemas.ChatMessage{Role: schemas.ChatMessageRoleAssistant, ChatAssistantMessage: &schemas.ChatAssistantMessage{ToolCalls: calls}}}}}}
++}
++func TestProxyKitAuditMixedHandoff(t *testing.T) {
++	ctx := schemas.NewBifrostContext(context.Background(), schemas.NoDeadline)
++	executed, continued := 0, 0
++	result, err := (&AgentModeExecutor{logger: &MockLogger{}}).ExecuteAgentForChatRequest(ctx, 3, &schemas.BifrostChatRequest{}, auditResponse(auditCall("gateway-id", "gateway_tool"), auditCall("client-id", "client_tool")), func(*schemas.BifrostContext, *schemas.BifrostChatRequest) (*schemas.BifrostChatResponse, *schemas.BifrostError) {
++		continued++
++		return auditResponse(), nil
++	}, nil, func(_ *schemas.BifrostContext, r *schemas.BifrostMCPRequest) (*schemas.BifrostMCPResponse, error) {
++		executed++
++		return &schemas.BifrostMCPResponse{ChatMessage: createToolResultMessage(*r.ChatAssistantMessageToolCall, "gateway-result", nil)}, nil
++	}, &auditMixedManager{})
++	if err != nil || executed != 1 || continued != 0 {
++		t.Fatalf("err=%v executed=%d continued=%d", err, executed, continued)
++	}
++	calls := extractToolCalls(result)
++	if len(calls) != 1 || *calls[0].ID != "client-id" {
++		t.Fatalf("pending calls: %+v", calls)
++	}
++	if !strings.Contains(*result.Choices[0].Message.Content.ContentStr, "gateway-result") {
++		t.Fatal("missing summary")
++	}
++	t.Logf("gateway executions=%d continuation calls=%d pending ID=%s finish_reason=%s", executed, continued, *calls[0].ID, *result.Choices[0].FinishReason)
++}
++func TestProxyKitAuditRepeatedToolSummaryLoss(t *testing.T) {
++	calls := []schemas.ChatAssistantMessageToolCall{auditCall("first-id", "lookup"), auditCall("second-id", "lookup")}
++	results := []*schemas.ChatMessage{createToolResultMessage(calls[0], "first-unique-result", nil), createToolResultMessage(calls[1], "second-unique-result", nil)}
++	result := createChatResponseWithExecutedToolsAndNonAutoExecutableCalls(auditResponse(), results, calls, []schemas.ChatAssistantMessageToolCall{auditCall("client-id", "client_tool")})
++	body := *result.Choices[0].Message.Content.ContentStr
++	// Pin observed defect rather than presenting a failing desired-behavior test as a harness error.
++	if strings.Contains(body, "first-unique-result") || !strings.Contains(body, "second-unique-result") {
++		t.Fatalf("observed behavior changed: %s", body)
++	}
++	t.Logf("OBSERVED LOSS: same-name result overwritten: %s", body)
++}
++func TestProxyKitAuditCanceledContextStillDispatches(t *testing.T) {
++	parent, cancel := context.WithCancel(context.Background())
++	cancel()
++	ctx := schemas.NewBifrostContext(parent, schemas.NoDeadline)
++	toolCalls, llmCalls := 0, 0
++	_, err := (&AgentModeExecutor{logger: &MockLogger{}}).ExecuteAgentForChatRequest(ctx, 1, &schemas.BifrostChatRequest{}, auditResponse(auditCall("gateway-id", "gateway_tool")), func(c *schemas.BifrostContext, _ *schemas.BifrostChatRequest) (*schemas.BifrostChatResponse, *schemas.BifrostError) {
++		llmCalls++
++		if c.Err() == nil {
++			t.Error("lost cancellation")
++		}
++		return auditResponse(), nil
++	}, nil, func(c *schemas.BifrostContext, r *schemas.BifrostMCPRequest) (*schemas.BifrostMCPResponse, error) {
++		toolCalls++
++		return &schemas.BifrostMCPResponse{ChatMessage: createToolResultMessage(*r.ChatAssistantMessageToolCall, "result", nil)}, nil
++	}, &MockAutoClientManager{})
++	if err != nil || toolCalls != 1 || llmCalls != 1 {
++		t.Fatalf("err=%v tool=%d llm=%d", err, toolCalls, llmCalls)
++	}
++	t.Log("Already-canceled context still dispatches tool and continuation callbacks; cancellation enforcement depends on callees")
++}
++func TestProxyKitAuditToolFanout(t *testing.T) {
++	const n = 64
++	started := make(chan struct{}, n)
++	release := make(chan struct{})
++	done := make(chan struct{})
++	calls := make([]schemas.ChatAssistantMessageToolCall, n)
++	for i := range calls {
++		calls[i] = auditCall(fmt.Sprint(i), "gateway_tool")
++	}
++	go func() {
++		defer close(done)
++		(&AgentModeExecutor{logger: &MockLogger{}}).ExecuteAgentForChatRequest(schemas.NewBifrostContext(context.Background(), schemas.NoDeadline), 1, &schemas.BifrostChatRequest{}, auditResponse(calls...), func(*schemas.BifrostContext, *schemas.BifrostChatRequest) (*schemas.BifrostChatResponse, *schemas.BifrostError) {
++			return auditResponse(), nil
++		}, nil, func(_ *schemas.BifrostContext, r *schemas.BifrostMCPRequest) (*schemas.BifrostMCPResponse, error) {
++			started <- struct{}{}
++			<-release
++			return &schemas.BifrostMCPResponse{ChatMessage: createToolResultMessage(*r.ChatAssistantMessageToolCall, "result", nil)}, nil
++		}, &MockAutoClientManager{})
++	}()
++	count := 0
++	timer := time.NewTimer(3 * time.Second)
++	defer timer.Stop()
++	for count < n {
++		select {
++		case <-started:
++			count++
++		case <-timer.C:
++			close(release)
++			<-done
++			t.Fatalf("only %d concurrently entered", count)
++		}
++	}
++	close(release)
++	<-done
++	t.Logf("all %d tools entered concurrently before any completed; no agent-loop fanout cap", count)
++}
++
++func TestProxyKitAuditAgentUsageIncludesContinuation(t *testing.T) {
++	initial := auditResponse(auditCall("gateway-id", "gateway_tool"))
++	initial.Usage = &schemas.BifrostLLMUsage{PromptTokens: 10, CompletionTokens: 2, TotalTokens: 12}
++	next := auditResponse()
++	next.Usage = &schemas.BifrostLLMUsage{PromptTokens: 20, CompletionTokens: 3, TotalTokens: 23}
++	result, err := (&AgentModeExecutor{logger: &MockLogger{}}).ExecuteAgentForChatRequest(schemas.NewBifrostContext(context.Background(), schemas.NoDeadline), 2, &schemas.BifrostChatRequest{}, initial, func(_ *schemas.BifrostContext, r *schemas.BifrostChatRequest) (*schemas.BifrostChatResponse, *schemas.BifrostError) {
++		if len(r.Input) != 2 || r.Input[1].ChatToolMessage == nil || *r.Input[1].ChatToolMessage.ToolCallID != "gateway-id" {
++			t.Errorf("continuation lost tool pairing: %+v", r.Input)
++		}
++		return next, nil
++	}, nil, func(_ *schemas.BifrostContext, r *schemas.BifrostMCPRequest) (*schemas.BifrostMCPResponse, error) {
++		return &schemas.BifrostMCPResponse{ChatMessage: createToolResultMessage(*r.ChatAssistantMessageToolCall, "result", nil)}, nil
++	}, &MockAutoClientManager{})
++	if err != nil || result.Usage.TotalTokens != 35 || result.Usage.PromptTokens != 30 || result.Usage.CompletionTokens != 5 {
++		t.Fatalf("err=%v usage=%+v", err, result.Usage)
++	}
++	t.Logf("initial total=12 continuation total=23 delivered total=%d; gateway call/result ID pairing retained in continuation", result.Usage.TotalTokens)
++}
++func TestProxyKitAuditRepeatedToolResponsesSummaryLoss(t *testing.T) {
++	calls := []schemas.ChatAssistantMessageToolCall{auditCall("first-id", "lookup"), auditCall("second-id", "lookup")}
++	results := []*schemas.ChatMessage{createToolResultMessage(calls[0], "first-unique-result", nil), createToolResultMessage(calls[1], "second-unique-result", nil)}
++	result := createResponsesResponseWithExecutedToolsAndNonAutoExecutableCalls(&schemas.BifrostResponsesResponse{}, results, calls, []schemas.ChatAssistantMessageToolCall{auditCall("client-id", "client_tool")})
++	data, err := json.Marshal(result)
++	if err != nil {
++		t.Fatal(err)
++	}
++	body := string(data)
++	if strings.Contains(body, "first-unique-result") || !strings.Contains(body, "second-unique-result") || !strings.Contains(body, "client-id") {
++		t.Fatalf("observed behavior changed: %s", body)
++	}
++	t.Logf("OBSERVED LOSS in Responses output; pending client ID preserved: %s", body)
++}
+diff --git a/transports/bifrost-http/lib/config_test.go b/transports/bifrost-http/lib/config_test.go
+index 0b20a25..bccf07b 100644
+--- a/transports/bifrost-http/lib/config_test.go
++++ b/transports/bifrost-http/lib/config_test.go
+@@ -27146,3 +27146,51 @@ func TestAgentGrantsFromConfigFile_NewKeyUnknownAgent(t *testing.T) {
+ 		assert.Empty(t, vk.AgentGrants)
+ 	}
+ }
++
++// ProxyKit audit: direct transport stream pipeline, no provider/network.
++type auditChunkPlugin struct {
++	schemas.HTTPTransportPlugin
++	name   string
++	events *[]string
++	mode   string
++}
++
++func (p *auditChunkPlugin) GetName() string { return p.name }
++func (p *auditChunkPlugin) HTTPTransportStreamChunkHook(_ *schemas.BifrostContext, _ *schemas.HTTPRequest, c *schemas.BifrostStreamChunk) (*schemas.BifrostStreamChunk, error) {
++	*p.events = append(*p.events, p.name)
++	switch p.mode {
++	case "skip":
++		return nil, nil
++	case "error-with-chunk":
++		return c, fmt.Errorf("policy unavailable")
++	case "abort":
++		return nil, fmt.Errorf("policy denied")
++	}
++	return c, nil
++}
++func TestProxyKitAuditChunkSemantics(t *testing.T) {
++	for _, mode := range []string{"pass", "skip", "error-with-chunk", "abort"} {
++		t.Run(mode, func(t *testing.T) {
++			events := []string{}
++			p := &pluginChunkInterceptor{plugins: []schemas.HTTPTransportPlugin{&auditChunkPlugin{name: "first", events: &events}, &auditChunkPlugin{name: "last", events: &events, mode: mode}}}
++			chunk := &schemas.BifrostStreamChunk{}
++			out, err := p.InterceptChunk(schemas.NewBifrostContext(context.Background(), schemas.NoDeadline), &schemas.HTTPRequest{}, chunk)
++			if mode == "pass" {
++				if err != nil || out != chunk || len(events) != 2 || events[0] != "last" {
++					t.Fatalf("bad pass: %v %v", err, events)
++				}
++			} else {
++				if len(events) != 1 {
++					t.Fatalf("later hook ran: %v", events)
++				}
++				if (mode == "skip") != (err == nil) {
++					t.Fatalf("bad error: %v", err)
++				}
++				if (mode == "error-with-chunk") != (out != nil) {
++					t.Fatalf("bad chunk %v", out)
++				}
++			}
++			t.Logf("mode=%s chunk-present=%t error=%v order=%v", mode, out != nil, err, events)
++		})
++	}
++}

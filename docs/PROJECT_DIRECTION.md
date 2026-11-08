@@ -1,12 +1,18 @@
 # ProxyKit: project direction and architecture waypoint
 
-Created: 2026-11-07. Status: founding brief, not an implemented specification.
+Updated: 2026-11-08. Status: current direction with historical research. The Go transport is implemented; extension contracts remain proposed.
+
+The authoritative [six extension architecture decisions](research/2026-11-extension-audit/extension-requirements.md) cover R01–R50 under the extension-owned application model. Read the [core readiness review and staged gates](CORE_READINESS.md) before implementing extensions. Historical router evidence does not override these ownership rules.
+
+The [composition design note](EXTENSION_COMPOSITION.md) records the latest priorities: broad trusted-extension freedom, developer-defined ordering, internal metadata/ledger, handler-local pass decisions and user-adjustable limits. Its recommendations refine the six decisions; earlier credential enforcement and operator ordering prescriptions are superseded.
+
+Start implementation planning with the [consolidated extension plan](EXTENSION_PLAN.md), which records accepted decisions, recommendations, open cases and progress. Separate check callbacks are withdrawn; saved-input fallback and internal HTTP authentication reuse are explicit goals.
 
 ## Purpose
 
 Build a customizable HTTP proxy core whose extensions can supply account brokering, context management, memory, skills, policy checks, gateway tools, and analytics. The core should remain useful without those features. AI-aware behavior should be an optional layer over generic HTTP transport.
 
-This document consolidates the founding conversation, an attached earlier Codex Broker design conversation, and public Context Mode Gateway documentation reviewed during that discussion. Conversation excerpts below are paraphrased to preserve intent without publishing the raw private thread or personal details. External implementations have not been independently validated by this project.
+This document consolidates the founding conversation, an attached earlier Codex Broker design conversation, and public Context Mode Gateway documentation reviewed during that discussion. Conversation excerpts below are paraphrased to preserve intent without publishing the raw private thread or personal details. The founding external claims below are historical. Later targeted source audits and local probes are recorded in the [engineering reference](EXTENSION_ENGINEERING_REFERENCE.md); they do not certify complete external implementations.
 
 ## Founding intent, paraphrased
 
@@ -20,9 +26,9 @@ The desired product is a reusable foundation, not merely a renamed Codex-specifi
 
 ## Immediate scope and authorization
 
-The founding task authorizes creation of this public repository, this brief, and a new T3 conversation to digest the context. It does **not** authorize implementation in that new conversation yet. The new thread must read, acknowledge, and wait for the user's next prompt.
+The initial context-only handoff is historical. The generic Go transport has since been authorized and implemented. The current task updates architecture documentation and reviews readiness; it does not implement the extension layer.
 
-The proposed milestones below are guidance for future work, not instructions to start now. Language/runtime, license, packaging, deployment model, and final public extension API remain decisions to make explicitly.
+The milestones are acceptance gates for future authorized work, not instructions to build every possible feature. Go is selected for transport; extension authoring/worker APIs, packaging and deployment details remain open.
 
 ## Recommendation
 
@@ -35,7 +41,7 @@ One extension package may register several roles:
 3. **Tools:** register model-callable operations executed by the gateway.
 4. **Observers and jobs:** collect usage and analytics or extract memory off the streaming path.
 
-A recall extension might register an archive writer, a context transform, and a search tool. A broker extension might provide account pools, quota-aware selection, refresh logic, and usage decoration. The host coordinates these roles rather than forcing each extension to rebuild transport and control flow.
+A recall extension might register an archive writer, a context transform, and a search tool. A broker extension might provide account pools, quota-aware selection, refresh logic, and usage decoration. Extensions may own complete applications and coordinators. Shared dispatch and delivery let cooperating extensions reuse transport and enforce the guarantees promised for managed traffic.
 
 ## Responsibility boundaries
 
@@ -43,7 +49,7 @@ A recall extension might register an archive writer, a context transform, and a 
 
 Own HTTP lifecycle, connection management, cancellation, deadlines, backpressure, bounded buffering, and response commitment. Expose ordinary request/response and streaming access. Unknown AI protocols can remain opaque HTTP; pass-through does not imply AI feature support. WebSocket support is a separate capability, not implied by HTTP or SSE support.
 
-Keep transport correctness and operational limits in the host. "Everything as an extension" does not mean every extension can independently override framing, tenant isolation, accounting, and retry invariants.
+Keep transport correctness and honest API guarantees in the host. Extensions own application policy and correctness, including destination and credential choices. Resource limits have configurable defaults and may be disabled; unrestricted extension behavior cannot carry unconditional composition or liveness guarantees.
 
 ### Protocol adapters and client compatibility
 
@@ -53,80 +59,38 @@ Separate protocol knowledge from client-specific behavior: two clients can use t
 
 Expose a deliberate raw escape hatch for specialized transformations. Do not promise that arbitrary raw edits are compatible with semantic transforms; define ownership, ordering, and validation when both are enabled.
 
-### Host-managed execution
+### Shared dispatch and optional orchestration
 
-The host coordinates ordered transforms, route selection, attempts, upstream responses, tool handling, and final client delivery. It owns retries and continuation budgets, even when extensions supply selection policy or tool implementations.
+The execution layer provides ordered transforms, request-local route decisions, attributed managed attempts and final delivery. An extension can own retry and model/tool coordination, or use an optional shared AI runtime. All calls covered by gateway policy/accounting must use managed dispatch; private sockets opened by trusted code are outside that guarantee.
 
-Gateway-owned tools are advertised to the model and executed inside the gateway. Their results can trigger another upstream model request. Client-owned tools return to the client for execution. Mixed responses require an explicit protocol-valid handoff; never blindly continue past unresolved client tool results.
+The coordinator must preserve tool-call/result IDs, stop for unresolved client tools, reconcile private continuations with replay when needed, and obey cancellation and shared budgets. These obligations follow the feature, not a requirement to place the coordinator in the generic HTTP core.
 
-The host must preserve tool-call IDs and result pairing, reconcile private continuations with subsequent client replay, and account for every upstream call. Cap rounds, elapsed time, output, and spending where configured. Cancellation must propagate through the entire exchange.
+### Extension-owned services
 
-### Shared services
+Extensions may own enrollment listeners, dashboards, account catalogs, credential stores, databases, transactions, jobs and independently supervised services. No corresponding host endpoint or database API is mandatory. Host conveniences can be added for a concrete need. A companion service still needs a gateway adapter with sufficient interception/control and trusted context.
 
-Provide scoped durable storage, credential references, configuration, attributed logging, usage records, lifecycle management, and job execution as needed by concrete extensions. Keep credentials out of unrelated transforms. Credential handles are an API boundary, not protection against unrestricted trusted code running as the same OS user.
+Keep credentials out of unrelated transforms at the API boundary. Unrestricted trusted code sharing an OS identity is not isolated by credential handles or manifests.
 
-A broker extension can own account pools, renewal behavior, quota policy, and account selection while using host credential storage and forwarding primitives.
+## Six architectural decisions
 
-## Architectural choices to make early
+The [canonical six decisions](research/2026-11-extension-audit/extension-requirements.md) replace the founding list of eight considerations:
 
-### 1. Explicit composition instead of accidental filename ordering
+1. **Routing and credentials:** extension selection policy, shared attempt execution, extension-owned credentials and distinct requested/served routes; destination policing is optional.
+2. **Orchestration and tools:** optional extension or shared-runtime ownership, with valid tool handoff, budgets and managed inference.
+3. **Conversation state:** extension-owned persistence, archive-before-reduction, explicit identity/revisions and supported replay/migration.
+4. **Observation and mutation:** original attempt evidence plus final delivery coverage, explicit body modes and commitment rules.
+5. **Failures and resources:** safe continuation or explicit failure, optional blocking protection features, adjustable limits and cooperative cancellation.
+6. **Composition and lifetime:** developer-defined stages/dependencies, compatibility validation, stable configuration and setup/drain/cleanup.
 
-Use a small set of named execution stages and explicit dependencies where necessary. Validate ordering at startup; reject cycles and unsupported combinations. Do not begin with an elaborate general-purpose workflow engine.
+These are proposed contracts, not six implemented subsystems. Start with ordinary data structures and a few stages. Defer dependency graphs, live reload and untrusted hosting until required. The 50 rows are a capability catalog spanning core boundaries, optional protocol runtimes and extension applications—not 50 mandatory core modules.
 
-Multiple extensions can contribute instructions or memory. Initially select one authoritative context-compaction strategy per route/session. Two independent compressors can invalidate one another's message mappings, archive IDs, and summaries. Define precedence for local responses and competing route providers.
+### Compatibility and accounting constraints
 
-### 2. Transcript and working context are different things
+Client transcript, upstream working context and provider-held state are distinct. Transparent HTTP interception cannot universally rewrite a client's saved history or disable its local compaction. Client-specific adapters and optional client companions must state tested versions and features. Never strip provider-held references without reconstruction or another supported mode.
 
-The client can retain its complete transcript while the proxy sends a smaller working context upstream. Reapply durable transformations when the client resends the original history. Store mappings among originals, replacements, archive IDs, and context revisions.
+Capture actual upstream usage before presentation mutation, including managed internal calls and failed attempts when usage is available. Missing usage is unknown, not zero. Cached tokens still occupy context; quota snapshots, provider usage and hypothetical savings are different measurements.
 
-Archive successfully before removing material from the model's view. A restart must not lose the only way to interpret reduced context. Durable updates need concurrency control; a few process-local JSON values are insufficient for distributed context ownership.
-
-Prefer explicit native thread and turn IDs scoped to an authenticated identity. Cache affinity, IP addresses, and similar prompts do not reliably identify a conversation. If continuity is unknown, do not merge unrelated conversations heuristically by default.
-
-Requests using provider-held state, such as `previous_response_id`, need explicit support. Never strip references without reconstructing the referenced context or selecting a valid alternative mode.
-
-### 3. Client compatibility has levels
-
-- **Transparent mode:** ordinary clients keep their own history; the proxy consistently transforms the upstream view.
-- **Client-specific compatibility:** tested adapters handle particular compaction endpoints, tool formats, or replay behavior.
-- **Optional client integration:** a plugin or companion can adopt context revisions, expose local tools/UI, and coordinate compaction.
-
-An ordinary model response cannot universally tell clients to replace their saved history. Reducing upstream tokens also cannot universally disable local auto-compaction. Do not falsify usage to influence client behavior. Context size, historical transcript size, and actual provider usage are different measurements.
-
-### 4. Failure policy follows responsibility
-
-- Optional usage decoration may fail open.
-- Required protection checks should fail closed for the protected operation.
-- Archive failure must prevent the associated context removal.
-- Routing or credential failure needs a valid alternative or an explicit request failure.
-
-Operators control which roles are required. An extension cannot silently downgrade a required policy. Payload rollback cannot undo external side effects, database writes, or bytes already delivered.
-
-### 5. Streaming requires ownership and commitment rules
-
-Once delivered, bytes cannot be retracted. Complete-tool-call validation may require buffering the tool item; whole-answer rewriting may require buffering the entire answer. Preserve agreement between deltas, completed items, and terminal response objects.
-
-Avoid copying full history through worker IPC for every token. Parse once where practical; let extensions subscribe to the semantic units they need. Preserve backpressure and bounded memory. Never automatically retry after visible output or side effects without a defined safe continuation strategy.
-
-### 6. Workloads need different budgets
-
-Fast transformations, archive reads, credential refresh, model continuations, and background extraction need different deadlines. Use bounded concurrency, request cancellation, and serialization scoped to the state that requires it. Avoid globally serializing every request through a slow extension.
-
-Background jobs need explicit queueing and shutdown semantics. Account for duplicate delivery and retry where side effects matter. Add this infrastructure incrementally, driven by an actual extension.
-
-### 7. Extension management should be simple and explicit
-
-Start with trusted TypeScript packages if that remains the selected authoring language. Use versioned manifests/API contracts, declared roles and dependencies, configuration schemas, pinned versions, and startup validation. Keep active requests on a stable extension/configuration snapshot during updates.
-
-Define process, request, conversation, and job lifetimes. Restart isolation does not equal a security sandbox. Filesystem/network capabilities only become enforced security boundaries with a runtime or OS mechanism that actually restricts them. Do not claim a manifest alone provides isolation.
-
-Defer marketplaces, arbitrary dashboard plugins, hot reload, and untrusted-code hosting until needed. Do not choose a complex sandbox or microservice architecture solely for theoretical extensibility.
-
-### 8. Keep accounting authentic
-
-Record original upstream usage before presentation rewrites, including hidden gateway continuations and retries. Distinguish account quota snapshots from request token usage. Cache reuse predictions are estimates; provider-returned cached-token counts are evidence after a request. Missing usage is unknown, not zero.
-
-Cached tokens still occupy context. Context rewriting can reduce token volume while hurting prefix-cache reuse. Stable layouts and deliberate rewrite boundaries matter. Savings against a hypothetical unmodified request are estimates, separate from billed usage.
+Preserve protocol-specific signed/opaque data or reject an unsupported transformation. An adapter can translate the response wire format; it cannot promise that a substituted model behaves like the originally requested model. Streaming, unknown protocols and opaque WebSocket forwarding do not establish semantic compatibility.
 
 ## What Context Mode Gateway illustrates
 
@@ -175,20 +139,20 @@ The existing `feature/proxy-extension-layer` branch is useful prior work, not th
 - Host-owned authentication, account selection, credential injection, and failover.
 - No host-managed gateway-tool loop or general agent-session ownership; non-Responses protocols are opaque and WebSocket upgrades are rejected.
 
-Those boundaries suit traffic customization within Broker. For ProxyKit, account selection needs a provider role, gateway tools need a shared execution loop, durable context needs stronger storage contracts, and failure/concurrency policy needs to vary by responsibility.
+Those boundaries suit traffic customization within Broker. For ProxyKit, account selection needs a provider role, gateway tools need an optional coordinator with valid continuation contracts, durable context needs extension-owned persistence plus sufficient identity/replay hooks, and failure/concurrency policy needs to vary by responsibility.
 
 Keep useful abstractions and behavior tests. Do not assume a wholesale rewrite or wholesale source copy is necessary. Check the source license and current implementation before porting anything.
 
 ## Suggested sequence after explicit implementation authorization
 
-1. Agree on minimal transport/runtime choice, extension trust model, initial protocol, and a concrete end-to-end acceptance scenario.
-2. Establish a small core and routing-provider boundary. Demonstrate a broker-like provider without baking account policy into transport.
-3. Add a host-managed gateway-tool interface. Prove one internal search tool alongside ordinary client tool calls.
-4. Implement one durable archive/reconciliation extension, including restart and replay behavior.
-5. Add skills/instructions and background memory extraction using the same contracts.
-6. Add policy enforcement and a second protocol/client to test that abstractions generalize.
+The transport milestone is complete within its [declared scope](TRANSPORT_DECISION.md). Follow the [readiness gates and R01–R50 traceability](CORE_READINESS.md) for the extension layer:
 
-Avoid implementing every possible extension point in advance. The decisive test is whether a broker extension and a recall extension coexist without either reimplementing streaming, retries, transport, or the model loop.
+1. Prove a small native Go execution boundary with explicit failure behavior, request-local routing, a mock broker and an independent recorder.
+2. Add one protocol/client slice with explicit streaming, replay and delivery contracts; then settle the ergonomic extension/worker interface.
+3. Add optional tool coordination and durable recall, with mixed tools, restart and concurrent replay checks.
+4. Add provider substitution and bounded dynamic routing using those same dispatch/delivery boundaries.
+
+Enrollment, storage and jobs stay in extensions. Add adapters and convenience APIs only when a real extension needs them. Failure behavior is part of the first slice. Mandatory protection is an optional feature, not universal destination enforcement.
 
 ## Acceptance criteria to retain
 
@@ -197,7 +161,7 @@ Avoid implementing every possible extension point in advance. The decisive test 
 - Unknown identity does not leak or blend another conversation's state.
 - Gateway and client tool calls retain valid IDs, results, and ordering, including mixed responses.
 - Streaming deltas and final objects agree; cancellation and backpressure work.
-- Required policies cannot silently fail open; archive failure cannot discard context.
+- An explicitly blocking protection feature cannot report failure as approval; context extensions must not discard context on archive failure.
 - Real upstream accounting includes internal calls regardless of visible response rewriting.
 - Provider-held state and signed/opaque fields are preserved or handled through an explicit supported path.
 - Tests inspect both what clients receive/persist and what they send on the next request.
@@ -205,14 +169,14 @@ Avoid implementing every possible extension point in advance. The decisive test 
 
 ## Open questions for the next conversation
 
-- Preserve Go plus Node, or choose another implementation after evaluating real requirements?
-- Is the first deliverable a standalone generic proxy, or a minimal AI gateway on a reusable HTTP core?
+- What is the smallest extension authoring/worker contract on the accepted Go core, and when is Node IPC justified?
+- Which first broker/policy/recorder slice proves the shared execution boundary?
 - Which initial protocol/client combination proves the design with the smallest scope?
-- What is the initial storage topology: one instance with SQLite, or shared state across replicas?
+- What is the first stateful extension’s storage topology: one instance with SQLite, or shared state across replicas?
 - Which identity signals are required for durable context features?
-- How are route providers selected and their credential capabilities isolated?
-- What is the first supported model-tool continuation contract and replay strategy?
-- Which policies may fail open, and how does an operator mark a role as required?
+- How do routing/credential extensions expose their choices and optional protection contracts?
+- What is the first supported optional model-tool coordinator contract and replay strategy?
+- Which hook failures permit safe continuation, and how are optional blocking features declared?
 - What license and distribution strategy should this new public project use?
 
 ## Sources and verification boundary
@@ -234,4 +198,4 @@ Public sources reviewed in the founding discussion:
 - Codex Broker source: https://github.com/NotRllyRn/codex-broker
 - Broker branch contract: `docs/proxy-extensions.md` and `packages/proxy-extension/index.d.ts` on `feature/proxy-extension-layer`.
 
-No implementation, live provider compatibility test, performance benchmark, or security audit has been performed for ProxyKit. This document is the waypoint for deciding and building those things.
+The Go transport and local socket/system tests are implemented, with a local benchmark documented in the README. Extension contracts remain proposals. No live-provider compatibility certification, complete R01–R50 acceptance run, or security audit is established by this brief. See the readiness review for the exact verification scope.

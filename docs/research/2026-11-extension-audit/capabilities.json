@@ -1,0 +1,855 @@
+{
+  "date": "2026-11-07",
+  "legend": {
+    "available": "Usable seam exists, not a completed feature plugin",
+    "partial": "Restricted path, custom host, or additional plugin infrastructure",
+    "gap": "No matching host guarantee in reviewed extension contract",
+    "unverified": "Evidence insufficient for the requested guarantee"
+  },
+  "evidence": {
+    "T": "Local runtime/contract test",
+    "S": "Source inspection"
+  },
+  "rows": [
+    {
+      "id": "R01",
+      "group": "Broker",
+      "requirement": "Replace inbound authentication",
+      "ccr": {
+        "status": "partial",
+        "evidence": "S/T",
+        "detail": "Core beforeAuth can reject; built-in auth/introspection remains a distinct layer."
+      },
+      "cpa": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "FrontendAuthProviderExclusive replaces ordinary request auth; management auth is separate."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S/T",
+        "detail": "HTTP pre-auth translates credentials or denies; stock governance remains authoritative."
+      }
+    },
+    {
+      "id": "R02",
+      "group": "Broker",
+      "requirement": "Choose account / upstream route",
+      "ccr": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "routeResolvers can return dynamic provider configs and fallback lists."
+      },
+      "cpa": {
+        "status": "available",
+        "evidence": "S/T",
+        "detail": "Scheduler and ModelRouter over host-eligible candidates; not unrestricted retry ownership."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S/T",
+        "detail": "Plugin can pin eligible keys; full Account / KeySelector replacement requires SDK/custom host."
+      }
+    },
+    {
+      "id": "R03",
+      "group": "Broker",
+      "requirement": "Replace credentials / implement refresh",
+      "ccr": {
+        "status": "available",
+        "evidence": "T/S",
+        "detail": "ProviderPlugin.authenticate replaces upstream credentials; refresh service is plugin-owned."
+      },
+      "cpa": {
+        "status": "available",
+        "evidence": "S/T",
+        "detail": "AuthProvider parse/login/poll/refresh plus managed auth callbacks; live OAuth untested."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Custom Account in SDK; stock plugin loader does not register a general refresh provider."
+      }
+    },
+    {
+      "id": "R04",
+      "group": "Broker",
+      "requirement": "Account CRUD / label / client ACL model",
+      "ccr": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Plugin routes and SQLite support own model; account connector is quota-oriented."
+      },
+      "cpa": {
+        "status": "partial",
+        "evidence": "S/T",
+        "detail": "Auth list/get/save + metadata; no auth.delete callback or complete relational label/ACL service."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Built-in provider-key and virtual-key ACL CRUD; not plugin-defined account domain."
+      }
+    },
+    {
+      "id": "R05",
+      "group": "Broker",
+      "requirement": "Public enrollment POST + private service auth",
+      "ccr": {
+        "status": "partial",
+        "evidence": "T/S",
+        "detail": "Arbitrary routes exist; scoped service auth/cookies/listener separation are own work."
+      },
+      "cpa": {
+        "status": "partial",
+        "evidence": "T/S",
+        "detail": "Management POST protected by management key; public resources GET-only. External listener needed."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S/T",
+        "detail": "Built-in management sign-in is provider-specific; generic plugin route registration absent. Custom host needed."
+      }
+    },
+    {
+      "id": "R06",
+      "group": "Broker",
+      "requirement": "Isolated public enrollment listener",
+      "ccr": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Can run own backend/service; no generic host-enforced enrollment process boundary."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Plugin can run own service; no host-managed isolated enrollment listener."
+      },
+      "bifrost": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Own listener or custom host; no dynamic-plugin listener service."
+      }
+    },
+    {
+      "id": "R07",
+      "group": "Broker",
+      "requirement": "Atomic activation + labels + notification outbox",
+      "ccr": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "SQLite/outbox primitives exist separately; no shared enrollment transaction contract."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "File save and runtime upsert; no shared plugin/account/outbox transaction."
+      },
+      "bifrost": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Framework databases exist; no corresponding dynamic-plugin transaction contract."
+      }
+    },
+    {
+      "id": "R08",
+      "group": "Broker",
+      "requirement": "Quota snapshots / per-attempt outcomes",
+      "ccr": {
+        "status": "available",
+        "evidence": "S/T",
+        "detail": "Account connectors, provider hooks and billing/trace events; exact Broker policy is own work."
+      },
+      "cpa": {
+        "status": "available",
+        "evidence": "S/T",
+        "detail": "QuotaProvider and UsagePlugin include account/failure metadata."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S/T",
+        "detail": "Core key retries and trace spans; broker-specific quota refresh/store is own work."
+      }
+    },
+    {
+      "id": "R09",
+      "group": "Transforms & protocols",
+      "requirement": "Rewrite request / instructions / tool schemas",
+      "ccr": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "Raw body + standard request transforms before routing/upstream."
+      },
+      "cpa": {
+        "status": "available",
+        "evidence": "T/S",
+        "detail": "Interceptors, body patchers and translators."
+      },
+      "bifrost": {
+        "status": "available",
+        "evidence": "S/T",
+        "detail": "PreRequest / PreLLM typed mutation and HTTP hooks."
+      }
+    },
+    {
+      "id": "R10",
+      "group": "Transforms & protocols",
+      "requirement": "Modify ordinary nonstream response",
+      "ccr": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "Provider and final response hooks; virtual model final hook differs."
+      },
+      "cpa": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "ResponseInterceptor and translation stages."
+      },
+      "bifrost": {
+        "status": "available",
+        "evidence": "S/T",
+        "detail": "PostLLM and HTTP transport post hooks."
+      }
+    },
+    {
+      "id": "R11",
+      "group": "Transforms & protocols",
+      "requirement": "Modify ordinary live stream",
+      "ccr": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "streamHooks wrap upstream Response on ordinary paths."
+      },
+      "cpa": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "StreamChunkInterceptor + host streaming callbacks; host adds terminal marker."
+      },
+      "bifrost": {
+        "status": "available",
+        "evidence": "T/S",
+        "detail": "Typed post hooks and transport chunk interceptor; drop/abort semantics tested."
+      }
+    },
+    {
+      "id": "R12",
+      "group": "Transforms & protocols",
+      "requirement": "Same output hooks cover hidden tool loops",
+      "ccr": {
+        "status": "gap",
+        "evidence": "T",
+        "detail": "Virtual nonstream bypasses final response hook; optimistic virtual stream bypasses stream hook."
+      },
+      "cpa": {
+        "status": "partial",
+        "evidence": "S/T",
+        "detail": "Nested model calls skip caller interceptor; no generic host tool loop to cover."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Nonstream continuations reenter core; no streaming agent loop. Coverage depends on role/path."
+      }
+    },
+    {
+      "id": "R13",
+      "group": "Transforms & protocols",
+      "requirement": "Add new wire protocol through plugin",
+      "ccr": {
+        "status": "available",
+        "evidence": "S",
+        "detail": "sourceAdapters + targetAdapters; preservation must be implemented/tested by adapter."
+      },
+      "cpa": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Custom translator formats/executors; new inbound HTTP endpoints require host/service work."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Custom provider based on existing wire formats; entirely new protocols require host integration."
+      }
+    },
+    {
+      "id": "R14",
+      "group": "Transforms & protocols",
+      "requirement": "Register arbitrary HTTP method/path",
+      "ccr": {
+        "status": "available",
+        "evidence": "T/S",
+        "detail": "Core httpRoutes and outer registerGatewayRoute."
+      },
+      "cpa": {
+        "status": "partial",
+        "evidence": "T",
+        "detail": "Management prefix routes + public GET resources; arbitrary public POST returned 404."
+      },
+      "bifrost": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Stock .so loader has no route registration; custom SDK host can mount routes."
+      }
+    },
+    {
+      "id": "R15",
+      "group": "Transforms & protocols",
+      "requirement": "Generic bidirectional WebSocket extension",
+      "ccr": {
+        "status": "unverified",
+        "evidence": "S",
+        "detail": "Built-in Responses/MCP WebSocket code exists; generic plugin frame/upgrade contract unverified."
+      },
+      "cpa": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Built-in WebSockets and response observer; no generic frame/upgrade registrar."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Built-in realtime routes; no generic upgrade/frame registration in dynamic loader."
+      }
+    },
+    {
+      "id": "R16",
+      "group": "Context & tools",
+      "requirement": "Scoped durable storage for extension",
+      "ccr": {
+        "status": "partial",
+        "evidence": "S/T",
+        "detail": "Outer openSqliteStore/dataDir; core plugins need their own storage access."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Native code may own a DB; no general host storage callback."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Framework stores/KV available to custom host; not injected through generic plugin Init."
+      }
+    },
+    {
+      "id": "R17",
+      "group": "Context & tools",
+      "requirement": "Archive-before-removal transaction",
+      "ccr": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Built-in archive exists; no generic extension working-context transaction."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Plugin must implement transaction and explicitly terminate on failure."
+      },
+      "bifrost": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Plugin-owned transaction; no shared archive/context commit service."
+      }
+    },
+    {
+      "id": "R18",
+      "group": "Context & tools",
+      "requirement": "Context revisions + concurrent session ownership",
+      "ccr": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "No generic revision/CAS compactor contract established."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "No context revision/CAS API in capability or callback enumeration."
+      },
+      "bifrost": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "No transcript revision/CAS service in plugin interface."
+      }
+    },
+    {
+      "id": "R19",
+      "group": "Context & tools",
+      "requirement": "Restore private continuation on client replay",
+      "ccr": {
+        "status": "gap",
+        "evidence": "T",
+        "detail": "Same-session replay lacked hidden result; fold exposes text instead."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "No host private-transcript/replay state machine; implement in plugin."
+      },
+      "bifrost": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Agent loop state is local; summary text is not a durable reconciliation map."
+      }
+    },
+    {
+      "id": "R20",
+      "group": "Context & tools",
+      "requirement": "Compaction with provider-held / signed state",
+      "ccr": {
+        "status": "unverified",
+        "evidence": "S",
+        "detail": "Built-in client compaction code exists; full opaque/state preservation not tested."
+      },
+      "cpa": {
+        "status": "unverified",
+        "evidence": "S",
+        "detail": "Translations exist; proposed compactor must resolve provider-held state explicitly."
+      },
+      "bifrost": {
+        "status": "unverified",
+        "evidence": "S",
+        "detail": "Provider compaction exists; extension rewrite/state fidelity not established."
+      }
+    },
+    {
+      "id": "R21",
+      "group": "Context & tools",
+      "requirement": "Register executable gateway tool",
+      "ccr": {
+        "status": "partial",
+        "evidence": "T/S",
+        "detail": "Virtual profiles bind MCP tools; no direct tool implementation array in core plugin result."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "No generic tool registrar/dispatcher; custom executor can implement one."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S/T",
+        "detail": "SDK RegisterMCPTool / configured MCP server; not handed to dynamic plugin Init."
+      }
+    },
+    {
+      "id": "R22",
+      "group": "Context & tools",
+      "requirement": "Host-owned nonstream tool continuation",
+      "ccr": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "Virtual model tool_loop and separate transparent-tool path."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "host.model.execute supports plugin-owned orchestration, not a shared host tool loop."
+      },
+      "bifrost": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "MCP agent mode continues Chat/Responses and sums usage."
+      }
+    },
+    {
+      "id": "R23",
+      "group": "Context & tools",
+      "requirement": "Host-owned streaming tool continuation",
+      "ccr": {
+        "status": "partial",
+        "evidence": "T",
+        "detail": "Optimistic virtual loop works; hook/identity/replay gaps remain."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Streaming bridges exist; tool-loop state machine is plugin-owned."
+      },
+      "bifrost": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Agent Mode explicitly excludes chat_stream/responses_stream."
+      }
+    },
+    {
+      "id": "R24",
+      "group": "Context & tools",
+      "requirement": "Lossless mixed client / gateway handoff",
+      "ccr": {
+        "status": "partial",
+        "evidence": "T",
+        "detail": "Stops for client calls; internal calls skipped by default or results exposed when folded."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "No shared tool ownership or mixed-handoff engine."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "T",
+        "detail": "Executes gateway tools and returns client IDs; same-name results collapse in text summary."
+      }
+    },
+    {
+      "id": "R25",
+      "group": "Context & tools",
+      "requirement": "Trusted tenant/session context in tool execution",
+      "ccr": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Virtual path builds profile-scoped session and forwards args/multimodal meta to MCP."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "No host tool-invocation API; plugin must bind caller and session itself."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Bifrost context exists; registered local tool callback takes args only; binding needs care."
+      }
+    },
+    {
+      "id": "R26",
+      "group": "Context & tools",
+      "requirement": "Cancellation through every internal tool",
+      "ccr": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Transport abort exists; virtual tool call does not receive client abort signal."
+      },
+      "cpa": {
+        "status": "partial",
+        "evidence": "T/S",
+        "detail": "Host callbacks cancel; arbitrary native execution continues until it cooperates."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "T",
+        "detail": "Canceled loop still dispatches mock callbacks; downstream must enforce; local tool callback lacks context."
+      }
+    },
+    {
+      "id": "R27",
+      "group": "Context & tools",
+      "requirement": "Bounded tool turns + parallel execution",
+      "ccr": {
+        "status": "partial",
+        "evidence": "S/T",
+        "detail": "Virtual maxTurns/maxToolCalls; serial tools; no complete elapsed/spend budget tested."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "No shared continuation budget; generic native calls admit unconstrained concurrent work."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "T/S",
+        "detail": "maxAgentDepth exists; 64 tool calls entered concurrently without loop-level cap."
+      }
+    },
+    {
+      "id": "R28",
+      "group": "Telemetry",
+      "requirement": "Independent request/response/usage extension",
+      "ccr": {
+        "status": "available",
+        "evidence": "T/S",
+        "detail": "Transforms plus billing publishers/outboxes; virtual stream hooks need separate coverage."
+      },
+      "cpa": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "UsagePlugin separate from mutators; raw transcript visibility depends on chain order."
+      },
+      "bifrost": {
+        "status": "available",
+        "evidence": "S/T",
+        "detail": "HTTP/LLM hooks and independent ObservabilityPlugin.Inject traces."
+      }
+    },
+    {
+      "id": "R29",
+      "group": "Telemetry",
+      "requirement": "Actual usage retained before presentation edits",
+      "ccr": {
+        "status": "partial",
+        "evidence": "T/S",
+        "detail": "18 real vs 1998 displayed verified; billing event hooks may mutate/drop before sinks."
+      },
+      "cpa": {
+        "status": "partial",
+        "evidence": "T/S",
+        "detail": "10 real vs 1998 displayed verified on OpenAI-compatible route; not all translators."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S/T",
+        "detail": "Core traces capture usage before ordinary post hooks; full independent ledger not validated."
+      }
+    },
+    {
+      "id": "R30",
+      "group": "Telemetry",
+      "requirement": "Account for internal model calls / attempts",
+      "ccr": {
+        "status": "partial",
+        "evidence": "T/S",
+        "detail": "Two-call loop aggregates 36; all failed-provider cases not tested."
+      },
+      "cpa": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "Nested host.model.execute + 429 failover each emit usage; generic host.http does not."
+      },
+      "bifrost": {
+        "status": "available",
+        "evidence": "T/S",
+        "detail": "Continuation usage and per-attempt traces tested; avoid double-counting aggregated result."
+      }
+    },
+    {
+      "id": "R31",
+      "group": "Telemetry",
+      "requirement": "Reliable lifecycle / attempt correlation",
+      "ccr": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Request/attempt fields exist; comprehensive cross-path joining not tested."
+      },
+      "cpa": {
+        "status": "partial",
+        "evidence": "T",
+        "detail": "Lifecycle and usage RequestID differ; shared TraceID cannot uniquely join nested attempts."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S/T",
+        "detail": "Trace hierarchy and agent IDs exist; pooled objects require ownership/copy discipline."
+      }
+    },
+    {
+      "id": "R32",
+      "group": "Telemetry",
+      "requirement": "Missing usage distinct from measured zero",
+      "ccr": {
+        "status": "unverified",
+        "evidence": "S",
+        "detail": "All missing-usage paths not tested."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "T",
+        "detail": "Successful missing usage normalized to zero counters; no presence flag."
+      },
+      "bifrost": {
+        "status": "unverified",
+        "evidence": "S",
+        "detail": "All provider/trace missing-usage paths not established."
+      }
+    },
+    {
+      "id": "R33",
+      "group": "Telemetry",
+      "requirement": "Durable export / bounded observer delivery",
+      "ccr": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Outbox/publisher/delivery-state extension contracts; durability supplied by chosen backend."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S/T",
+        "detail": "In-memory global queue, sequential sinks; buffer argument does not cap global queue."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "T/S",
+        "detail": "Bounded async exporters drop saturated traces; built-in logs are a separate durable path."
+      }
+    },
+    {
+      "id": "R34",
+      "group": "Operations",
+      "requirement": "Explicit policy denial before upstream",
+      "ccr": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "Core beforeAuth/other hooks can reject; outer transform errors alone do not."
+      },
+      "cpa": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "Successful Terminate or explicit auth denial blocks upstream."
+      },
+      "bifrost": {
+        "status": "available",
+        "evidence": "T",
+        "detail": "LLM short-circuit error and HTTP denial; disable fallbacks for mandatory denial."
+      }
+    },
+    {
+      "id": "R35",
+      "group": "Operations",
+      "requirement": "Fail-closed mandatory policy on unexpected error",
+      "ccr": {
+        "status": "partial",
+        "evidence": "T/S",
+        "detail": "Core defaults fail_closed; outer transforms fail open and startup can skip failed plugin."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "T/S",
+        "detail": "Interceptor errors fail open; scheduler semantics differ; no global required-role override."
+      },
+      "bifrost": {
+        "status": "gap",
+        "evidence": "T/S",
+        "detail": "LLM errors fail open; HTTP errors differ; no generic mandatory-role guarantee."
+      }
+    },
+    {
+      "id": "R36",
+      "group": "Operations",
+      "requirement": "Per-hook deadline / queue / concurrency policy",
+      "ccr": {
+        "status": "available",
+        "evidence": "S",
+        "detail": "Core execution config exposes timeout, concurrency, queue, failure threshold/cooldown; optional."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "T/S",
+        "detail": "No generic worker bound; 24 calls entered and remained active after caller cancellation."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S/T",
+        "detail": "Provider queues/exporter bounds; synchronous LLM hooks lack independent forced timeout."
+      }
+    },
+    {
+      "id": "R37",
+      "group": "Operations",
+      "requirement": "Deterministic extension order",
+      "ccr": {
+        "status": "available",
+        "evidence": "S",
+        "detail": "Named stages and registration order; no dependency DAG established."
+      },
+      "cpa": {
+        "status": "available",
+        "evidence": "S",
+        "detail": "Priority descending then ID; single chosen scheduler with defined fallback rules."
+      },
+      "bifrost": {
+        "status": "available",
+        "evidence": "S/T",
+        "detail": "Pre hooks forward / post reverse; before/builtin/after placement + order."
+      }
+    },
+    {
+      "id": "R38",
+      "group": "Operations",
+      "requirement": "Dependencies / exclusive compactor arbitration",
+      "ccr": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "No request-transform dependency graph or exclusive compactor contract found."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "No dependency DAG/cycle check or compactor arbitration."
+      },
+      "bifrost": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Order/placement is not dependency validation or compactor arbitration."
+      }
+    },
+    {
+      "id": "R39",
+      "group": "Operations",
+      "requirement": "Stable plugin snapshot for whole request",
+      "ccr": {
+        "status": "unverified",
+        "evidence": "S",
+        "detail": "Loader replacement validation exists; whole-request snapshot guarantee unverified."
+      },
+      "cpa": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Atomic active sets per access; each hook can fetch a new set."
+      },
+      "bifrost": {
+        "status": "unverified",
+        "evidence": "S",
+        "detail": "Live config/plugin swapping exists; whole-request guarantee unverified."
+      }
+    },
+    {
+      "id": "R40",
+      "group": "Operations",
+      "requirement": "Host job service available to ordinary plugin",
+      "ccr": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Delivery workers and plugin backends exist; general durable jobs need plugin service."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "No general host job callback; plugin owns goroutines and queues."
+      },
+      "bifrost": {
+        "status": "partial",
+        "evidence": "S",
+        "detail": "Sidekiq durable jobs in framework; custom host integration, not injected in .so Init."
+      }
+    },
+    {
+      "id": "R41",
+      "group": "Operations",
+      "requirement": "Enforced secret / OS sandbox per extension",
+      "ccr": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Trusted JavaScript sees config; permission flags gate registration only."
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Trusted native C ABI + raw auth callbacks; no OS sandbox."
+      },
+      "bifrost": {
+        "status": "gap",
+        "evidence": "S",
+        "detail": "Trusted in-process Go .so; no sandbox from manifest/config alone."
+      }
+    },
+    {
+      "id": "R42",
+      "group": "Operations",
+      "requirement": "Short-circuit cache / local response",
+      "ccr": {
+        "status": "available",
+        "evidence": "S/T",
+        "detail": "Plugin HTTP routes and policy response handling can answer locally; full cache policy is own work."
+      },
+      "cpa": {
+        "status": "available",
+        "evidence": "T/S",
+        "detail": "Request termination/custom executor can synthesize response; semantic cache is own work."
+      },
+      "bifrost": {
+        "status": "available",
+        "evidence": "T/S",
+        "detail": "LLM/HTTP short circuits; built-in cache plugins demonstrate use."
+      }
+    }
+  ]
+}

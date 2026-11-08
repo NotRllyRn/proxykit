@@ -1,0 +1,199 @@
+=== RUN   TestHandlerStreamInterceptorRewritesAndDropsChunks
+--- PASS: TestHandlerStreamInterceptorRewritesAndDropsChunks (0.02s)
+=== RUN   TestExecuteModelStreamDoesNotReusePreparedRouteWhenRouterPluginSkipped
+--- PASS: TestExecuteModelStreamDoesNotReusePreparedRouteWhenRouterPluginSkipped (0.00s)
+=== RUN   TestExecuteModelPropagatesRouterSkipPluginID
+--- PASS: TestExecuteModelPropagatesRouterSkipPluginID (0.00s)
+=== RUN   TestExecuteStreamWithAuthManager_RetriesAfterDroppedBootstrapPayload
+time="2026-11-07T21:18:25Z" level=warning msg="401 |           1ms | upstream execution failed: provider=bootstrap-test model=bootstrap-model auth=provider=bootstrap-test auth_file=bootstrap-auth err=unauthorized"
+--- PASS: TestExecuteStreamWithAuthManager_RetriesAfterDroppedBootstrapPayload (0.02s)
+=== RUN   TestIssue6332LifecycleDeliveryReadyBoundary
+=== RUN   TestIssue6332LifecycleDeliveryReadyBoundary/delivered
+=== RUN   TestIssue6332LifecycleDeliveryReadyBoundary/early_cancel
+=== RUN   TestIssue6332LifecycleDeliveryReadyBoundary/write_failure
+=== RUN   TestIssue6332LifecycleDeliveryReadyBoundary/read_failure
+--- PASS: TestIssue6332LifecycleDeliveryReadyBoundary (0.02s)
+    --- PASS: TestIssue6332LifecycleDeliveryReadyBoundary/delivered (0.00s)
+    --- PASS: TestIssue6332LifecycleDeliveryReadyBoundary/early_cancel (0.00s)
+    --- PASS: TestIssue6332LifecycleDeliveryReadyBoundary/write_failure (0.01s)
+    --- PASS: TestIssue6332LifecycleDeliveryReadyBoundary/read_failure (0.00s)
+=== RUN   TestIssue6332LifecycleClosesChannelsBeforeDeliveryWait
+--- PASS: TestIssue6332LifecycleClosesChannelsBeforeDeliveryWait (0.01s)
+=== RUN   TestIssue6332LifecycleValidationFailureSurvivesDeliveryCancellation
+--- PASS: TestIssue6332LifecycleValidationFailureSurvivesDeliveryCancellation (0.00s)
+=== RUN   TestExecuteModelStreamCanceledBeforeFirstChunkCompletesAsCanceled
+--- PASS: TestExecuteModelStreamCanceledBeforeFirstChunkCompletesAsCanceled (6.36s)
+=== RUN   TestExecuteModelCarriesEntryAndExitProtocols
+--- PASS: TestExecuteModelCarriesEntryAndExitProtocols (0.00s)
+=== RUN   TestExecuteModelSkipsOriginatingPluginInterceptors
+--- PASS: TestExecuteModelSkipsOriginatingPluginInterceptors (0.00s)
+=== RUN   TestExecuteModelStream
+--- PASS: TestExecuteModelStream (0.01s)
+=== RUN   TestExecuteModelStreamSkipsOriginatingPluginInterceptors
+--- PASS: TestExecuteModelStreamSkipsOriginatingPluginInterceptors (0.01s)
+=== RUN   TestExecuteModelStreamStartupError
+time="2026-11-07T21:18:31Z" level=warning msg="upstream execution failed: provider=codex model=model-execution-stream-startup-error-model auth=provider=codex auth_file=model-execution-model-execution-stream-startup-error-model duration=0s err=startup failed"
+--- PASS: TestExecuteModelStreamStartupError (0.01s)
+=== RUN   TestExecuteModelStreamTerminalError
+time="2026-11-07T21:18:31Z" level=warning msg="429 |            0s | upstream execution failed: provider=codex model=model-execution-stream-terminal-error-model auth=provider=codex auth_file=model-execution-model-execution-stream-terminal-error-model err=rate limited"
+--- PASS: TestExecuteModelStreamTerminalError (0.01s)
+=== RUN   TestExecuteModelStreamContextCancel
+--- PASS: TestExecuteModelStreamContextCancel (0.01s)
+=== RUN   TestExecuteModelStreamKeepsInteractionsProviderForOpenAIEntry
+--- PASS: TestExecuteModelStreamKeepsInteractionsProviderForOpenAIEntry (0.00s)
+=== RUN   TestExecuteModelPropagatesForcedProviderAndAuthID
+--- PASS: TestExecuteModelPropagatesForcedProviderAndAuthID (0.00s)
+=== RUN   TestExecuteModelStreamPropagatesForcedProviderAndAuthID
+--- PASS: TestExecuteModelStreamPropagatesForcedProviderAndAuthID (0.01s)
+=== RUN   TestExecuteModelPinsExactAuthAcrossPrioritiesWithoutFallback
+--- PASS: TestExecuteModelPinsExactAuthAcrossPrioritiesWithoutFallback (0.00s)
+=== RUN   TestExecuteModelRequestProxyOverridesCredentialProxy
+--- PASS: TestExecuteModelRequestProxyOverridesCredentialProxy (0.00s)
+=== RUN   TestExecuteModelRejectsInvalidProxyURL
+--- PASS: TestExecuteModelRejectsInvalidProxyURL (0.00s)
+=== RUN   TestExecuteModelOmittedProxyDoesNotInheritAmbientProxy
+--- PASS: TestExecuteModelOmittedProxyDoesNotInheritAmbientProxy (0.01s)
+=== RUN   TestExecuteModelReturnsFilteredHeadersWhenPassthroughDisabled
+--- PASS: TestExecuteModelReturnsFilteredHeadersWhenPassthroughDisabled (0.01s)
+=== RUN   TestExecuteModelStreamReturnsFilteredHeadersWhenPassthroughDisabled
+--- PASS: TestExecuteModelStreamReturnsFilteredHeadersWhenPassthroughDisabled (0.00s)
+=== RUN   TestExecuteModelAllowsImageModel_Issue6196
+--- PASS: TestExecuteModelAllowsImageModel_Issue6196 (0.00s)
+=== RUN   TestExecuteModelReplaysInterceptedCallerScopeWithoutGinContext
+--- PASS: TestExecuteModelReplaysInterceptedCallerScopeWithoutGinContext (0.01s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/sdk/api/handlers	7.289s
+=== RUN   TestExecutorAdapterExecuteStreamSameFormatMissingDoneIsSeededAndDropped
+--- PASS: TestExecutorAdapterExecuteStreamSameFormatMissingDoneIsSeededAndDropped (0.00s)
+=== RUN   TestStreamInterceptorsDropChunkStopsChain
+--- PASS: TestStreamInterceptorsDropChunkStopsChain (0.00s)
+=== RUN   TestIssue6332PluginNestedDelivery
+=== RUN   TestIssue6332PluginNestedDelivery/complete
+=== RUN   TestIssue6332PluginNestedDelivery/cancel_partial
+=== RUN   TestIssue6332PluginNestedDelivery/cancel_complete
+--- PASS: TestIssue6332PluginNestedDelivery (0.18s)
+    --- PASS: TestIssue6332PluginNestedDelivery/complete (0.12s)
+    --- PASS: TestIssue6332PluginNestedDelivery/cancel_partial (0.04s)
+    --- PASS: TestIssue6332PluginNestedDelivery/cancel_complete (0.02s)
+=== RUN   TestHostPickAuthUsesHighestPrioritySchedulerOnly
+--- PASS: TestHostPickAuthUsesHighestPrioritySchedulerOnly (0.00s)
+=== RUN   TestHostPickAuthReturnsSchedulerError
+time="2026-11-07T21:18:25Z" level=warning msg="pluginhost: scheduler rejected auth pick" error="tenant quota exhausted" plugin_id=scheduler
+--- PASS: TestHostPickAuthReturnsSchedulerError (0.00s)
+=== RUN   TestHostPickAuthPanicFusesAndFallsBack
+time="2026-11-07T21:18:25Z" level=error msg="pluginhost: plugin panic recovered: boom\ngoroutine 95 [running]:\nruntime/debug.Stack()\n\t/usr/local/go/src/runtime/debug/stack.go:26 +0x5e\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.(*Host).fusePlugin(0x2884164906e0, {0x12e48d5, 0x9}, {0x13671b7, 0xe}, {0x277f098, 0x1418ff0})\n\t/tmp/proxy-research-0/internal/pluginhost/adapters_usage_translation.go:105 +0x30f\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.(*Host).callScheduler.func1()\n\t/tmp/proxy-research-0/internal/pluginhost/scheduler.go:66 +0x79\npanic({0x277f098?, 0x1418ff0?})\n\t/usr/local/go/src/runtime/panic.go:859 +0x125\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.TestHostPickAuthPanicFusesAndFallsBack.func1({_, _}, {{{0x0, 0x0}, {0x0, 0x0}, {0x0, 0x0}, {0x0, 0x0}, ...}, ...})\n\t/tmp/proxy-research-0/internal/pluginhost/scheduler_test.go:77 +0x45\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.schedulerFunc.Pick(_, {_, _}, {{{0x0, 0x0}, {0x0, 0x0}, {0x0, 0x0}, {0x0, ...}, ...}, ...})\n\t/tmp/proxy-research-0/internal/pluginhost/test_helpers_test.go:456 +0x144\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.(*Host).callScheduler(_, {_, _}, {{0x12e48d5, 0x9}, {0x2884163df400, 0x19}, {0x1342e10, 0xc}, 0x0, ...}, ...)\n\t/tmp/proxy-research-0/internal/pluginhost/scheduler.go:74 +0x2e2\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.(*Host).PickAuth(_, {_, _}, {{{0x0, 0x0}, {0x0, 0x0}, {0x0, 0x0}, {0x0, ...}, ...}, ...})\n\t/tmp/proxy-research-0/internal/pluginhost/scheduler.go:17 +0x192\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.TestHostPickAuthPanicFusesAndFallsBack(0x288416481208)\n\t/tmp/proxy-research-0/internal/pluginhost/scheduler_test.go:81 +0x375\ntesting.tRunner(0x288416481208, 0x28870d8)\n\t/usr/local/go/src/testing/testing.go:2193 +0xea\ncreated by testing.(*T).Run in goroutine 1\n\t/usr/local/go/src/testing/testing.go:2258 +0x4d4\n" method=Scheduler.Pick plugin_id=scheduler
+--- PASS: TestHostPickAuthPanicFusesAndFallsBack (0.00s)
+=== RUN   TestHostPickAuthUnhandledDoesNotCallLowerPriorityScheduler
+--- PASS: TestHostPickAuthUnhandledDoesNotCallLowerPriorityScheduler (0.00s)
+=== RUN   TestHostPickAuthInvalidResponseFallsBack
+=== RUN   TestHostPickAuthInvalidResponseFallsBack/unknown_auth_id
+time="2026-11-07T21:18:25Z" level=warning msg="pluginhost: scheduler returned invalid response: unknown auth id" plugin_id=scheduler
+=== RUN   TestHostPickAuthInvalidResponseFallsBack/unknown_delegate
+time="2026-11-07T21:18:25Z" level=warning msg="pluginhost: scheduler returned invalid response: unknown delegate" plugin_id=scheduler
+=== RUN   TestHostPickAuthInvalidResponseFallsBack/handled_without_decision
+time="2026-11-07T21:18:25Z" level=warning msg="pluginhost: scheduler returned invalid response: missing auth id or delegate" plugin_id=scheduler
+--- PASS: TestHostPickAuthInvalidResponseFallsBack (0.00s)
+    --- PASS: TestHostPickAuthInvalidResponseFallsBack/unknown_auth_id (0.00s)
+    --- PASS: TestHostPickAuthInvalidResponseFallsBack/unknown_delegate (0.00s)
+    --- PASS: TestHostPickAuthInvalidResponseFallsBack/handled_without_decision (0.00s)
+=== RUN   TestHostPickAuthPrefersValidAuthIDOverInvalidDelegate
+--- PASS: TestHostPickAuthPrefersValidAuthIDOverInvalidDelegate (0.00s)
+=== RUN   TestHostPickAuthAllowsKnownBuiltinDelegates
+=== RUN   TestHostPickAuthAllowsKnownBuiltinDelegates/round-robin
+=== RUN   TestHostPickAuthAllowsKnownBuiltinDelegates/fill-first
+--- PASS: TestHostPickAuthAllowsKnownBuiltinDelegates (0.00s)
+    --- PASS: TestHostPickAuthAllowsKnownBuiltinDelegates/round-robin (0.00s)
+    --- PASS: TestHostPickAuthAllowsKnownBuiltinDelegates/fill-first (0.00s)
+=== RUN   TestHostPickAuthTerminalRejection
+--- PASS: TestHostPickAuthTerminalRejection (0.00s)
+=== RUN   TestHostPickAuthTerminalRejectionWhitespaceDefaults
+--- PASS: TestHostPickAuthTerminalRejectionWhitespaceDefaults (0.00s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost	1.396s
+=== RUN   TestManagerPluginSchedulerSelectsAuthID
+--- PASS: TestManagerPluginSchedulerSelectsAuthID (0.00s)
+=== RUN   TestManagerPluginSchedulerAcrossPriorities
+--- PASS: TestManagerPluginSchedulerAcrossPriorities (0.00s)
+=== RUN   TestManagerPluginSchedulerAcrossPrioritiesMixed
+--- PASS: TestManagerPluginSchedulerAcrossPrioritiesMixed (0.00s)
+=== RUN   TestManagerPluginSchedulerDefaultHighestPriorityOnly
+--- PASS: TestManagerPluginSchedulerDefaultHighestPriorityOnly (0.00s)
+=== RUN   TestManagerPluginSchedulerAcrossPrioritiesUnhandledFallsBackToHighestPriority
+--- PASS: TestManagerPluginSchedulerAcrossPrioritiesUnhandledFallsBackToHighestPriority (0.00s)
+=== RUN   TestManagerPluginSchedulerAcrossPrioritiesAttributesAndCooldownFilter
+--- PASS: TestManagerPluginSchedulerAcrossPrioritiesAttributesAndCooldownFilter (0.00s)
+=== RUN   TestManagerPluginSchedulerAcrossPrioritiesMixedUnhandledFallsBackToHighestPriority
+--- PASS: TestManagerPluginSchedulerAcrossPrioritiesMixedUnhandledFallsBackToHighestPriority (0.00s)
+=== RUN   TestManagerPluginSchedulerSkippedWhenHomeEnabled
+--- PASS: TestManagerPluginSchedulerSkippedWhenHomeEnabled (0.01s)
+=== RUN   TestManagerPluginSchedulerCalledOutsideManagerLock
+=== RUN   TestManagerPluginSchedulerCalledOutsideManagerLock/PluginSchedulerWantsAcrossPriorities
+=== RUN   TestManagerPluginSchedulerCalledOutsideManagerLock/pickNext
+=== RUN   TestManagerPluginSchedulerCalledOutsideManagerLock/pickNextMixed
+--- PASS: TestManagerPluginSchedulerCalledOutsideManagerLock (0.00s)
+    --- PASS: TestManagerPluginSchedulerCalledOutsideManagerLock/PluginSchedulerWantsAcrossPriorities (0.00s)
+    --- PASS: TestManagerPluginSchedulerCalledOutsideManagerLock/pickNext (0.00s)
+    --- PASS: TestManagerPluginSchedulerCalledOutsideManagerLock/pickNextMixed (0.00s)
+=== RUN   TestManagerPluginSchedulerSnapshotConsistencyAcrossSwap
+=== RUN   TestManagerPluginSchedulerSnapshotConsistencyAcrossSwap/single
+=== RUN   TestManagerPluginSchedulerSnapshotConsistencyAcrossSwap/mixed
+--- PASS: TestManagerPluginSchedulerSnapshotConsistencyAcrossSwap (0.00s)
+    --- PASS: TestManagerPluginSchedulerSnapshotConsistencyAcrossSwap/single (0.00s)
+    --- PASS: TestManagerPluginSchedulerSnapshotConsistencyAcrossSwap/mixed (0.00s)
+=== RUN   TestManagerPluginSchedulerErrorStopsPick
+--- PASS: TestManagerPluginSchedulerErrorStopsPick (0.00s)
+=== RUN   TestManagerPluginSchedulerFallsBackWhenUnhandledOrUnknown
+=== RUN   TestManagerPluginSchedulerFallsBackWhenUnhandledOrUnknown/unhandled
+=== RUN   TestManagerPluginSchedulerFallsBackWhenUnhandledOrUnknown/unknown_auth_id
+--- PASS: TestManagerPluginSchedulerFallsBackWhenUnhandledOrUnknown (0.00s)
+    --- PASS: TestManagerPluginSchedulerFallsBackWhenUnhandledOrUnknown/unhandled (0.00s)
+    --- PASS: TestManagerPluginSchedulerFallsBackWhenUnhandledOrUnknown/unknown_auth_id (0.00s)
+=== RUN   TestManagerPluginSchedulerDelegatesBuiltin
+=== RUN   TestManagerPluginSchedulerDelegatesBuiltin/round-robin
+=== RUN   TestManagerPluginSchedulerDelegatesBuiltin/round-robin_model_cursors
+=== RUN   TestManagerPluginSchedulerDelegatesBuiltin/fill-first
+--- PASS: TestManagerPluginSchedulerDelegatesBuiltin (0.01s)
+    --- PASS: TestManagerPluginSchedulerDelegatesBuiltin/round-robin (0.00s)
+    --- PASS: TestManagerPluginSchedulerDelegatesBuiltin/round-robin_model_cursors (0.00s)
+    --- PASS: TestManagerPluginSchedulerDelegatesBuiltin/fill-first (0.00s)
+=== RUN   TestManagerPluginSchedulerDelegateRoundRobinUsesNativeMixedRotation
+--- PASS: TestManagerPluginSchedulerDelegateRoundRobinUsesNativeMixedRotation (0.00s)
+=== RUN   TestManagerPluginSchedulerPickNextMixedSelectsProvider
+--- PASS: TestManagerPluginSchedulerPickNextMixedSelectsProvider (0.00s)
+=== RUN   TestManagerPluginSchedulerCandidatesAreSafeCopies
+--- PASS: TestManagerPluginSchedulerCandidatesAreSafeCopies (0.00s)
+=== RUN   TestManagerPluginSchedulerTerminalRejection
+=== RUN   TestManagerPluginSchedulerTerminalRejection/explicit_code_and_message
+=== RUN   TestManagerPluginSchedulerTerminalRejection/default_code_and_message
+=== RUN   TestManagerPluginSchedulerTerminalRejection/whitespace_code_and_message_fallback_to_defaults
+=== RUN   TestManagerPluginSchedulerTerminalRejection/reject_with_auth_id_takes_precedence
+--- PASS: TestManagerPluginSchedulerTerminalRejection (0.00s)
+    --- PASS: TestManagerPluginSchedulerTerminalRejection/explicit_code_and_message (0.00s)
+    --- PASS: TestManagerPluginSchedulerTerminalRejection/default_code_and_message (0.00s)
+    --- PASS: TestManagerPluginSchedulerTerminalRejection/whitespace_code_and_message_fallback_to_defaults (0.00s)
+    --- PASS: TestManagerPluginSchedulerTerminalRejection/reject_with_auth_id_takes_precedence (0.00s)
+=== RUN   TestManagerPluginSchedulerUnhandledWithRejectFlagFallsBack
+--- PASS: TestManagerPluginSchedulerUnhandledWithRejectFlagFallsBack (0.00s)
+=== RUN   TestManagerPluginSchedulerSelectionID
+=== RUN   TestManagerPluginSchedulerSelectionID/single_credential_outer_retry_after_429_yields_distinct_ids_matching_context
+time="2026-11-07T21:18:25Z" level=warning msg="429 |            0s | upstream execution failed: provider=gemini model=gemini-2.5-pro auth=auth_id=auth-a err=rate_limited: 429"
+=== RUN   TestManagerPluginSchedulerSelectionID/different_credentials_on_retry_get_different_ids
+time="2026-11-07T21:18:25Z" level=warning msg="429 |            0s | upstream execution failed: provider=gemini model=gemini-2.5-pro auth=auth_id=auth-a err=rate_limited: 429"
+=== RUN   TestManagerPluginSchedulerSelectionID/attempts_within_one_selection_keep_same_id_for_token_refresh_and_model_pool
+time="2026-11-07T21:18:25Z" level=warning msg="500 |            0s | upstream execution failed: provider=openai-compatibility model=model-pool-1 auth=api_key=sk...ol err=upstream_error: 500"
+=== RUN   TestManagerPluginSchedulerSelectionID/unhandled_scheduler_clears_selection_id_and_does_not_attribute_builtin_selection
+time="2026-11-07T21:18:25Z" level=warning msg="429 |            0s | upstream execution failed: provider=gemini model=gemini-2.5-pro auth=auth_id=auth-a err=rate_limited: 429"
+=== RUN   TestManagerPluginSchedulerSelectionID/rejected_pick_causes_no_fallback_and_clears_selection_id
+=== RUN   TestManagerPluginSchedulerSelectionID/execute_count_and_stream_propagate_selection_id
+=== RUN   TestManagerPluginSchedulerSelectionID/home_execute_count_and_stream_clear_stale_selection_id
+time="2026-11-07T21:18:25Z" level=warning msg="upstream execution failed: provider=home-retry-contract model=gpt auth=auth_id=home-auth-1 duration=0s err=empty_stream: upstream stream closed before first payload"
+--- PASS: TestManagerPluginSchedulerSelectionID (0.04s)
+    --- PASS: TestManagerPluginSchedulerSelectionID/single_credential_outer_retry_after_429_yields_distinct_ids_matching_context (0.00s)
+    --- PASS: TestManagerPluginSchedulerSelectionID/different_credentials_on_retry_get_different_ids (0.00s)
+    --- PASS: TestManagerPluginSchedulerSelectionID/attempts_within_one_selection_keep_same_id_for_token_refresh_and_model_pool (0.01s)
+    --- PASS: TestManagerPluginSchedulerSelectionID/unhandled_scheduler_clears_selection_id_and_does_not_attribute_builtin_selection (0.00s)
+    --- PASS: TestManagerPluginSchedulerSelectionID/rejected_pick_causes_no_fallback_and_clears_selection_id (0.00s)
+    --- PASS: TestManagerPluginSchedulerSelectionID/execute_count_and_stream_propagate_selection_id (0.00s)
+    --- PASS: TestManagerPluginSchedulerSelectionID/home_execute_count_and_stream_clear_stale_selection_id (0.01s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/sdk/cliproxy/auth	1.316s

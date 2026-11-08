@@ -85,6 +85,12 @@ Local baseline: Go 1.27.1, Linux amd64, Intel i9-13900H, four benchmark CPUs, pa
 
 ## Project context
 
-[Project direction and architecture](docs/PROJECT_DIRECTION.md) records the founding goals and proposed future boundaries; its initial no-implementation status is historical. The accepted transport decision above describes this implemented milestone.
+Start with the [consolidated extension plan](docs/EXTENSION_PLAN.md) for current decisions, recovery/re-entry recommendations, open cases and implementation progress.
+
+The [extension composition note](docs/EXTENSION_COMPOSITION.md) records current priorities, proposed hook stages/ledger, streaming rules, and source findings from Pi and Codex Broker.
+
+[Project direction and architecture](docs/PROJECT_DIRECTION.md) records the goals and current ownership model. The [six architecture decisions](docs/research/2026-11-extension-audit/extension-requirements.md) define proposed extension contracts; the [core readiness review](docs/CORE_READINESS.md) maps all 50 requirements to staged implementation and test gates. The accepted transport decision above describes the implemented milestone.
+
+The [50-requirement extension engineering reference](docs/EXTENSION_ENGINEERING_REFERENCE.md) compares Claude Code Router, CLIProxyAPI, and Bifrost using pinned implementation evidence. It explains supported mechanisms, extension ownership, integration work, host gaps, and minimal proposed ProxyKit contracts.
 
 The project takes inspiration from Codex Broker, Pi's extension authoring experience, and context gateways. It is not a Pi compatibility layer or a claim of universal client support.

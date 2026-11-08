@@ -39,3 +39,5 @@ This is a native composition boundary, **not** a TypeScript extension API. Later
 3. Test observable forwarding, streaming before completion, cancellation, connection reuse, compression, trailers, errors and native transformations over local sockets.
 4. Run a compiled-process system test for CLI startup, forwarding and graceful termination; run race detection, vet and a repeatable benchmark.
 5. Document measured results and limits; defer extensions, dashboard, npm packaging, storage and account logic.
+
+For the next milestone, follow the [core readiness review](CORE_READINESS.md) and [six extension decisions](research/2026-11-extension-audit/extension-requirements.md). Native callbacks are building blocks, not the final public extension contract.

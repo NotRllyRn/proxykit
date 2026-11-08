@@ -1,0 +1,1225 @@
+{
+  "model": "Trusted self-hosted extension application plus gateway adapter",
+  "revision": 2,
+  "date": "2026-11-07",
+  "new_runtime_tests": 0,
+  "legend": {
+    "supported": "Relevant gateway/runtime mechanism exists; scoped prior tests only",
+    "owned": "Extension can implement this itself; no specialized host service required",
+    "integration": "Feasible building blocks, but gateway boundary/coverage/control still needs integration",
+    "gap": "A retained host boundary lacks the requested guarantee",
+    "unknown": "Insufficient evidence",
+    "optional": "Not required for trusted self-hosted extensions"
+  },
+  "evidence": {
+    "S": "Prior source inspection",
+    "I": "Architectural feasibility inference, not implemented/tested",
+    "Prior T": "Earlier local test evidence unchanged"
+  },
+  "rows": [
+    {
+      "id": "R43",
+      "group": "Extension runtime",
+      "requirement": "Run a full extension application plus gateway adapter",
+      "original_requirement": null,
+      "responsibility": "Extension runtime + deployment",
+      "ccr": {
+        "status": "supported",
+        "evidence": "S/I",
+        "detail": "Trusted Node/JS setup can create listeners, databases, workers or companion processes, then register hooks. Outer service has backend registration and stop lifecycle. Other-language services can sit behind a JS adapter.",
+        "prior_status": null,
+        "basis": "Existing audited loader/runtime contract; service packaging not newly executed"
+      },
+      "cpa": {
+        "status": "supported",
+        "evidence": "S/I",
+        "detail": "Trusted native plugin initialization can run services/goroutines or communicate with a separately supervised application while registering capabilities. Native ABI adapter required; arbitrary JS projects are not directly loadable.",
+        "prior_status": null,
+        "basis": "Existing audited loader/runtime contract; service packaging not newly executed"
+      },
+      "bifrost": {
+        "status": "supported",
+        "evidence": "S/I",
+        "detail": "Trusted Go .so Init/Cleanup can run listeners/workers or connect to a supervised companion while exporting hooks. A language-independent service still needs a compatible Go plugin adapter or SDK host.",
+        "prior_status": null,
+        "basis": "Existing audited loader/runtime contract; service packaging not newly executed"
+      }
+    },
+    {
+      "id": "R01",
+      "group": "Broker",
+      "requirement": "Replace inbound authentication",
+      "ccr": {
+        "status": "integration",
+        "evidence": "Prior S/T",
+        "detail": "Core beforeAuth can reject; built-in auth/introspection remains a distinct layer.",
+        "prior_status": "partial",
+        "basis": "Prior audit S/T"
+      },
+      "cpa": {
+        "status": "supported",
+        "evidence": "Prior T",
+        "detail": "FrontendAuthProviderExclusive replaces ordinary request auth; management auth is separate.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "Prior S/T",
+        "detail": "HTTP pre-auth translates credentials or denies; stock governance remains authoritative.",
+        "prior_status": "partial",
+        "basis": "Prior audit S/T"
+      },
+      "original_requirement": "Replace inbound authentication",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R02",
+      "group": "Broker",
+      "requirement": "Choose account / upstream route",
+      "ccr": {
+        "status": "supported",
+        "evidence": "Prior T",
+        "detail": "routeResolvers can return dynamic provider configs and fallback lists.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "cpa": {
+        "status": "supported",
+        "evidence": "Prior S/T",
+        "detail": "Scheduler and ModelRouter over host-eligible candidates; not unrestricted retry ownership.",
+        "prior_status": "available",
+        "basis": "Prior audit S/T"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "Prior S/T",
+        "detail": "Plugin can pin eligible keys; full Account / KeySelector replacement requires SDK/custom host.",
+        "prior_status": "partial",
+        "basis": "Prior audit S/T"
+      },
+      "original_requirement": "Choose account / upstream route",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R03",
+      "group": "Broker",
+      "requirement": "Replace credentials / implement refresh",
+      "ccr": {
+        "status": "supported",
+        "evidence": "Prior T/S",
+        "detail": "ProviderPlugin.authenticate replaces upstream credentials; refresh service is plugin-owned.",
+        "prior_status": "available",
+        "basis": "Prior audit T/S"
+      },
+      "cpa": {
+        "status": "supported",
+        "evidence": "Prior S/T",
+        "detail": "AuthProvider parse/login/poll/refresh plus managed auth callbacks; live OAuth untested.",
+        "prior_status": "available",
+        "basis": "Prior audit S/T"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "Prior S",
+        "detail": "Custom Account in SDK; stock plugin loader does not register a general refresh provider.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Replace credentials / implement refresh",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R04",
+      "group": "Broker",
+      "requirement": "Own account catalog, labels and client ACLs",
+      "ccr": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own database/UI/ACL engine; apply committed eligibility via route and authenticate hooks.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own catalog/ACL engine is feasible. Reconcile host auth records and reapply eligibility on selections/fallbacks; host.auth.delete is absent.",
+        "prior_status": "partial",
+        "basis": "Prior audit S/T"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own catalog/UI is feasible. Integrate with built-in key/virtual-key policy or custom SDK Account; stock plugin cannot replace every account service.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Account CRUD / label / client ACL model",
+      "responsibility": "Extension + gateway selection"
+    },
+    {
+      "id": "R05",
+      "group": "Broker",
+      "requirement": "Serve public enrollment POST and private service auth",
+      "ccr": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own HTTP server handles POST /start, cookies and private-service authentication. No gateway route registrar is required. Publishing usable credentials is a separate integration requirement.",
+        "prior_status": "partial",
+        "basis": "Prior audit T/S"
+      },
+      "cpa": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own HTTP server handles POST /start, cookies and private-service authentication. No gateway route registrar is required. Publishing usable credentials is a separate integration requirement.",
+        "prior_status": "partial",
+        "basis": "Prior audit T/S"
+      },
+      "bifrost": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own HTTP server handles POST /start, cookies and private-service authentication. No gateway route registrar is required. Publishing usable credentials is a separate integration requirement.",
+        "prior_status": "partial",
+        "basis": "Prior audit S/T"
+      },
+      "original_requirement": "Public enrollment POST + private service auth",
+      "responsibility": "Extension"
+    },
+    {
+      "id": "R06",
+      "group": "Broker",
+      "requirement": "Run separate public enrollment listener/process",
+      "ccr": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own listener on another port or supervised companion process. A second port alone is not process/credential isolation; separate processes and stores can implement that boundary.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own listener on another port or supervised companion process. A second port alone is not process/credential isolation; separate processes and stores can implement that boundary.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own listener on another port or supervised companion process. A second port alone is not process/credential isolation; separate processes and stores can implement that boundary.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Isolated public enrollment listener",
+      "responsibility": "Extension + deployment"
+    },
+    {
+      "id": "R07",
+      "group": "Broker",
+      "requirement": "Commit activation, labels and notification outbox",
+      "ccr": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Keep authoritative activation, labels and outbox in one plugin database transaction; route/auth hooks read only committed eligible accounts. This architecture is feasible, not implemented/tested.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own activation/labels/outbox can be atomic. Host credential-file/runtime publication is a second system; use reconciliation plus authoritative eligibility checks, not an assumed cross-store transaction.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own activation/labels/outbox can be atomic. Stock key store/routing must honor that decision; use reconciled publication/eligibility or SDK Account wiring.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Atomic activation + labels + notification outbox",
+      "responsibility": "Extension + account publication"
+    },
+    {
+      "id": "R08",
+      "group": "Broker",
+      "requirement": "Quota snapshots / per-attempt outcomes",
+      "ccr": {
+        "status": "supported",
+        "evidence": "Prior S/T",
+        "detail": "Account connectors, provider hooks and billing/trace events; exact Broker policy is own work.",
+        "prior_status": "available",
+        "basis": "Prior audit S/T"
+      },
+      "cpa": {
+        "status": "supported",
+        "evidence": "Prior S/T",
+        "detail": "QuotaProvider and UsagePlugin include account/failure metadata.",
+        "prior_status": "available",
+        "basis": "Prior audit S/T"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "Prior S/T",
+        "detail": "Core key retries and trace spans; broker-specific quota refresh/store is own work.",
+        "prior_status": "partial",
+        "basis": "Prior audit S/T"
+      },
+      "original_requirement": "Quota snapshots / per-attempt outcomes",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R09",
+      "group": "Transforms & protocols",
+      "requirement": "Rewrite request / instructions / tool schemas",
+      "ccr": {
+        "status": "supported",
+        "evidence": "Prior T",
+        "detail": "Raw body + standard request transforms before routing/upstream.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "cpa": {
+        "status": "supported",
+        "evidence": "Prior T/S",
+        "detail": "Interceptors, body patchers and translators.",
+        "prior_status": "available",
+        "basis": "Prior audit T/S"
+      },
+      "bifrost": {
+        "status": "supported",
+        "evidence": "Prior S/T",
+        "detail": "PreRequest / PreLLM typed mutation and HTTP hooks.",
+        "prior_status": "available",
+        "basis": "Prior audit S/T"
+      },
+      "original_requirement": "Rewrite request / instructions / tool schemas",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R10",
+      "group": "Transforms & protocols",
+      "requirement": "Modify ordinary nonstream response",
+      "ccr": {
+        "status": "supported",
+        "evidence": "Prior T",
+        "detail": "Provider and final response hooks; virtual model final hook differs.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "cpa": {
+        "status": "supported",
+        "evidence": "Prior T",
+        "detail": "ResponseInterceptor and translation stages.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "bifrost": {
+        "status": "supported",
+        "evidence": "Prior S/T",
+        "detail": "PostLLM and HTTP transport post hooks.",
+        "prior_status": "available",
+        "basis": "Prior audit S/T"
+      },
+      "original_requirement": "Modify ordinary nonstream response",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R11",
+      "group": "Transforms & protocols",
+      "requirement": "Modify ordinary live stream",
+      "ccr": {
+        "status": "supported",
+        "evidence": "Prior T",
+        "detail": "streamHooks wrap upstream Response on ordinary paths.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "cpa": {
+        "status": "supported",
+        "evidence": "Prior T",
+        "detail": "StreamChunkInterceptor + host streaming callbacks; host adds terminal marker.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "bifrost": {
+        "status": "supported",
+        "evidence": "Prior T/S",
+        "detail": "Typed post hooks and transport chunk interceptor; drop/abort semantics tested.",
+        "prior_status": "available",
+        "basis": "Prior audit T/S"
+      },
+      "original_requirement": "Modify ordinary live stream",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R12",
+      "group": "Transforms & protocols",
+      "requirement": "Same output hooks cover hidden tool loops",
+      "ccr": {
+        "status": "gap",
+        "evidence": "Prior T",
+        "detail": "Virtual nonstream bypasses final response hook; optimistic virtual stream bypasses stream hook.",
+        "prior_status": "gap",
+        "basis": "Prior audit T"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "Prior S/T",
+        "detail": "Nested model calls skip caller interceptor; no generic host tool loop to cover.",
+        "prior_status": "partial",
+        "basis": "Prior audit S/T"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "Prior S",
+        "detail": "Nonstream continuations reenter core; no streaming agent loop. Coverage depends on role/path.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Same output hooks cover hidden tool loops",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R13",
+      "group": "Transforms & protocols",
+      "requirement": "Add new wire protocol through plugin",
+      "ccr": {
+        "status": "supported",
+        "evidence": "Prior S",
+        "detail": "sourceAdapters + targetAdapters; preservation must be implemented/tested by adapter.",
+        "prior_status": "available",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "Prior S",
+        "detail": "Custom translator formats/executors; new inbound HTTP endpoints require host/service work.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "Prior S",
+        "detail": "Custom provider based on existing wire formats; entirely new protocols require host integration.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Add new wire protocol through plugin",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R14",
+      "group": "Transforms & protocols",
+      "requirement": "Serve arbitrary HTTP endpoints and dashboard",
+      "ccr": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Trusted extension can bind its own HTTP server or call a companion in any language. Restrictions on the gateway-owned router do not block this. Same gateway port/prefix remains an optional integration.",
+        "prior_status": "available",
+        "basis": "Prior audit T/S"
+      },
+      "cpa": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Trusted extension can bind its own HTTP server or call a companion in any language. Restrictions on the gateway-owned router do not block this. Same gateway port/prefix remains an optional integration.",
+        "prior_status": "partial",
+        "basis": "Prior audit T"
+      },
+      "bifrost": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Trusted extension can bind its own HTTP server or call a companion in any language. Restrictions on the gateway-owned router do not block this. Same gateway port/prefix remains an optional integration.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Register arbitrary HTTP method/path",
+      "responsibility": "Extension"
+    },
+    {
+      "id": "R15",
+      "group": "Transforms & protocols",
+      "requirement": "Own WebSocket service / modify gateway WebSockets",
+      "ccr": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own WebSocket listener is feasible. Interception of the gateway existing Responses/MCP sockets remains unverified; a new port does not create those hooks.",
+        "prior_status": "unverified",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own WebSocket service is feasible; stock upstream observer is not a generic bidirectional mutation/upgrade API.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own WebSocket service is feasible; modifying built-in realtime connections still depends on their hook coverage.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Generic bidirectional WebSocket extension",
+      "responsibility": "Extension + transport integration"
+    },
+    {
+      "id": "R16",
+      "group": "Context & tools",
+      "requirement": "Own durable storage and tenant scoping",
+      "ccr": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Use own SQLite/Postgres/files, migrations, tenant namespaces and credentials. A host database API is optional. No new restart or isolation validation was performed.",
+        "prior_status": "partial",
+        "basis": "Prior audit S/T"
+      },
+      "cpa": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Use own SQLite/Postgres/files, migrations, tenant namespaces and credentials. A host database API is optional. No new restart or isolation validation was performed.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Use own SQLite/Postgres/files, migrations, tenant namespaces and credentials. A host database API is optional. No new restart or isolation validation was performed.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Scoped durable storage for extension",
+      "responsibility": "Extension"
+    },
+    {
+      "id": "R17",
+      "group": "Context & tools",
+      "requirement": "Archive successfully before returning reduced context",
+      "ccr": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "One extension awaits its durable archive commit before returning a reduced request. On failure return unchanged history or explicit denial. Hooks provide the basic mechanism; do not reduce in an earlier independent hook.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "One extension awaits its durable archive commit before returning a reduced request. On failure return unchanged history or explicit denial. Hooks provide the basic mechanism; do not reduce in an earlier independent hook.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "One extension awaits its durable archive commit before returning a reduced request. On failure return unchanged history or explicit denial. Hooks provide the basic mechanism; do not reduce in an earlier independent hook.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Archive-before-removal transaction",
+      "responsibility": "Extension + awaited request hook"
+    },
+    {
+      "id": "R18",
+      "group": "Context & tools",
+      "requirement": "Own context revisions, locks and concurrent state",
+      "ccr": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Implement revisions/CAS, per-session locks, leases and restart recovery in own state service. Require reliable caller/session identifiers from traffic; the host need not implement a context database.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Implement revisions/CAS, per-session locks, leases and restart recovery in own state service. Require reliable caller/session identifiers from traffic; the host need not implement a context database.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Implement revisions/CAS, per-session locks, leases and restart recovery in own state service. Require reliable caller/session identifiers from traffic; the host need not implement a context database.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Context revisions + concurrent session ownership",
+      "responsibility": "Extension"
+    },
+    {
+      "id": "R19",
+      "group": "Context & tools",
+      "requirement": "Reconcile private continuations with client replay",
+      "ccr": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own replay database/transform is feasible. Built-in virtual loop does not expose complete private replay automatically; record via controlled tool path or own orchestrator. Existing hidden-result replay failure still applies to default loop.",
+        "prior_status": "gap",
+        "basis": "Prior audit T"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own orchestrator can record continuations and reapply them via request hooks/host.model.execute. No supplied complete implementation or end-to-end replay proof.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own replay database is feasible. Must capture tool/continuation events before lossy built-in mixed summaries or own the orchestration path; exact coverage needs verification.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Restore private continuation on client replay",
+      "responsibility": "Extension + visibility/control"
+    },
+    {
+      "id": "R20",
+      "group": "Context & tools",
+      "requirement": "Compaction with provider-held / signed state",
+      "ccr": {
+        "status": "unknown",
+        "evidence": "Prior S",
+        "detail": "Built-in client compaction code exists; full opaque/state preservation not tested.",
+        "prior_status": "unverified",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "unknown",
+        "evidence": "Prior S",
+        "detail": "Translations exist; proposed compactor must resolve provider-held state explicitly.",
+        "prior_status": "unverified",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "unknown",
+        "evidence": "Prior S",
+        "detail": "Provider compaction exists; extension rewrite/state fidelity not established.",
+        "prior_status": "unverified",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Compaction with provider-held / signed state",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R21",
+      "group": "Context & tools",
+      "requirement": "Provide executable internal tools",
+      "ccr": {
+        "status": "supported",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Extension can run its own MCP tool server and use virtual profiles. Trusted request/session context still needs integration.",
+        "prior_status": "partial",
+        "basis": "Prior audit T/S"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own tool dispatcher inside custom executor/orchestrator; host.model.execute and streams provide model-call primitives. Generic host tool registration is not required if extension owns loop.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "supported",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Extension can run an operator-configured MCP server; SDK also offers RegisterMCPTool. Stock dynamic plugin is not automatically given that SDK instance.",
+        "prior_status": "partial",
+        "basis": "Prior audit S/T"
+      },
+      "original_requirement": "Register executable gateway tool",
+      "responsibility": "Extension + execution integration"
+    },
+    {
+      "id": "R22",
+      "group": "Context & tools",
+      "requirement": "Implement nonstream model/tool continuation",
+      "ccr": {
+        "status": "supported",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Existing virtual/transparent tool loops can be reused; own orchestration remains possible through plugin HTTP/provider integration.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own loop can use tested nested host.model.execute calls. Must implement tool ownership, IDs, budgets and replay; lack of built-in loop is no longer a categorical blocker.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "supported",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Built-in nonstream MCP agent mode supplies continuation. An independent loop can instead call inference API, with explicit identity/recursion/accounting handling.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "original_requirement": "Host-owned nonstream tool continuation",
+      "responsibility": "Extension or optional host loop"
+    },
+    {
+      "id": "R23",
+      "group": "Context & tools",
+      "requirement": "Implement streaming model/tool continuation",
+      "ccr": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Existing optimistic loop works but has hook/identity/replay gaps. Own orchestrator can replace that path; exact integration must be demonstrated.",
+        "prior_status": "partial",
+        "basis": "Prior audit T"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Custom executor plus host model stream open/read/close and emit callbacks are usable building blocks for own streaming loop. Complete protocol/terminal control remains unproven.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Built-in Agent Mode remains nonstreaming. Own service can call streaming inference endpoints and own client output, or use a custom host; not an automatically composable stock hook.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Host-owned streaming tool continuation",
+      "responsibility": "Extension + stream ownership"
+    },
+    {
+      "id": "R24",
+      "group": "Context & tools",
+      "requirement": "Preserve mixed client/internal calls and IDs",
+      "ccr": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own coordinator can implement this; reusing the default virtual loop retains its tested skip/fold limitations.",
+        "prior_status": "partial",
+        "basis": "Prior audit T"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own coordinator handles internal tools, yields client calls, persists pairing and resumes. Public execution bridges help; full mixed-stream/replay behavior not tested.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own coordinator can avoid name-keyed summaries. Default mixed agent path still loses repeated same-name results; hooking after loss cannot recover them.",
+        "prior_status": "partial",
+        "basis": "Prior audit T"
+      },
+      "original_requirement": "Lossless mixed client / gateway handoff",
+      "responsibility": "Extension + stream/tool ownership"
+    },
+    {
+      "id": "R25",
+      "group": "Context & tools",
+      "requirement": "Bind trusted caller/session to tool execution",
+      "ccr": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own service can issue trusted scoped invocation handles and store identity. Built-in virtual MCP path lacks trusted per-request session propagation; another port alone does not fix this.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own orchestrator can bind frontend principal/CallerScope and an explicit conversation ID to tool calls. Derived session IDs are not authoritative identity.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own service can bind request identity; local tool callback args-only and MCP identity propagation still require a deliberate integration.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Trusted tenant/session context in tool execution",
+      "responsibility": "Extension + request identity"
+    },
+    {
+      "id": "R26",
+      "group": "Context & tools",
+      "requirement": "Cancellation through every internal tool",
+      "ccr": {
+        "status": "integration",
+        "evidence": "Prior S",
+        "detail": "Transport abort exists; virtual tool call does not receive client abort signal.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "Prior T/S",
+        "detail": "Host callbacks cancel; arbitrary native execution continues until it cooperates.",
+        "prior_status": "partial",
+        "basis": "Prior audit T/S"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "Prior T",
+        "detail": "Canceled loop still dispatches mock callbacks; downstream must enforce; local tool callback lacks context.",
+        "prior_status": "partial",
+        "basis": "Prior audit T"
+      },
+      "original_requirement": "Cancellation through every internal tool",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R27",
+      "group": "Context & tools",
+      "requirement": "Bound tool turns, spend and parallel work",
+      "ccr": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own loop/worker pool can enforce budgets and semaphores; built-in virtual loop already has turn/call limits. Cancellation boundary remains R26.",
+        "prior_status": "partial",
+        "basis": "Prior audit S/T"
+      },
+      "cpa": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own orchestration enforces rounds, spend, queue limits and concurrency. Lack of a host continuation budget is not a blocker under this model; native cancellation remains R26.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own loop/MCP service can bound admission. Reusing built-in agent fan-out does not automatically inherit those limits; avoid or wrap that path. R26 covers cancellation.",
+        "prior_status": "partial",
+        "basis": "Prior audit T/S"
+      },
+      "original_requirement": "Bounded tool turns + parallel execution",
+      "responsibility": "Extension + cancellation integration"
+    },
+    {
+      "id": "R28",
+      "group": "Telemetry",
+      "requirement": "Independent request/response/usage extension",
+      "ccr": {
+        "status": "supported",
+        "evidence": "Prior T/S",
+        "detail": "Transforms plus billing publishers/outboxes; virtual stream hooks need separate coverage.",
+        "prior_status": "available",
+        "basis": "Prior audit T/S"
+      },
+      "cpa": {
+        "status": "supported",
+        "evidence": "Prior T",
+        "detail": "UsagePlugin separate from mutators; raw transcript visibility depends on chain order.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "bifrost": {
+        "status": "supported",
+        "evidence": "Prior S/T",
+        "detail": "HTTP/LLM hooks and independent ObservabilityPlugin.Inject traces.",
+        "prior_status": "available",
+        "basis": "Prior audit S/T"
+      },
+      "original_requirement": "Independent request/response/usage extension",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R29",
+      "group": "Telemetry",
+      "requirement": "Actual usage retained before presentation edits",
+      "ccr": {
+        "status": "integration",
+        "evidence": "Prior T/S",
+        "detail": "18 real vs 1998 displayed verified; billing event hooks may mutate/drop before sinks.",
+        "prior_status": "partial",
+        "basis": "Prior audit T/S"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "Prior T/S",
+        "detail": "10 real vs 1998 displayed verified on OpenAI-compatible route; not all translators.",
+        "prior_status": "partial",
+        "basis": "Prior audit T/S"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "Prior S/T",
+        "detail": "Core traces capture usage before ordinary post hooks; full independent ledger not validated.",
+        "prior_status": "partial",
+        "basis": "Prior audit S/T"
+      },
+      "original_requirement": "Actual usage retained before presentation edits",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R30",
+      "group": "Telemetry",
+      "requirement": "Account for internal model calls / attempts",
+      "ccr": {
+        "status": "integration",
+        "evidence": "Prior T/S",
+        "detail": "Two-call loop aggregates 36; all failed-provider cases not tested.",
+        "prior_status": "partial",
+        "basis": "Prior audit T/S"
+      },
+      "cpa": {
+        "status": "supported",
+        "evidence": "Prior T",
+        "detail": "Nested host.model.execute + 429 failover each emit usage; generic host.http does not.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "bifrost": {
+        "status": "supported",
+        "evidence": "Prior T/S",
+        "detail": "Continuation usage and per-attempt traces tested; avoid double-counting aggregated result.",
+        "prior_status": "available",
+        "basis": "Prior audit T/S"
+      },
+      "original_requirement": "Account for internal model calls / attempts",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R31",
+      "group": "Telemetry",
+      "requirement": "Reliable lifecycle / attempt correlation",
+      "ccr": {
+        "status": "integration",
+        "evidence": "Prior S",
+        "detail": "Request/attempt fields exist; comprehensive cross-path joining not tested.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "Prior T",
+        "detail": "Lifecycle and usage RequestID differ; shared TraceID cannot uniquely join nested attempts.",
+        "prior_status": "partial",
+        "basis": "Prior audit T"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "Prior S/T",
+        "detail": "Trace hierarchy and agent IDs exist; pooled objects require ownership/copy discipline.",
+        "prior_status": "partial",
+        "basis": "Prior audit S/T"
+      },
+      "original_requirement": "Reliable lifecycle / attempt correlation",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R32",
+      "group": "Telemetry",
+      "requirement": "Distinguish missing usage from measured zero",
+      "ccr": {
+        "status": "unknown",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own observer can preserve a presence flag if it sees the original usage payload. Coverage of every relevant path was not established.",
+        "prior_status": "unverified",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Normalized UsagePlugin record erases absence as zero. An extension can track presence from an earlier raw response/executor path and correlate it; a database reading only UsagePlugin cannot recover it.",
+        "prior_status": "gap",
+        "basis": "Prior audit T"
+      },
+      "bifrost": {
+        "status": "unknown",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own observer can track usage presence when original data is exposed; all provider/trace paths were not established.",
+        "prior_status": "unverified",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Missing usage distinct from measured zero",
+      "responsibility": "Extension + original-payload visibility"
+    },
+    {
+      "id": "R33",
+      "group": "Telemetry",
+      "requirement": "Persist telemetry after capture / avoid pre-capture loss",
+      "ccr": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own outbox/exporter can durably store received events. Gateway event transforms and hook coverage still determine what reaches it.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own database/queue is feasible. Host in-memory usage queue and sequential dispatch remain before the sink; durability after callback cannot prevent pre-callback crash loss.",
+        "prior_status": "gap",
+        "basis": "Prior audit S/T"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own collector/outbox is feasible. Inject drops under saturation before callback; choose an earlier capture path or change delivery requirements for lossless audit.",
+        "prior_status": "partial",
+        "basis": "Prior audit T/S"
+      },
+      "original_requirement": "Durable export / bounded observer delivery",
+      "responsibility": "Extension + host event delivery"
+    },
+    {
+      "id": "R34",
+      "group": "Operations",
+      "requirement": "Explicit policy denial before upstream",
+      "ccr": {
+        "status": "supported",
+        "evidence": "Prior T",
+        "detail": "Core beforeAuth/other hooks can reject; outer transform errors alone do not.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "cpa": {
+        "status": "supported",
+        "evidence": "Prior T",
+        "detail": "Successful Terminate or explicit auth denial blocks upstream.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "bifrost": {
+        "status": "supported",
+        "evidence": "Prior T",
+        "detail": "LLM short-circuit error and HTTP denial; disable fallbacks for mandatory denial.",
+        "prior_status": "available",
+        "basis": "Prior audit T"
+      },
+      "original_requirement": "Explicit policy denial before upstream",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R35",
+      "group": "Operations",
+      "requirement": "Fail-closed mandatory policy on unexpected error",
+      "ccr": {
+        "status": "integration",
+        "evidence": "Prior T/S",
+        "detail": "Core defaults fail_closed; outer transforms fail open and startup can skip failed plugin.",
+        "prior_status": "partial",
+        "basis": "Prior audit T/S"
+      },
+      "cpa": {
+        "status": "gap",
+        "evidence": "Prior T/S",
+        "detail": "Interceptor errors fail open; scheduler semantics differ; no global required-role override.",
+        "prior_status": "gap",
+        "basis": "Prior audit T/S"
+      },
+      "bifrost": {
+        "status": "gap",
+        "evidence": "Prior T/S",
+        "detail": "LLM errors fail open; HTTP errors differ; no generic mandatory-role guarantee.",
+        "prior_status": "gap",
+        "basis": "Prior audit T/S"
+      },
+      "original_requirement": "Fail-closed mandatory policy on unexpected error",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R36",
+      "group": "Operations",
+      "requirement": "Bound extension-owned workers / host hook execution",
+      "ccr": {
+        "status": "supported",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own service limits plus existing core per-hook timeout/concurrency/queue policy. Neither forcibly stops unrestricted JS.",
+        "prior_status": "available",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own admission controls/worker pools are feasible. Generic host guarded calls still create work and cannot forcibly stop native callbacks; host-wide isolation is separate.",
+        "prior_status": "gap",
+        "basis": "Prior audit T/S"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own service limits are feasible; host provider/exporter bounds exist. Generic synchronous hooks and built-in tool dispatch still have their own limits/behavior.",
+        "prior_status": "partial",
+        "basis": "Prior audit S/T"
+      },
+      "original_requirement": "Per-hook deadline / queue / concurrency policy",
+      "responsibility": "Extension + gateway runtime"
+    },
+    {
+      "id": "R37",
+      "group": "Operations",
+      "requirement": "Deterministic extension order",
+      "ccr": {
+        "status": "supported",
+        "evidence": "Prior S",
+        "detail": "Named stages and registration order; no dependency DAG established.",
+        "prior_status": "available",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "supported",
+        "evidence": "Prior S",
+        "detail": "Priority descending then ID; single chosen scheduler with defined fallback rules.",
+        "prior_status": "available",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "supported",
+        "evidence": "Prior S/T",
+        "detail": "Pre hooks forward / post reverse; before/builtin/after placement + order.",
+        "prior_status": "available",
+        "basis": "Prior audit S/T"
+      },
+      "original_requirement": "Deterministic extension order",
+      "responsibility": "Gateway integration"
+    },
+    {
+      "id": "R38",
+      "group": "Operations",
+      "requirement": "Coordinate cooperating extensions / compactor choice",
+      "ccr": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "One coordinator can own ordering, dependencies and exclusive compactor selection; operator disables competing paths. No host DAG needed. Independently loaded unaware plugins do not gain automatic arbitration.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "One coordinator can own ordering, dependencies and exclusive compactor selection; operator disables competing paths. No host DAG needed. Independently loaded unaware plugins do not gain automatic arbitration.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "One coordinator can own ordering, dependencies and exclusive compactor selection; operator disables competing paths. No host DAG needed. Independently loaded unaware plugins do not gain automatic arbitration.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Dependencies / exclusive compactor arbitration",
+      "responsibility": "Extension coordinator + operator"
+    },
+    {
+      "id": "R39",
+      "group": "Operations",
+      "requirement": "Keep configuration stable for active work",
+      "ccr": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own immutable request config and disable/drain hot reload. If live replacement of gateway hook registries is required, whole-request snapshot remains unverified.",
+        "prior_status": "unverified",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own config snapshots plus disable/drain reload. Host obtains active sets per hook; one extension cannot make other plugins atomically snapshot.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "integration",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Own config snapshots plus disable/drain reload. Atomic host-wide live swap for an entire request remains unverified.",
+        "prior_status": "unverified",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Stable plugin snapshot for whole request",
+      "responsibility": "Extension + reload policy"
+    },
+    {
+      "id": "R40",
+      "group": "Operations",
+      "requirement": "Own background jobs and lifecycle",
+      "ccr": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Run own jobs/queues, retry/outbox workers and health server; stop via plugin cleanup or supervise companion independently. Host job API is optional. Child-process supervision is not automatically supplied.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Run own jobs/queues, retry/outbox workers and health server; stop via plugin cleanup or supervise companion independently. Host job API is optional. Child-process supervision is not automatically supplied.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "owned",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Run own jobs/queues, retry/outbox workers and health server; stop via plugin cleanup or supervise companion independently. Host job API is optional. Child-process supervision is not automatically supplied.",
+        "prior_status": "partial",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Host job service available to ordinary plugin",
+      "responsibility": "Extension + deployment"
+    },
+    {
+      "id": "R41",
+      "group": "Operations",
+      "requirement": "Sandbox untrusted extension code",
+      "ccr": {
+        "status": "optional",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Trusted JS can use OS APIs; a host sandbox is not required by this model. Use process/container permissions if independent service isolation is desired.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "cpa": {
+        "status": "optional",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Native C ABI executes trusted code; no host sandbox required here. Companion can use OS/container isolation, which does not sandbox the in-process bridge.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "bifrost": {
+        "status": "optional",
+        "evidence": "S/I; prior evidence linked",
+        "detail": "Native Go plugin executes trusted code; no host sandbox required here. A separate service can be isolated, but its in-process adapter remains trusted.",
+        "prior_status": "gap",
+        "basis": "Prior audit S"
+      },
+      "original_requirement": "Enforced secret / OS sandbox per extension",
+      "responsibility": "Optional; outside trusted-extension model"
+    },
+    {
+      "id": "R42",
+      "group": "Operations",
+      "requirement": "Short-circuit cache / local response",
+      "ccr": {
+        "status": "supported",
+        "evidence": "Prior S/T",
+        "detail": "Plugin HTTP routes and policy response handling can answer locally; full cache policy is own work.",
+        "prior_status": "available",
+        "basis": "Prior audit S/T"
+      },
+      "cpa": {
+        "status": "supported",
+        "evidence": "Prior T/S",
+        "detail": "Request termination/custom executor can synthesize response; semantic cache is own work.",
+        "prior_status": "available",
+        "basis": "Prior audit T/S"
+      },
+      "bifrost": {
+        "status": "supported",
+        "evidence": "Prior T/S",
+        "detail": "LLM/HTTP short circuits; built-in cache plugins demonstrate use.",
+        "prior_status": "available",
+        "basis": "Prior audit T/S"
+      },
+      "original_requirement": "Short-circuit cache / local response",
+      "responsibility": "Gateway integration"
+    }
+  ]
+}

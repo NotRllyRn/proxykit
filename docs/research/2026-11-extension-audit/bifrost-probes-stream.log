@@ -1,0 +1,16 @@
+=== RUN   TestProxyKitAuditChunkSemantics
+=== RUN   TestProxyKitAuditChunkSemantics/pass
+    config_test.go:27193: mode=pass chunk-present=true error=<nil> order=[last first]
+=== RUN   TestProxyKitAuditChunkSemantics/skip
+    config_test.go:27193: mode=skip chunk-present=false error=<nil> order=[last]
+=== RUN   TestProxyKitAuditChunkSemantics/error-with-chunk
+    config_test.go:27193: mode=error-with-chunk chunk-present=true error=failed to intercept chunk with plugin last: policy unavailable order=[last]
+=== RUN   TestProxyKitAuditChunkSemantics/abort
+    config_test.go:27193: mode=abort chunk-present=false error=failed to intercept chunk with plugin last: policy denied order=[last]
+--- PASS: TestProxyKitAuditChunkSemantics (0.00s)
+    --- PASS: TestProxyKitAuditChunkSemantics/pass (0.00s)
+    --- PASS: TestProxyKitAuditChunkSemantics/skip (0.00s)
+    --- PASS: TestProxyKitAuditChunkSemantics/error-with-chunk (0.00s)
+    --- PASS: TestProxyKitAuditChunkSemantics/abort (0.00s)
+PASS
+ok  	github.com/maximhq/bifrost/transports/v2/bifrost-http/lib	0.136s

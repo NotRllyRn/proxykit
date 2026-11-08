@@ -1,0 +1,82 @@
+{
+  "project": "maximhq/bifrost",
+  "commit": "6e640279b36337820f2088fb85f6e78f339063c3",
+  "toolchain": "go version go1.27.3 linux/amd64",
+  "logs": [
+    {
+      "file": "bifrost-mcp-tests.log",
+      "sha256": "53859481323f4dc382bf9444bc88f939b2f7e12a3ecb911c3531bb5aa37beb03",
+      "top_level_pass_count": 0,
+      "package_results": [
+        "ok  \tgithub.com/maximhq/bifrost/core/mcp\t0.155s"
+      ],
+      "has_fail": false
+    },
+    {
+      "file": "bifrost-mcp-expanded.log",
+      "sha256": "80da1e27eefeaa122705856e99abf85d194de664b4c962f931e8e38cd05b2e8b",
+      "top_level_pass_count": 17,
+      "package_results": [
+        "ok  \tgithub.com/maximhq/bifrost/core/mcp\t0.178s"
+      ],
+      "has_fail": false
+    },
+    {
+      "file": "bifrost-probes-mcp.log",
+      "sha256": "07ebd572379ca270fdf2769d200f3e94e0c00d068263a584b97053619976bf6b",
+      "top_level_pass_count": 6,
+      "package_results": [
+        "ok  \tgithub.com/maximhq/bifrost/core/mcp\t0.200s"
+      ],
+      "has_fail": false
+    },
+    {
+      "file": "bifrost-probes-core.log",
+      "sha256": "93ae6320a7bfdbe54416adc4ac5e9f70d4fb542ac8759318abbefad20cccf81f",
+      "top_level_pass_count": 2,
+      "package_results": [
+        "ok  \tgithub.com/maximhq/bifrost/core\t0.397s"
+      ],
+      "has_fail": false
+    },
+    {
+      "file": "bifrost-scenarios.log",
+      "sha256": "1dc3fee90cbcd76b110f3d0dbffdc24ccbe7ce32aebc197a36d0b0a658a80b0f",
+      "top_level_pass_count": 5,
+      "package_results": [
+        "ok  \tgithub.com/maximhq/bifrost/core\t6.982s"
+      ],
+      "has_fail": false
+    },
+    {
+      "file": "bifrost-transport-local.log",
+      "sha256": "b857b3e172279a90d7e47950b86b02fae7a360ed5eda8ad711abeeec2150bf3b",
+      "top_level_pass_count": 20,
+      "package_results": [
+        "ok  \tgithub.com/maximhq/bifrost/transports/v2/bifrost-http/handlers\t0.291s",
+        "ok  \tgithub.com/maximhq/bifrost/transports/v2/bifrost-http/lib\t0.215s"
+      ],
+      "has_fail": false
+    },
+    {
+      "file": "bifrost-observability.log",
+      "sha256": "f808f2b423975f526ccc91f9c77e6a5ff64760530bd90d9987e423cfbe89953b",
+      "top_level_pass_count": 3,
+      "package_results": [
+        "ok  \tgithub.com/maximhq/bifrost/framework/tracing\t0.568s"
+      ],
+      "has_fail": false
+    },
+    {
+      "file": "bifrost-probes-stream.log",
+      "sha256": "680ba76b368ad60b103748c2cb553768bad2e5652801dd6b63654568cb76b237",
+      "top_level_pass_count": 1,
+      "package_results": [
+        "ok  \tgithub.com/maximhq/bifrost/transports/v2/bifrost-http/lib\t0.136s"
+      ],
+      "has_fail": false
+    }
+  ],
+  "probe_patch_sha256": "653aeda1cf40519407c49c9df5184ce53e230e6889364cd7ccb1c05c76e325ec",
+  "scope": "local synthetic callbacks and loopback HTTP provider mocks only; no live credentials/providers"
+}

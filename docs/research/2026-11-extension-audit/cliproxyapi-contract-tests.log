@@ -1,0 +1,134 @@
+=== RUN   TestAuditRequiredInterceptorErrorDoesNotBlockOrRollbackSibling
+time="2026-11-07T21:16:04Z" level=warning msg="pluginhost: request interceptor policy failed: archive unavailable"
+    audit_contract_test.go:31: policy error ignored; sibling compaction retained; downstream observer sees modified body
+--- PASS: TestAuditRequiredInterceptorErrorDoesNotBlockOrRollbackSibling (0.00s)
+=== RUN   TestAuditCancellationReturnsWhileNativeWorkRemainsAndConcurrentCallsEnter
+    audit_contract_test.go:82: 24 concurrent inner calls admitted; cancellation returned to every caller while inner work remained blocked
+--- PASS: TestAuditCancellationReturnsWhileNativeWorkRemainsAndConcurrentCallsEnter (0.01s)
+=== RUN   TestHostAuthListCallbackUsesAuthManager
+--- PASS: TestHostAuthListCallbackUsesAuthManager (0.01s)
+=== RUN   TestHostAuthGetCallbackReturnsPhysicalJSONByAuthIndex
+--- PASS: TestHostAuthGetCallbackReturnsPhysicalJSONByAuthIndex (0.00s)
+=== RUN   TestHostAuthListCallbackFallsBackToDisk
+--- PASS: TestHostAuthListCallbackFallsBackToDisk (0.00s)
+=== RUN   TestHostAuthGetRuntimeCallbackReturnsRuntimeInfo
+--- PASS: TestHostAuthGetRuntimeCallbackReturnsRuntimeInfo (0.00s)
+=== RUN   TestHostAuthGetRuntimeCallbackReturnsBaseURL
+--- PASS: TestHostAuthGetRuntimeCallbackReturnsBaseURL (0.01s)
+=== RUN   TestHostAuthSaveCallbackRejectsInvalidWeightBeforePersistence
+=== RUN   TestHostAuthSaveCallbackRejectsInvalidWeightBeforePersistence/1.5
+=== RUN   TestHostAuthSaveCallbackRejectsInvalidWeightBeforePersistence/1000001
+=== RUN   TestHostAuthSaveCallbackRejectsInvalidWeightBeforePersistence/9223372036854775808
+=== RUN   TestHostAuthSaveCallbackRejectsInvalidWeightBeforePersistence/"invalid"
+--- PASS: TestHostAuthSaveCallbackRejectsInvalidWeightBeforePersistence (0.01s)
+    --- PASS: TestHostAuthSaveCallbackRejectsInvalidWeightBeforePersistence/1.5 (0.00s)
+    --- PASS: TestHostAuthSaveCallbackRejectsInvalidWeightBeforePersistence/1000001 (0.01s)
+    --- PASS: TestHostAuthSaveCallbackRejectsInvalidWeightBeforePersistence/9223372036854775808 (0.00s)
+    --- PASS: TestHostAuthSaveCallbackRejectsInvalidWeightBeforePersistence/"invalid" (0.00s)
+=== RUN   TestHostAuthSaveCallbackWritesPhysicalFile
+--- PASS: TestHostAuthSaveCallbackWritesPhysicalFile (0.00s)
+=== RUN   TestHostAuthSaveCallbackPreservesDisabledState
+--- PASS: TestHostAuthSaveCallbackPreservesDisabledState (0.01s)
+=== RUN   TestHostAuthSaveCallbackDoesNotDuplicatePluginAuthWithNonJSONID
+--- PASS: TestHostAuthSaveCallbackDoesNotDuplicatePluginAuthWithNonJSONID (0.00s)
+=== RUN   TestHostAuthSaveCallbackReusesExistingSameFileAuthIDWithoutAuthProvider
+--- PASS: TestHostAuthSaveCallbackReusesExistingSameFileAuthIDWithoutAuthProvider (0.00s)
+=== RUN   TestHostAuthSaveCallbackPreservesPluginDisabledChildWhenFileDisabledFalse
+--- PASS: TestHostAuthSaveCallbackPreservesPluginDisabledChildWhenFileDisabledFalse (0.00s)
+=== RUN   TestHostAuthSaveCallbackUnregistersModelsForRemovedStaleSameFileAuth
+--- PASS: TestHostAuthSaveCallbackUnregistersModelsForRemovedStaleSameFileAuth (0.00s)
+=== RUN   TestHostAuthSaveRelativeAuthDirPreservesIdentity
+=== RUN   TestHostAuthSaveRelativeAuthDirPreservesIdentity/absolute
+=== RUN   TestHostAuthSaveRelativeAuthDirPreservesIdentity/relative
+--- PASS: TestHostAuthSaveRelativeAuthDirPreservesIdentity (0.01s)
+    --- PASS: TestHostAuthSaveRelativeAuthDirPreservesIdentity/absolute (0.00s)
+    --- PASS: TestHostAuthSaveRelativeAuthDirPreservesIdentity/relative (0.00s)
+=== RUN   TestHostAuthModelsCallbackReturnsAllCredentialsIncludingConfigBacked
+time="2026-11-07T21:16:04Z" level=info msg="pluginhost: plugin loaded" path=/tmp/TestHostAuthModelsCallbackReturnsAllCredentialsIncludingConfigBa1241739923/002/linux/amd64/catalog-filter.so plugin_id=catalog-filter
+time="2026-11-07T21:16:04Z" level=info msg="pluginhost: plugin registered" path=/tmp/TestHostAuthModelsCallbackReturnsAllCredentialsIncludingConfigBa1241739923/002/linux/amd64/catalog-filter.so plugin_id=catalog-filter plugin_name=catalog-filter version=1.0.0
+--- PASS: TestHostAuthModelsCallbackReturnsAllCredentialsIncludingConfigBacked (0.01s)
+=== RUN   TestHostAuthModelsCallbackValidationAndEmptyManager
+--- PASS: TestHostAuthModelsCallbackValidationAndEmptyManager (0.00s)
+=== RUN   TestHostAuthDataToCoreAuthRejectsMissingProviderAndUsesAuthDir
+--- PASS: TestHostAuthDataToCoreAuthRejectsMissingProviderAndUsesAuthDir (0.00s)
+=== RUN   TestHostHTTPCallbacksCanBeCanceledBeforeResponse
+=== RUN   TestHostHTTPCallbacksCanBeCanceledBeforeResponse/do
+=== RUN   TestHostHTTPCallbacksCanBeCanceledBeforeResponse/do_stream
+--- PASS: TestHostHTTPCallbacksCanBeCanceledBeforeResponse (0.02s)
+    --- PASS: TestHostHTTPCallbacksCanBeCanceledBeforeResponse/do (0.01s)
+    --- PASS: TestHostHTTPCallbacksCanBeCanceledBeforeResponse/do_stream (0.00s)
+=== RUN   TestHostHTTPDoWithoutOperationIDIsCanceledWithPluginInstance
+--- PASS: TestHostHTTPDoWithoutOperationIDIsCanceledWithPluginInstance (0.00s)
+=== RUN   TestHostHTTPDoCanBeCanceledWhileReadingBody
+--- PASS: TestHostHTTPDoCanBeCanceledWhileReadingBody (0.00s)
+=== RUN   TestHostHTTPCancelBeforeDoPreventsRequest
+--- PASS: TestHostHTTPCancelBeforeDoPreventsRequest (0.00s)
+=== RUN   TestHostHTTPStreamOperationCanBeCanceledAfterHeaders
+--- PASS: TestHostHTTPStreamOperationCanBeCanceledAfterHeaders (0.00s)
+=== RUN   TestHostModelExecuteRejectsInvalidProxyURL
+--- PASS: TestHostModelExecuteRejectsInvalidProxyURL (0.00s)
+=== RUN   TestHostModelExecuteForwardsProxyURL
+--- PASS: TestHostModelExecuteForwardsProxyURL (0.00s)
+=== RUN   TestHostModelExecuteCallback
+--- PASS: TestHostModelExecuteCallback (0.00s)
+=== RUN   TestHostModelExecuteCallbacksForwardCallerScope
+--- PASS: TestHostModelExecuteCallbacksForwardCallerScope (0.00s)
+=== RUN   TestHostModelExecuteCallbackCarriesCallerPluginSkipID
+--- PASS: TestHostModelExecuteCallbackCarriesCallerPluginSkipID (0.00s)
+=== RUN   TestHostModelExecuteStreamStartupErrorCleansUp
+--- PASS: TestHostModelExecuteStreamStartupErrorCleansUp (0.00s)
+=== RUN   TestHostModelExecutePropagatesForcedProviderAndAuthID
+--- PASS: TestHostModelExecutePropagatesForcedProviderAndAuthID (0.00s)
+=== RUN   TestHostModelExecuteStreamPropagatesForcedProviderAndAuthID
+--- PASS: TestHostModelExecuteStreamPropagatesForcedProviderAndAuthID (0.00s)
+=== RUN   TestHostModelExecuteCallbackPreservesHTTPStatusOnError
+--- PASS: TestHostModelExecuteCallbackPreservesHTTPStatusOnError (0.00s)
+=== RUN   TestHostModelExecuteStreamDetachesFromCallbackParentCancel
+--- PASS: TestHostModelExecuteStreamDetachesFromCallbackParentCancel (0.00s)
+=== RUN   TestHostHTTPClientWireProfile_CONNECTCancellationClosesConnection
+=== PAUSE TestHostHTTPClientWireProfile_CONNECTCancellationClosesConnection
+=== RUN   TestHostHTTPOperationParentCancellationCleansUp
+--- PASS: TestHostHTTPOperationParentCancellationCleansUp (0.00s)
+=== RUN   TestHostHTTPOperationCancelIsPluginScoped
+--- PASS: TestHostHTTPOperationCancelIsPluginScoped (0.00s)
+=== RUN   TestCompleteRequestUsesUncancelledContextAndClonesMetadata
+--- PASS: TestCompleteRequestUsesUncancelledContextAndClonesMetadata (0.00s)
+=== RUN   TestCompleteRequestDoesNotWaitForBlockingPlugin
+--- PASS: TestCompleteRequestDoesNotWaitForBlockingPlugin (0.00s)
+=== RUN   TestHostPickAuthUsesHighestPrioritySchedulerOnly
+--- PASS: TestHostPickAuthUsesHighestPrioritySchedulerOnly (0.00s)
+=== RUN   TestHostPickAuthReturnsSchedulerError
+time="2026-11-07T21:16:04Z" level=warning msg="pluginhost: scheduler rejected auth pick" error="tenant quota exhausted" plugin_id=scheduler
+--- PASS: TestHostPickAuthReturnsSchedulerError (0.00s)
+=== RUN   TestHostPickAuthPanicFusesAndFallsBack
+time="2026-11-07T21:16:04Z" level=error msg="pluginhost: plugin panic recovered: boom\ngoroutine 127 [running]:\nruntime/debug.Stack()\n\t/usr/local/go/src/runtime/debug/stack.go:26 +0x5e\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.(*Host).fusePlugin(0x240cc431e9a0, {0x12e48d5, 0x9}, {0x13671b7, 0xe}, {0x277f098, 0x1418ff0})\n\t/tmp/proxy-research-0/internal/pluginhost/adapters_usage_translation.go:105 +0x30f\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.(*Host).callScheduler.func1()\n\t/tmp/proxy-research-0/internal/pluginhost/scheduler.go:66 +0x79\npanic({0x277f098?, 0x1418ff0?})\n\t/usr/local/go/src/runtime/panic.go:859 +0x125\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.TestHostPickAuthPanicFusesAndFallsBack.func1({_, _}, {{{0x0, 0x0}, {0x0, 0x0}, {0x0, 0x0}, {0x0, 0x0}, ...}, ...})\n\t/tmp/proxy-research-0/internal/pluginhost/scheduler_test.go:77 +0x45\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.schedulerFunc.Pick(_, {_, _}, {{{0x0, 0x0}, {0x0, 0x0}, {0x0, 0x0}, {0x0, ...}, ...}, ...})\n\t/tmp/proxy-research-0/internal/pluginhost/test_helpers_test.go:456 +0x144\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.(*Host).callScheduler(_, {_, _}, {{0x12e48d5, 0x9}, {0x240cc4655520, 0x19}, {0x1342e10, 0xc}, 0x0, ...}, ...)\n\t/tmp/proxy-research-0/internal/pluginhost/scheduler.go:74 +0x2e2\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.(*Host).PickAuth(_, {_, _}, {{{0x0, 0x0}, {0x0, 0x0}, {0x0, 0x0}, {0x0, ...}, ...}, ...})\n\t/tmp/proxy-research-0/internal/pluginhost/scheduler.go:17 +0x192\ngithub.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost.TestHostPickAuthPanicFusesAndFallsBack(0x240cc46e78c8)\n\t/tmp/proxy-research-0/internal/pluginhost/scheduler_test.go:81 +0x375\ntesting.tRunner(0x240cc46e78c8, 0x28870d8)\n\t/usr/local/go/src/testing/testing.go:2193 +0xea\ncreated by testing.(*T).Run in goroutine 1\n\t/usr/local/go/src/testing/testing.go:2258 +0x4d4\n" method=Scheduler.Pick plugin_id=scheduler
+--- PASS: TestHostPickAuthPanicFusesAndFallsBack (0.00s)
+=== RUN   TestHostPickAuthUnhandledDoesNotCallLowerPriorityScheduler
+--- PASS: TestHostPickAuthUnhandledDoesNotCallLowerPriorityScheduler (0.00s)
+=== RUN   TestHostPickAuthInvalidResponseFallsBack
+=== RUN   TestHostPickAuthInvalidResponseFallsBack/unknown_auth_id
+time="2026-11-07T21:16:04Z" level=warning msg="pluginhost: scheduler returned invalid response: unknown auth id" plugin_id=scheduler
+=== RUN   TestHostPickAuthInvalidResponseFallsBack/unknown_delegate
+time="2026-11-07T21:16:04Z" level=warning msg="pluginhost: scheduler returned invalid response: unknown delegate" plugin_id=scheduler
+=== RUN   TestHostPickAuthInvalidResponseFallsBack/handled_without_decision
+time="2026-11-07T21:16:04Z" level=warning msg="pluginhost: scheduler returned invalid response: missing auth id or delegate" plugin_id=scheduler
+--- PASS: TestHostPickAuthInvalidResponseFallsBack (0.00s)
+    --- PASS: TestHostPickAuthInvalidResponseFallsBack/unknown_auth_id (0.00s)
+    --- PASS: TestHostPickAuthInvalidResponseFallsBack/unknown_delegate (0.00s)
+    --- PASS: TestHostPickAuthInvalidResponseFallsBack/handled_without_decision (0.00s)
+=== RUN   TestHostPickAuthPrefersValidAuthIDOverInvalidDelegate
+--- PASS: TestHostPickAuthPrefersValidAuthIDOverInvalidDelegate (0.00s)
+=== RUN   TestHostPickAuthAllowsKnownBuiltinDelegates
+=== RUN   TestHostPickAuthAllowsKnownBuiltinDelegates/round-robin
+=== RUN   TestHostPickAuthAllowsKnownBuiltinDelegates/fill-first
+--- PASS: TestHostPickAuthAllowsKnownBuiltinDelegates (0.00s)
+    --- PASS: TestHostPickAuthAllowsKnownBuiltinDelegates/round-robin (0.00s)
+    --- PASS: TestHostPickAuthAllowsKnownBuiltinDelegates/fill-first (0.00s)
+=== RUN   TestHostPickAuthTerminalRejection
+--- PASS: TestHostPickAuthTerminalRejection (0.00s)
+=== RUN   TestHostPickAuthTerminalRejectionWhitespaceDefaults
+--- PASS: TestHostPickAuthTerminalRejectionWhitespaceDefaults (0.00s)
+=== CONT  TestHostHTTPClientWireProfile_CONNECTCancellationClosesConnection
+--- PASS: TestHostHTTPClientWireProfile_CONNECTCancellationClosesConnection (0.00s)
+PASS
+ok  	github.com/router-for-me/CLIProxyAPI/v8/internal/pluginhost	0.691s
