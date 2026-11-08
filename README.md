@@ -1,6 +1,6 @@
 # ProxyKit
 
-A small, streaming HTTP reverse proxy written in Go, with native Go extensions and trusted Node ESM workers. The Go core has no third-party dependencies. Installed extensions activate on server restart; a dashboard and published npm/npx packaging remain future work.
+A small, streaming HTTP reverse proxy written in Go, with native Go extensions and trusted Node ESM workers. The Go core has no third-party dependencies. Installed extensions default to disabled and support explicit hot activation with unchanged-worker reuse; a dashboard and published npm/npx packaging remain future work.
 
 Go owns transport and extension execution; Node supplies an optional TypeScript/JavaScript authoring boundary. See the [transport decision](docs/TRANSPORT_DECISION.md), [extension SDK](sdk/README.md), and [implementation tracker](docs/IMPLEMENTATION_TRACKER.md). Local installed-worker and combined-application acceptance tests pass; the [R01–R50 audit](docs/implementation/acceptance-audit.md) distinguishes tested boundaries from optional, unsupported or uncertified capabilities.
 

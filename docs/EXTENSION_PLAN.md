@@ -4,6 +4,10 @@ Updated 2026-11-08. **Planning only. No extension execution API is implemented b
 
 The [project direction](PROJECT_DIRECTION.md), [six architectural decisions](research/2026-11-extension-audit/extension-requirements.md), [composition research](EXTENSION_COMPOSITION.md), [transport readiness review](CORE_READINESS.md) and [R01–R50 engineering reference](EXTENSION_ENGINEERING_REFERENCE.md) remain supporting material. Router status labels are historical evidence, not proof of ProxyKit support. Recommendations below are distinguished from settled user direction; unresolved choices are listed explicitly.
 
+## Implemented activation update
+
+[Safe hot activation](HOT_ACTIVATION.md) supersedes older restart-only/deferred-live-reload assumptions: installations require explicit `apiVersion: 1` and default to persistently disabled; online enable/disable publishes complete validated generations while reusing unchanged workers. Roots and descendants remain generation-pinned. Required dependency failures reject activation, unresolved legacy intent blocks startup, and overlapping stateful replacement is rejected. Bounded retirement and trusted-code limitations are documented there; this does not introduce untrusted hosting or resource migration.
+
 ## 1. User decisions to preserve
 
 1. Build a minimal generic HTTP proxy with an optional extensible execution layer. Keep Pi-like authoring simplicity without importing a CLI execution model into a streaming server.
