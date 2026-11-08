@@ -28,7 +28,7 @@ The desired product is a reusable foundation, not merely a renamed Codex-specifi
 
 The initial context-only handoff and subsequent readiness-only phase are historical. The user has now authorized extension implementation, including GitHub CLI installation and manager/worker implementation and review groups. Current progress and unresolved acceptance gates are tracked separately.
 
-The milestones remain acceptance gates, not instructions to turn every optional capability into a mandatory core subsystem. Go owns transport and execution; trusted Node ESM workers provide the initial JavaScript/TypeScript authoring boundary. Installation requires explicit trust and server restart for activation.
+The milestones remain acceptance gates, not instructions to turn every optional capability into a mandatory core subsystem. Go owns transport and execution; trusted Node ESM workers provide the initial JavaScript/TypeScript authoring boundary. Installation requires explicit trust and remains disabled by default. The live runtime supports explicit activation with pinned generations and unchanged-worker reuse; see [hot activation](HOT_ACTIVATION.md) for tested behavior and limits.
 
 ## Recommendation
 
@@ -82,7 +82,7 @@ The [canonical six decisions](research/2026-11-extension-audit/extension-require
 5. **Failures and resources:** safe continuation or explicit failure, optional blocking protection features, adjustable limits and cooperative cancellation.
 6. **Composition and lifetime:** developer-defined stages/dependencies, compatibility validation, stable configuration and setup/drain/cleanup.
 
-These are proposed contracts, not six implemented subsystems. Start with ordinary data structures and a few stages. Defer dependency graphs, live reload and untrusted hosting until required. The 50 rows are a capability catalog spanning core boundaries, optional protocol runtimes and extension applications—not 50 mandatory core modules.
+These are proposed contracts, not six implemented subsystems. Start with ordinary data structures and a few stages. The historical recommendation was to defer dependency graphs, live reload and untrusted hosting until required. Ordered dependencies and bounded trusted-extension hot activation are now implemented; untrusted hosting remains out of scope. The 50 rows are a capability catalog spanning core boundaries, optional protocol runtimes and extension applications—not 50 mandatory core modules.
 
 ### Compatibility and accounting constraints
 

@@ -134,6 +134,15 @@ func (i Installer) Enabled(s State) ([]Installation, error) {
 	if e != nil {
 		return nil, e
 	}
+	present := make(map[string]bool, len(rows))
+	for _, row := range rows {
+		present[row.ID] = true
+	}
+	for id, decision := range s.Decisions {
+		if decision.Enabled && !present[id] {
+			return nil, fmt.Errorf("%s: enabled installation is missing; restore the package before activation", id)
+		}
+	}
 	var enabled []Installation
 	for _, row := range rows {
 		d, ok := s.Decisions[row.ID]

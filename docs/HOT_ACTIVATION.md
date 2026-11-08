@@ -28,7 +28,8 @@ proxykit extension install https://github.com/example/repository --trust --activ
   intent, and publishes it at one ingress-gated commit point. Responses confirm
   commit, not completion of old work. Failure before commit leaves prior intent
   and pipeline unchanged; required dependency/security hooks are never silently
-  removed. A malformed enabled-state file fails closed.
+  removed. A malformed enabled-state file or a missing installation with enabled
+  intent fails closed; restore missing packages before activation.
 - Offline enable/disable persists intent only. Full composition validation occurs
   on the next startup, before serving. `status [ID]` is a readable table separating
   installed, enabled, active, draining, incompatible, failed and cleanup state.
