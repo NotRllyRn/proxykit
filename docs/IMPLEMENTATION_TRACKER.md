@@ -36,7 +36,7 @@ All managers: Pi `codex-broker/gpt-6-astra`, thinking medium. All implementation
 
 ## Acceptance status
 
-No extension requirement is marked complete yet. Each manager must return requirement IDs, concrete tests/commands/results, limitations and its commit IDs. Final evidence needs cross-package integration, process tests, race tests, vet, build and the no-extension socket regressions. R41 untrusted sandboxing is optional and not offered by trusted workers; it must not receive a false implemented checkmark.
+The [independent R01–R50 evidence matrix](implementation/acceptance-audit.md) classifies tested boundaries, example-only behavior, conditional support, unsupported modes and missing evidence. It accepts the native execution boundaries and bounded application examples, not blanket completion. Each manager must return concrete tests/commands/results, limitations and commit IDs. Final evidence still needs the combined cross-package gate and independent installed-activation review. R41 untrusted sandboxing is optional and not offered by trusted workers; it must not receive a false implemented checkmark.
 
 ### Integrated group results
 
@@ -54,7 +54,8 @@ All groups continue with Astra-medium managers and Sol-medium workers in isolate
 - `proxykit-group-c-manager-r2`: completed, reviewed and integrated; real managed inference and durable replay composition in `examples/aihost/`.
 - `proxykit-group-d-manager-r2`: completed and integrated in `examples/brokerapp/`.
 - `proxykit-system-manager-r1`: combined broker + AI + recall socket/process acceptance; explicit catalog route selection and actual served provenance where necessary. Owns optional examples and narrow AI changes, not the core or Node bridge.
-- `proxykit-acceptance-audit-r1`: read-only manager/worker review of R01–R50 evidence, contract gaps and overclaims; accounts for the two pending integration groups without duplicating them.
+- `proxykit-acceptance-audit-r1`: completed read-only manager/worker review at `1aa85ca`; [full evidence matrix and objections](implementation/acceptance-audit.md). No new blocker established for the declared single-source managed-AI slice. Installed activation and combined application evidence were pending at that baseline.
+- `proxykit-acceptance-audit-r2`: independent read-only Astra-medium/Sol-medium review of the now-merged installed Node activation boundary at `e074b34`; no duplicate implementation of the active combined-system work.
 
 Latest parent verification after the admission correction: `go test -race -count=1 -timeout 180s ./...`, `go vet ./...`, and CLI build all pass. Historical integration failure `TestHostScopedHTTPAuthAndOneSlot/1` (`host_test.go:315: 502`, hook capacity exhausted) is addressed by the publication-order regression/fix, not by a retry or wider admission.
 
