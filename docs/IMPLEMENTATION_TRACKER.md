@@ -41,7 +41,8 @@ No extension requirement is marked complete yet. Each manager must return requir
 ### Integrated group results
 
 - **Group D / broker application:** manager commit `b05cbc6` integrated locally as `8f94c53`. Parent inspected the broker, store and application implementations and reran `go test -race -count=1 -timeout 90s ./...` and `go vet ./...` successfully. Package scope covers extension-owned authentication/routing, refresh, catalog/enrollment, atomic activation/outbox and lifecycle. See [the detailed evidence](implementation/brokerapp.md). Host registration, managed transport, attribution and composed acceptance tests remain pending; this is not end-to-end requirement completion. No remote push or release.
-- Groups A, B and C remain active; integration waits for their reviewed results rather than coding against moving contracts.
+- **Group A / execution:** first implementation passed its manager's test/race/vet/build checks but was not approved or committed. Review requires immutable original upstream metadata/body observations (excluding local responses), plus a distinct proxy-boundary delivery observation rather than treating reader completion as delivery. Fresh Astra-medium manager round `proxykit-group-a-manager-r2` is running against the preserved isolated checkout, with Sol-medium correction/review instructions. Pi child availability initially failed its version check; a direct version check and the new manager launch subsequently succeeded. Do not merge until correction review passes.
+- Groups B and C remain active; bridge integration waits for reviewed contracts rather than coding against moving APIs.
 
 Baseline before implementation: `go test -race -count=1 -timeout 90s ./...`, `go vet ./...` and `go build ./cmd/proxykit` passed on Go 1.27.1 / Linux. Node v24.16.0 is available for worker process tests. This is transport evidence only.
 
