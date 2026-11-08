@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NotRllyRn/proxykit/extensions"
 	"github.com/NotRllyRn/proxykit/proxy"
 )
 
@@ -27,6 +28,9 @@ func main() {
 }
 
 func run(ctx context.Context, args []string, output io.Writer) error {
+	if len(args) > 0 && args[0] == "extension" {
+		return runExtension(ctx, args[1:], output)
+	}
 	flags := flag.NewFlagSet("proxykit", flag.ContinueOnError)
 	flags.SetOutput(output)
 	listen := flags.String("listen", "127.0.0.1:8080", "HTTP listen address")
@@ -44,6 +48,17 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	}
 	if (*certificate == "") != (*privateKey == "") {
 		return fmt.Errorf("-tls-cert and -tls-key must be supplied together")
+	}
+	store, err := extensionStore()
+	if err != nil {
+		return err
+	}
+	installed, err := (extensions.Installer{Store: store}).List()
+	if err != nil {
+		return fmt.Errorf("inspect installed extensions: %w", err)
+	}
+	if len(installed) > 0 {
+		return fmt.Errorf("%d installed extension(s) cannot be activated: host bridge not yet wired; refusing to serve with silently ignored hooks (remove extensions to serve without them)", len(installed))
 	}
 	handler, err := proxy.New(*upstream)
 	if err != nil {

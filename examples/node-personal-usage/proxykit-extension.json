@@ -1,0 +1,6 @@
+{
+  "manifestVersion": 1,
+  "id": "personal-usage",
+  "version": "1.0.0",
+  "entry": "extension.mjs"
+}
