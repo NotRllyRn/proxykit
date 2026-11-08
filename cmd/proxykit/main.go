@@ -66,7 +66,7 @@ func run(ctx context.Context, args []string, output io.Writer) (runErr error) {
 	if err != nil {
 		return err
 	}
-	defer unlock()
+	defer func() { unlock() }()
 	handler, err := proxy.New(*upstream)
 	if err != nil {
 		return err
@@ -103,7 +103,18 @@ func run(ctx context.Context, args []string, output io.Writer) (runErr error) {
 		defer func() {
 			drain, cancel := context.WithTimeout(context.Background(), *drainTime+2*(*cleanupTime)+time.Second)
 			defer cancel()
-			runErr = errors.Join(runErr, host.Close(drain))
+			if err := host.Close(drain); err != nil {
+				runErr = errors.Join(runErr, err)
+				// Close can time out while teardown still owns workers or a
+				// management transaction. Transfer the lock to an eventual
+				// completion waiter, rather than releasing it on run's return.
+				release := unlock
+				unlock = func() {}
+				go func() {
+					_ = host.Close(context.Background())
+					release()
+				}()
+			}
 		}()
 		handler, err = proxy.NewWithRuntime(*upstream, host)
 		if err != nil {

@@ -104,7 +104,9 @@ a caller deadline does not wait for the serialized transaction to settle. Teardo
 continues owning that transaction after a timed-out `Close`, including actual
 reaping of aborted-candidate workers after bounded `Stop` returns; no preparing
 candidate can publish after shutdown begins. Embedders must still wait for eventual
-`Close` completion before releasing the store lock. Abnormal process exit
+`Close` completion before releasing the store lock. If the CLI's bounded close
+times out, it transfers lock release to an eventual completion waiter, retaining
+ownership until teardown finishes or the process exits. Abnormal process exit
 releases the OS lock. `SIGKILL` cannot run author cleanup or undo setup side effects.
 
 ## Ownership, control and persistence
@@ -153,7 +155,9 @@ covers API rejection, incompatible/legacy inventory and cross-process ownership 
 crash release. `control/control_test.go` covers private paths, stale sockets, strict
 commands and ownership. The compiled CLI system test verifies disabled install,
 online enable/disable/re-enable on one listener, second-owner refusal and SIGTERM
-cleanup. These synthetic fixtures do not claim validation against external broker
+cleanup. A CLI boundary regression blocks worker stderr reaping past the shutdown
+budget, verifying that the store remains locked after `run` returns and is released
+when teardown actually completes. These synthetic fixtures do not claim validation against external broker
 services or transactional migration of arbitrary extension-owned resources.
 
 Implementation verification in the isolated Linux checkout (Go 1.27.1, Node
