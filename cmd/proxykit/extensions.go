@@ -56,7 +56,7 @@ func runExtensionWithInstaller(ctx context.Context, args []string, out io.Writer
 		if err != nil {
 			return err
 		}
-		_, err = fmt.Fprintf(out, "Installed %s %s at commit %s. Trusted code is not sandboxed. Activation is NOT yet wired; a host bridge and server restart are required.\n", record.Manifest.ID, record.Manifest.Version, record.Commit)
+		_, err = fmt.Fprintf(out, "Installed %s %s at commit %s. Trusted code is not sandboxed. Restart the server to validate and activate installed hooks; running registrations are unchanged.\n", record.Manifest.ID, record.Manifest.Version, record.Commit)
 		return err
 	case "list":
 		if len(args) != 1 {

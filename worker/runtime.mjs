@@ -16,9 +16,13 @@ function send(message) {
   if (message.type === 'result' && !Object.hasOwn(JSON.parse(text), 'output')) throw new Error('hook must return a JSON value');
   const body = Buffer.from(text);
   if (!body.length || body.length > maxFrame) throw new Error('output frame exceeds bound');
-  if (++outCount > concurrency + 8) throw new Error('output queue exceeds bound');
+  if (outCount >= concurrency + 8) throw new Error('output queue exceeds bound');
   const frame = Buffer.allocUnsafe(body.length + 4); frame.writeUInt32BE(body.length); body.copy(frame, 4);
-  wireWrite(frame, error => { outCount--; if (error) fatal(error); });
+  // Validation/allocation rejection is definitely unsent and consumes no queue slot.
+  outCount++;
+  try { wireWrite(frame, error => { outCount--; if (error) fatal(error); }); }
+  // Once a write is attempted, delivery is uncertain: never reuse correlation.
+  catch (error) { fatal(error); }
 }
 function keys(m, required, optional = []) {
   if (!m || Array.isArray(m) || typeof m !== 'object') throw new Error('expected message object');
@@ -34,9 +38,11 @@ async function initialize(m) {
     log,
     on(descriptor, handler) {
       if (!registrationOpen) throw new Error('registration is closed');
-      keys(descriptor, ['id', 'stage', 'bodyMode'], ['order']);
+      keys(descriptor, ['id', 'stage', 'bodyMode'], ['order', 'failure', 'formats', 'requires', 'before', 'after']);
+      if (descriptor.failure !== undefined && !['block', 'failOpen'].includes(descriptor.failure)) throw new Error('invalid failure policy');
+      for (const key of ['formats', 'requires', 'before', 'after']) if (descriptor[key] !== undefined && (!Array.isArray(descriptor[key]) || descriptor[key].some(s => typeof s !== 'string' || !s.length || s.length > 256))) throw new Error('invalid descriptor list');
       if (!identifier.test(descriptor.id) || !identifier.test(descriptor.stage) || !['none', 'stream', 'buffered'].includes(descriptor.bodyMode) || (descriptor.order !== undefined && (typeof descriptor.order !== 'number' || !Number.isFinite(descriptor.order))) || hooks.has(descriptor.id) || hooks.size >= 4096 || typeof handler !== 'function') throw new Error('invalid hook registration');
-      hooks.set(descriptor.id, { descriptor: { ...descriptor }, handler });
+      hooks.set(descriptor.id, { descriptor: structuredClone(descriptor), handler });
     },
     cleanup(fn) { if (!registrationOpen || typeof fn !== 'function') throw new Error('cleanup must be registered during setup'); cleanups.push(fn); },
   });
@@ -46,10 +52,15 @@ async function initialize(m) {
   send({ type: 'ready', hooks: [...hooks.values()].map(h => h.descriptor) });
 }
 async function invoke(m) {
-  keys(m, ['v', 'type', 'id', 'hook', 'input'], ['deadline']);
+  keys(m, ['v', 'type', 'id', 'hook', 'input'], ['deadline', 'managed']);
+  if (m.managed !== undefined && typeof m.managed !== 'boolean') throw new Error('invalid managed scope flag');
   if (!ready || stopping || typeof m.id !== 'string' || !/^[1-9][0-9]{0,19}$/.test(m.id) || active.has(m.id) || !hooks.has(m.hook) || active.size >= concurrency || (m.deadline !== undefined && !Number.isSafeInteger(m.deadline))) throw new Error('invalid invocation or capacity exceeded');
   const controller = new AbortController();
-  const call = { controller }; active.set(m.id, call);
+  const call = { controller, nextCall: 0, pending: undefined }; active.set(m.id, call);
+  controller.signal.addEventListener('abort', () => {
+    call.pending?.reject(new Error('cancelled managed scope'));
+    call.pending = undefined;
+  }, { once: true });
   let timer;
   if (m.deadline !== undefined) {
     const delay = m.deadline - Date.now();
@@ -58,13 +69,27 @@ async function invoke(m) {
   }
   try {
     if (controller.signal.aborted) throw new Error('deadline exceeded before invocation');
-    const output = await hooks.get(m.hook).handler(m.input, { signal: controller.signal, deadline: m.deadline });
+    const context = { signal: controller.signal, deadline: m.deadline };
+    if (m.managed === true && m.input?.v === 1 && m.input?.stage !== 'delivery') context.http = request => {
+      if (active.get(m.id) !== call || controller.signal.aborted) return Promise.reject(new Error('expired managed scope'));
+      if (call.pending) return Promise.reject(new Error('managed call capacity exhausted'));
+      const callId = String(call.nextCall + 1);
+      return new Promise((resolve, reject) => {
+        call.pending = { callId, resolve, reject };
+        try {
+          send({ type: 'call', id: m.id, callId, request });
+          call.nextCall++;
+        }
+        catch (error) { call.pending = undefined; reject(error); }
+      });
+    };
+    const output = await hooks.get(m.hook).handler(m.input, Object.freeze(context));
     if (output === undefined) throw new Error('hook must return a JSON value (use null or an explicit pass result)');
     // JSON serialization validation occurs before releasing capacity.
     send({ type: 'result', id: m.id, output });
   } catch (error) {
     send({ type: 'error', id: m.id, error: { code: controller.signal.aborted ? 'CANCELLED' : 'HOOK_ERROR', message: String(error?.message ?? error).slice(0, 512) || 'hook failed' } });
-  } finally { clearTimeout(timer); active.delete(m.id); }
+  } finally { clearTimeout(timer); call.pending?.reject(new Error('expired managed scope')); call.pending = undefined; active.delete(m.id); }
 }
 async function shutdown(m) {
   keys(m, ['v', 'type']); if (!ready || stopping) throw new Error('invalid shutdown'); stopping = true;
@@ -82,6 +107,18 @@ function message(m) {
   switch (m.type) {
     case 'init': initialize(m).catch(fatal); break;
     case 'invoke': invoke(m).catch(fatal); break;
+    case 'callResult': {
+      keys(m, ['v', 'type', 'id', 'callId'], ['output', 'error']);
+      if (typeof m.id !== 'string' || typeof m.callId !== 'string' || Object.hasOwn(m, 'output') === Object.hasOwn(m, 'error') || (Object.hasOwn(m, 'error') && typeof m.error !== 'string')) throw new Error('invalid callback result');
+      const call = active.get(m.id);
+      // A result may already have been queued when the invocation settled.
+      if (!call) break;
+      if (call.controller.signal.aborted) break;
+      if (call.pending?.callId !== m.callId) throw new Error('unmatched callback result');
+      const pending = call.pending; call.pending = undefined;
+      if (m.error !== undefined) pending.reject(new Error(m.error)); else pending.resolve(m.output);
+      break;
+    }
     case 'cancel': keys(m, ['v', 'type', 'id']); if (!ready || typeof m.id !== 'string') throw new Error('invalid cancel'); active.get(m.id)?.controller.abort(); break;
     case 'shutdown': shutdown(m).catch(fatal); break;
     default: throw new Error('unknown message type');

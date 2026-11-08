@@ -4,6 +4,11 @@ export function defineExtension(setup) {
   if (typeof setup !== 'function') throw new TypeError('setup must be a function');
   return setup;
 }
+// Typed HTTP authoring uses the same dependency-free runtime registration API.
+export const defineHTTP = defineExtension;
+export const replace = message => ({ action: 'replace', message });
+export const respond = message => ({ action: 'respond', message });
+export const child = request => ({ action: 'child', request });
 // Limits refer to decoded bytes. The base64 JSON envelope must also fit MaxFrame.
 export function streamUnit(streamId, sequence, data, end = false, maxBytes = 64 * 1024) {
   if (typeof streamId !== 'string' || !streamId.length || streamId.length > 128 || !Number.isSafeInteger(sequence) || sequence < 0 || !(data instanceof Uint8Array) || !Number.isSafeInteger(maxBytes) || maxBytes < 1 || data.byteLength > maxBytes || typeof end !== 'boolean') throw new TypeError('invalid bounded stream unit');

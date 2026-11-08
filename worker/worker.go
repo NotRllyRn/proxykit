@@ -26,11 +26,28 @@ var ErrBusy = errors.New("worker concurrency exhausted")
 var hookID = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_.-]{0,127}$`)
 
 type HookDescriptor struct {
-	ID       string  `json:"id"`
-	Stage    string  `json:"stage"`
-	BodyMode string  `json:"bodyMode"`
-	Order    float64 `json:"order,omitempty"`
+	ID       string   `json:"id"`
+	Stage    string   `json:"stage"`
+	BodyMode string   `json:"bodyMode"`
+	Order    float64  `json:"order,omitempty"`
+	Failure  string   `json:"failure,omitempty"`
+	Formats  []string `json:"formats,omitempty"`
+	Requires []string `json:"requires,omitempty"`
+	Before   []string `json:"before,omitempty"`
+	After    []string `json:"after,omitempty"`
 }
+
+func cloneHooks(hooks []HookDescriptor) []HookDescriptor {
+	out := append([]HookDescriptor(nil), hooks...)
+	for i := range out {
+		out[i].Formats = append([]string(nil), out[i].Formats...)
+		out[i].Requires = append([]string(nil), out[i].Requires...)
+		out[i].Before = append([]string(nil), out[i].Before...)
+		out[i].After = append([]string(nil), out[i].After...)
+	}
+	return out
+}
+
 type Options struct {
 	NodeBinary                                                string
 	Entry                                                     string
@@ -41,20 +58,26 @@ type Options struct {
 	CallTimeout, StartupTimeout, CancelGrace, ShutdownTimeout time.Duration
 }
 type Worker struct {
-	options   Options
-	mu        sync.Mutex
-	lifecycle sync.Mutex // serializes Start and Restart
-	current   *process
-	last      *process // retains the last Stop outcome until a new Start
-	next      atomic.Uint64
+	options       Options
+	mu            sync.Mutex
+	lifecycle     sync.Mutex // serializes Start and Restart
+	current       *process
+	last          *process // retains the last Stop outcome until a new Start
+	next          atomic.Uint64
+	callbackSlots chan struct{} // retained until Go callback settlement, including across restart
 }
 type reply struct {
 	output json.RawMessage
 	err    error
 }
 type pending struct {
-	ch        chan reply
-	cancelled bool
+	ch             chan reply
+	cancelled      bool
+	ctx            context.Context
+	cancel         context.CancelFunc
+	callback       Callback
+	callbackActive bool
+	nextCall       uint64
 }
 type process struct {
 	owner      *Worker
@@ -114,7 +137,7 @@ func New(o Options) (*Worker, error) {
 	if len(o.Config) > min(o.MaxFrame, 1<<20) {
 		return nil, errors.New("configuration exceeds startup frame allowance")
 	}
-	return &Worker{options: o}, nil
+	return &Worker{options: o, callbackSlots: make(chan struct{}, o.Concurrency)}, nil
 }
 func (w *Worker) Start(ctx context.Context) error {
 	w.lifecycle.Lock()
@@ -227,6 +250,11 @@ func (p *process) fail(err error) {
 				c.ch <- reply{err: err}
 			}
 		}
+		for _, c := range p.pending {
+			if c.cancel != nil {
+				c.cancel()
+			}
+		}
 		p.pending = map[string]*pending{}
 		p.mu.Unlock()
 		select {
@@ -311,12 +339,14 @@ func (p *process) reader(r io.Reader) {
 }
 func (p *process) receive(b []byte) error {
 	var m struct {
-		V      int              `json:"v"`
-		Type   string           `json:"type"`
-		ID     string           `json:"id"`
-		Hooks  []HookDescriptor `json:"hooks"`
-		Output json.RawMessage  `json:"output"`
-		Error  *struct {
+		V       int              `json:"v"`
+		Type    string           `json:"type"`
+		ID      string           `json:"id"`
+		Hooks   []HookDescriptor `json:"hooks"`
+		Output  json.RawMessage  `json:"output"`
+		CallID  string           `json:"callId"`
+		Request json.RawMessage  `json:"request"`
+		Error   *struct {
 			Code    string `json:"code"`
 			Message string `json:"message"`
 		} `json:"error"`
@@ -350,9 +380,11 @@ func (p *process) receive(b []byte) error {
 			}
 			seen[h.ID] = true
 		}
-		p.hooks = append([]HookDescriptor(nil), m.Hooks...)
+		p.hooks = cloneHooks(m.Hooks)
 		p.ready = true
 		p.readyCh <- nil
+	case "call":
+		return p.receiveCallLocked(m.ID, m.CallID, m.Request)
 	case "result", "error":
 		if !p.ready {
 			return errors.New("reply before readiness")
@@ -368,6 +400,9 @@ func (p *process) receive(b []byte) error {
 			return errors.New("invalid worker error")
 		}
 		delete(p.pending, m.ID)
+		if c.cancel != nil {
+			c.cancel()
+		}
 		if !c.cancelled {
 			if m.Type == "error" {
 				c.ch <- reply{err: fmt.Errorf("worker %s: %s", m.Error.Code, m.Error.Message)}
@@ -393,12 +428,20 @@ func (w *Worker) Hooks() []HookDescriptor {
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return append([]HookDescriptor(nil), p.hooks...)
+	return cloneHooks(p.hooks)
 }
 
 // Invoke admits immediately or returns ErrBusy. Cancellation retains capacity until settlement or kill.
 // Input/output are explicit bounded JSON units; no HTTP bodies are copied by this package.
 func (w *Worker) Invoke(ctx context.Context, hook string, input json.RawMessage) (json.RawMessage, error) {
+	return w.InvokeWithCallback(ctx, hook, input, nil)
+}
+
+// Callback is a bounded invocation-scoped host operation. It must honor ctx.
+// Only one callback may be outstanding per invocation; no callback queue exists.
+type Callback func(context.Context, json.RawMessage) (json.RawMessage, error)
+
+func (w *Worker) InvokeWithCallback(ctx context.Context, hook string, input json.RawMessage, callback Callback) (json.RawMessage, error) {
 	if len(input) > w.options.MaxFrame {
 		return nil, errors.New("input exceeds worker frame bound")
 	}
@@ -415,11 +458,13 @@ func (w *Worker) Invoke(ctx context.Context, hook string, input json.RawMessage)
 		return nil, errors.New("worker not started")
 	}
 	id := fmt.Sprint(w.next.Add(1))
-	c := &pending{ch: make(chan reply, 1)}
+	scopectx, scopeCancel := context.WithCancel(ctx)
+	defer scopeCancel()
+	c := &pending{ch: make(chan reply, 1), ctx: scopectx, cancel: scopeCancel, callback: callback}
 	// Prepare outside the admission lock; registration and enqueue below are
 	// one transaction, so Stop cannot overtake an admitted call.
 	deadline, _ := ctx.Deadline()
-	b, err := json.Marshal(map[string]any{"v": 1, "type": "invoke", "id": id, "hook": hook, "input": input, "deadline": deadline.UnixMilli()})
+	b, err := json.Marshal(map[string]any{"v": 1, "type": "invoke", "id": id, "hook": hook, "input": input, "deadline": deadline.UnixMilli(), "managed": callback != nil})
 	if err != nil {
 		return nil, err
 	}
@@ -470,6 +515,7 @@ func (p *process) cancel(id string, c *pending) {
 		return
 	}
 	c.cancelled = true
+	c.cancel()
 	c.ch <- reply{err: context.Canceled}
 	b, _ := json.Marshal(map[string]any{"v": 1, "type": "cancel", "id": id})
 	err := p.enqueueLocked(b)
@@ -505,6 +551,9 @@ func (w *Worker) Stop(ctx context.Context) error {
 		for _, c := range p.pending {
 			if !c.cancelled {
 				c.cancelled = true
+				if c.cancel != nil {
+					c.cancel()
+				}
 				c.ch <- reply{err: context.Canceled}
 			}
 		}

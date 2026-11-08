@@ -1,5 +1,14 @@
+export * from './http.mjs';
+import type { HTTPSetup, HTTPResult, Message, BufferedMessage } from './http.mjs';
+export declare function defineHTTP(setup: HTTPSetup): HTTPSetup;
+export declare function replace(message: Message): HTTPResult;
+export declare function respond(message: BufferedMessage): HTTPResult;
+export declare function child(request: BufferedMessage): HTTPResult;
 export type JSONValue = null | boolean | number | string | JSONValue[] | { [key: string]: JSONValue };
-export interface HookDescriptor { id: string; stage: string; bodyMode: 'none' | 'stream' | 'buffered'; order?: number }
+export interface HookDescriptor {
+  id: string; stage: string; bodyMode: 'none' | 'stream' | 'buffered'; order?: number;
+  failure?: 'block' | 'failOpen'; formats?: string[]; requires?: string[]; before?: string[]; after?: string[];
+}
 export interface HookContext { signal: AbortSignal; deadline?: number }
 export interface SetupAPI {
   readonly config: JSONValue;

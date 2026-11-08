@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -15,7 +16,9 @@ import (
 	"time"
 
 	"github.com/NotRllyRn/proxykit/extensions"
+	"github.com/NotRllyRn/proxykit/nodehost"
 	"github.com/NotRllyRn/proxykit/proxy"
+	"github.com/NotRllyRn/proxykit/worker"
 )
 
 func main() {
@@ -27,7 +30,7 @@ func main() {
 	}
 }
 
-func run(ctx context.Context, args []string, output io.Writer) error {
+func run(ctx context.Context, args []string, output io.Writer) (runErr error) {
 	if len(args) > 0 && args[0] == "extension" {
 		return runExtension(ctx, args[1:], output)
 	}
@@ -37,6 +40,8 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	certificate := flags.String("tls-cert", "", "optional PEM certificate file (requires -tls-key)")
 	privateKey := flags.String("tls-key", "", "optional PEM private key file (requires -tls-cert)")
 	upstream := flags.String("upstream", "", "required upstream HTTP(S) URL")
+	node := flags.String("node", "node", "trusted extension Node executable")
+	gateway := flags.String("gateway-origin", "", "exact gateway HTTP(S) origin for managed extension calls (defaults to bound listener)")
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return nil
@@ -57,15 +62,52 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("inspect installed extensions: %w", err)
 	}
-	if len(installed) > 0 {
-		return fmt.Errorf("%d installed extension(s) cannot be activated: host bridge not yet wired; refusing to serve with silently ignored hooks (remove extensions to serve without them)", len(installed))
-	}
 	handler, err := proxy.New(*upstream)
 	if err != nil {
 		return err
 	}
-	defer handler.Transport.(*http.Transport).CloseIdleConnections()
+	// Retain the underlying transport explicitly: the engine wrapper does not
+	// own idle-connection cleanup or expose a concrete *http.Transport.
+	transport := handler.Transport
+	if closer, ok := transport.(interface{ CloseIdleConnections() }); ok {
+		defer closer.CloseIdleConnections()
+	}
+	listener, err := net.Listen("tcp", *listen)
+	if err != nil {
+		return err
+	}
+	defer listener.Close()
 	logger := log.New(output, "proxykit: ", log.LstdFlags)
+	if len(installed) > 0 {
+		origin := *gateway
+		if origin == "" {
+			scheme := "http"
+			if *certificate != "" {
+				scheme = "https"
+			}
+			origin = scheme + "://" + listener.Addr().String()
+		}
+		config, err := json.Marshal(map[string]string{"gatewayOrigin": origin})
+		if err != nil {
+			return err
+		}
+		host, err := nodehost.Open(ctx, nodehost.Options{Store: store, Gateway: origin, Worker: worker.Options{NodeBinary: *node, Stderr: output, Config: config}})
+		if err != nil {
+			return fmt.Errorf("activate installed extensions: %w", err)
+		}
+		defer func() {
+			drain, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			runErr = errors.Join(runErr, host.Close(drain))
+		}()
+		handler, err = proxy.NewWithEngine(*upstream, host.Engine)
+		if err != nil {
+			return err
+		}
+		// NewWithEngine's pristine transport has not opened any connections.
+		// Reuse the explicitly owned transport so its resources remain closable.
+		handler.Transport = host.Engine.Transport(transport)
+	}
 	handler.ErrorLog = logger
 	// Signal cancellation starts draining; this separate context closes upgraded
 	// connections when draining finishes, since Server.Shutdown does not own them.
@@ -82,10 +124,6 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		ReadHeaderTimeout: 10 * time.Second,
 		IdleTimeout:       90 * time.Second,
 		ErrorLog:          logger,
-	}
-	listener, err := net.Listen("tcp", *listen)
-	if err != nil {
-		return err
 	}
 	logger.Printf("listening on %s", listener.Addr())
 	result := make(chan error, 1)

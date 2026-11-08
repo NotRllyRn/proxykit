@@ -53,7 +53,7 @@ func TestExtensionCLIInstallListRemoveFixture(t *testing.T) {
 	if err := runExtensionWithInstaller(ctx, []string{"install", "https://github.com/example/repository", "--trust"}, &out, i); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out.String(), "Activation is NOT yet wired") || !strings.Contains(out.String(), sha) {
+	if !strings.Contains(out.String(), "Restart the server") || !strings.Contains(out.String(), sha) {
 		t.Fatal(out.String())
 	}
 	out.Reset()
@@ -65,7 +65,7 @@ func TestExtensionCLIInstallListRemoveFixture(t *testing.T) {
 		t.Fatal(out.String(), err)
 	}
 	t.Setenv("PROXYKIT_EXTENSIONS_DIR", store)
-	if err := run(ctx, []string{"-upstream", "http://127.0.0.1:1"}, &out); err == nil || !strings.Contains(err.Error(), "refusing to serve") {
+	if err := run(ctx, []string{"-listen", "127.0.0.1:0", "-upstream", "http://127.0.0.1:1"}, &out); err == nil || !strings.Contains(err.Error(), "activate installed extensions") {
 		t.Fatal("silently ignored installed extension", err)
 	}
 	if err := runExtensionWithInstaller(ctx, []string{"remove", "../bad"}, &out, i); err == nil {
