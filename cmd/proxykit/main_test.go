@@ -18,6 +18,7 @@ import (
 )
 
 func TestArguments(t *testing.T) {
+	t.Setenv("PROXYKIT_EXTENSIONS_DIR", filepath.Join(t.TempDir(), "extensions"))
 	for _, args := range [][]string{nil, {"-unknown"}, {"-upstream", "ftp://example.com"}, {"-upstream", "http://example.com", "extra"}, {"-upstream", "http://example.com", "-listen", "invalid address"}} {
 		if err := run(context.Background(), args, io.Discard); err == nil {
 			t.Errorf("accepted %v", args)
@@ -31,6 +32,7 @@ func TestArguments(t *testing.T) {
 
 // Exercise the actual executable, real sockets, and termination signal.
 func TestSystemGracefulShutdown(t *testing.T) {
+	t.Setenv("PROXYKIT_EXTENSIONS_DIR", filepath.Join(t.TempDir(), "extensions"))
 	if runtime.GOOS == "windows" {
 		t.Skip("requires POSIX termination signals")
 	}

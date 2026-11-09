@@ -22,6 +22,8 @@ import (
 // upgraded connections. Existing system tests also exercise a compiled binary.
 func startCommand(t *testing.T, upstream string, extra ...string) (string, func()) {
 	t.Helper()
+	// Transport fixtures must not activate packages from the developer's store.
+	t.Setenv("PROXYKIT_EXTENSIONS_DIR", filepath.Join(t.TempDir(), "extensions"))
 	ctx, cancel := context.WithCancel(context.Background())
 	reader, writer := io.Pipe()
 	result := make(chan error, 1)
