@@ -4,6 +4,10 @@ A small, streaming HTTP reverse proxy written in Go, with native Go extensions a
 
 Go owns transport and extension execution; Node supplies an optional TypeScript/JavaScript authoring boundary. See the [transport decision](docs/TRANSPORT_DECISION.md), [extension SDK](sdk/README.md), and [implementation tracker](docs/IMPLEMENTATION_TRACKER.md). Local installed-worker and combined-application acceptance tests pass; the [R01–R50 audit](docs/implementation/acceptance-audit.md) distinguishes tested boundaries from optional, unsupported or uncertified capabilities.
 
+## Start here
+
+Follow the **[step-by-step setup and extension installation guide](docs/GETTING_STARTED.md)**: build ProxyKit, choose a store, start the server, install and activate an extension, verify it, and safely disable or update it. Includes copyable commands and troubleshooting.
+
 ## Run
 
 Requires Go 1.26 or later.
@@ -21,6 +25,8 @@ Clients use ProxyKit as their base URL. An upstream such as `https://example.com
 The listener defaults to loopback. Without an authentication extension, there is no client authentication. For direct HTTPS/WSS, add `-tls-cert cert.pem -tls-key key.pem`; otherwise terminate TLS in front of ProxyKit. Public deployment still needs access controls. Upstream HTTPS certificates are verified normally. Upstream URLs cannot contain credentials or fragments. Request Authorization headers are forwarded.
 
 ## Install extensions
+
+For the numbered, two-terminal walkthrough, see **[Set up ProxyKit and install extensions](docs/GETTING_STARTED.md)**. The commands below are a quick reference.
 
 Requires Node on PATH when activating Node extensions (tested with Node 24). Packages must contain a root `proxykit-extension.json` manifest and prebuilt ESM; installation does not run npm, build commands or package scripts.
 
@@ -95,7 +101,7 @@ WebSocket traffic uses standard-library upgrade handling; there is no gateway We
 
 `proxy.New(upstream)` returns a `*proxy.Proxy` embedding the standard `*httputil.ReverseProxy`, with HTTP/1 full duplex enabled. Configure its `Rewrite`, `ModifyResponse` or `Transport` before serving to modify requests and responses, including body readers. Transformations must keep length/encoding headers correct and close replaced bodies. Configuration must remain unchanged while requests are running. Close the transport's idle connections when finished. Embedded servers should supply a cancellable `http.Server.BaseContext` and cancel it after HTTP draining to close upgraded connections, as the executable does.
 
-For managed native extensions, use `extension.New` and `proxy.NewWithEngine`. The engine owns ordered hooks, bounded body recovery, scoped internal calls, original observations and delivery evidence. See [execution contracts](docs/implementation/execution.md). `nodehost.Open` adapts installed Node hooks to that same engine; the CLI uses it automatically when extensions are installed. TypeScript authors compile to ESM before packaging.
+For managed native extensions, use `extension.New` and `proxy.NewWithEngine`. The engine owns ordered hooks, bounded body recovery, scoped internal calls, original observations and delivery evidence. See [execution contracts](docs/implementation/execution.md). `nodehost.Open` adapts enabled installed Node hooks to that same engine; the CLI uses `nodehost.OpenRuntime` with `proxy.NewWithRuntime` for hot activation. TypeScript authors compile to ESM before packaging.
 
 Optional examples demonstrate [account brokering](examples/brokerapp/), [managed AI coordination](examples/aihost/), [durable recall](examples/recall/) and their [combined composition](examples/system/) with an independent original recorder. Local socket/process tests cover two tenants, routing, tools, restart continuation, buffered SSE and shutdown. They are application building blocks, not enabled-by-default services or universal protocol adapters.
 
