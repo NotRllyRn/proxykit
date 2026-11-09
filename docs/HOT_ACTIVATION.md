@@ -13,7 +13,6 @@ file names or copied helpers never imply compatibility.
 ```
 proxykit extension install https://github.com/example/repository --trust
 proxykit extension status
-proxykit extension data-dir example-extension # prepare/discover storage before app init
 proxykit extension enable example-extension
 proxykit extension disable example-extension
 proxykit extension status example-extension
@@ -80,10 +79,13 @@ are not a transaction: register cleanup promptly and unwind partial acquisition.
 Installed Node setup receives additive HTTP v1 `api.dataDir`, a read-only absolute
 path created/validated by the host before setup: `<store>/.data/<manifest-id>`.
 It is separate from replaceable package files and keyed only by unique manifest
-ID (not display labels, version or commit). `extension data-dir ID` prepares and
-prints the same path online or offline, including disabled/pre-install IDs,
-without running code. An application can initialize its config there **before**
-enable; see the [author init workflow](EXTENSION_AUTHORING.md#persistent-data-and-pre-activation-init).
+ID (not display labels, version or commit). Installation creates or validates this
+directory before reporting success, without running package code; activation
+validates it again before setup. No directory initialization step is needed.
+Extensions initialize their own files via `api.dataDir` during setup or document
+optional application-specific configuration; see [authoring](EXTENSION_AUTHORING.md#persistent-data-and-application-configuration).
+A storage validation failure prevents installation from publishing a package or
+activation from changing the live pipeline.
 
 Data remains through unrelated activation/worker reuse, disable/re-enable,
 cleanup, restart, failed setup, removal and reinstall/version replacement. Removal
@@ -165,12 +167,15 @@ Do not edit installed files, provenance or state by hand.
 ## Observable verification
 
 `nodehost/data_test.go` exercises actual installed Node SDK dataDir delivery,
-distinct IDs with identical hook labels, pre-init config, stable worker reuse,
+distinct IDs with identical hook labels, setup-owned config, stable worker reuse,
 disable/re-enable cleanup, restart, removal/version replacement and storage/setup
 failure retention. `extensions/data_test.go` covers invalid IDs, private modes,
-symlink/non-directory rejection and stable paths. The compiled CLI archive fixture
-also verifies offline pre-install and online disabled path discovery followed by
-initialization, setup and persistent writes across enable/disable.
+symlink/non-directory rejection and stable paths. `extensions/install_data_test.go`
+checks automatic private directory creation, fail-closed installation and retained
+data across remove/reinstall and failed install. The compiled CLI archive fixture
+also verifies automatic installation storage and setup-owned initialization with
+persistent writes across enable/disable. CLI and control tests reject the removed
+path-discovery command.
 
 `nodehost/runtime_test.go` exercises repeated stateful PID/port/lock/job reuse,
 required-dependency rollback, setup and injected persistence rollback, native and

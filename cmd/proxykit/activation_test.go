@@ -39,7 +39,9 @@ func TestSystemInstalledNodeActivationAndShutdown(t *testing.T) {
 		t.Fatalf("build %v %s", err, out)
 	}
 	source := fmt.Sprintf(`import {writeFileSync,readFileSync,appendFileSync} from 'node:fs';import {join,isAbsolute} from 'node:path';import {defineHTTP} from './sdk.mjs';export default defineHTTP(api=>{
- if(!isAbsolute(api.dataDir)||readFileSync(join(api.dataDir,'config'),'utf8')!=='initialized')throw Error('missing initialized dataDir');
+ if(!isAbsolute(api.dataDir)||api.dataDir.split('/').pop()!=='example-user')throw Error('wrong dataDir');
+ writeFileSync(join(api.dataDir,'config'),'initialized',{mode:0o600});
+ if(readFileSync(join(api.dataDir,'config'),'utf8')!=='initialized')throw Error('missing initialized dataDir');
  appendFileSync(join(api.dataDir,'setups'),'setup\n',{mode:0o600});
  api.on({id:'decorate',stage:'responseBody',bodyMode:'buffered'},i=>({action:'replace',message:{...i.response,body:Buffer.from(Buffer.from(i.response.body,'base64').toString()+' installed').toString('base64')}}));
  api.cleanup(()=>writeFileSync(%q,'clean'));
@@ -76,19 +78,15 @@ func TestSystemInstalledNodeActivationAndShutdown(t *testing.T) {
 	store := filepath.Join(temp, "extensions")
 	var output bytes.Buffer
 	installer := extensions.Installer{Store: store, APIBase: fake.URL, ArchiveBase: fake.URL}
-	if err := runExtensionWithInstaller(context.Background(), []string{"data-dir", "example-user"}, &output, installer); err != nil {
-		t.Fatal(err)
-	}
-	dataDir := strings.TrimSpace(output.String())
-	if !filepath.IsAbs(dataDir) {
-		t.Fatal(dataDir)
-	}
-	if err := os.WriteFile(filepath.Join(dataDir, "config"), []byte("initialized"), 0600); err != nil {
-		t.Fatal(err)
-	}
-	output.Reset()
 	if err := runExtensionWithInstaller(context.Background(), []string{"install", "https://github.com/example/repository", "--trust"}, &output, installer); err != nil {
 		t.Fatal(err)
+	}
+	dataDir := filepath.Join(store, ".data", "example-user")
+	if st, err := os.Stat(dataDir); err != nil || !st.IsDir() || st.Mode().Perm() != 0700 {
+		t.Fatalf("install did not create private storage: %v %v", st, err)
+	}
+	if _, err := os.Stat(filepath.Join(dataDir, "config")); !os.IsNotExist(err) {
+		t.Fatal("install must not run setup", err)
 	}
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/example" {
@@ -150,9 +148,6 @@ func TestSystemInstalledNodeActivationAndShutdown(t *testing.T) {
 			t.Fatalf("management %v: %v %s", args, e, out)
 		}
 		return string(out)
-	}
-	if path := strings.TrimSpace(manage("data-dir", "example-user")); path != dataDir {
-		t.Fatalf("online path %q != offline %q", path, dataDir)
 	}
 	manage("enable", "example-user")
 	status := manage("status", "example-user")

@@ -48,12 +48,13 @@ import { join } from 'node:path';
 const config = JSON.parse(await readFile(join(api.dataDir, 'config.json'), 'utf8'));
 ```
 
-`proxykit extension data-dir ID` creates/validates the directory and prints only
-its absolute path, online or offline, including before installation or while
-disabled. Use the same store and OS identity as the server. Run your application's
-init/config tool against that path **before enable**, then read it from setup.
-See the [init workflow](../docs/EXTENSION_AUTHORING.md#persistent-data-and-pre-activation-init).
-It does not execute the extension or enable it.
+Installation automatically creates or validates the directory without running
+package code. Activation validates it again before setup; no user directory
+initialization step is needed. Extensions can create their own files through
+`api.dataDir` during setup or document optional application-specific configuration.
+The read example above assumes the application has already written its config;
+creating the host directory does not create application configuration. See the
+[initialization recipe](../docs/EXTENSION_AUTHORING.md#persistent-data-and-application-configuration).
 
 Data survives disable/re-enable, hot activation, restart, setup failure, removal
 and reinstall/version replacement of the same ID. Removal never deletes it;

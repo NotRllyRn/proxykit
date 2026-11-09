@@ -67,6 +67,12 @@ func TestProtectedManagementStrictCommandsAndOwnership(t *testing.T) {
 	if _, e = Call(context.Background(), store, Request{Op: "enable", ID: "missing"}); e == nil {
 		t.Fatal("missing ID enabled")
 	}
+	if _, e = Call(context.Background(), store, Request{Op: "data-dir", ID: "example"}); e == nil || !strings.Contains(e.Error(), "unknown management command") {
+		t.Fatal("removed command accepted", e)
+	}
+	if _, e = os.Stat(filepath.Join(store, ".data")); !os.IsNotExist(e) {
+		t.Fatal("removed command initialized storage", e)
+	}
 	transport := &http.Transport{DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
 		return (&net.Dialer{}).DialContext(ctx, "unix", socket(store))
 	}}

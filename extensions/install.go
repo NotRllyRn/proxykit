@@ -329,6 +329,13 @@ func (i Installer) Install(ctx context.Context, source string, trust bool) (Inst
 	if err = ctx.Err(); err != nil {
 		return Installation{}, err
 	}
+	// Validate persistent storage before publishing the package or enabled-state
+	// intent. Retain data even if a later install step fails.
+	owned := i
+	owned.Owned = true // Install already holds the store lock.
+	if _, err = owned.DataDir(m.ID); err != nil {
+		return Installation{}, err
+	}
 	if err = os.Rename(stage, destination); err != nil {
 		return Installation{}, err
 	}

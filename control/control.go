@@ -99,8 +99,6 @@ func Listen(store string, runtime *nodehost.Runtime) (func(context.Context) erro
 			e = runtime.Change(ctx, request.ID, request.Op == "enable")
 		case "remove":
 			e = runtime.Remove(request.ID)
-		case "data-dir":
-			response.Message, e = runtime.DataDir(ctx, request.ID)
 		case "install":
 			if request.ID != "" {
 				e = errors.New("unexpected installation ID")

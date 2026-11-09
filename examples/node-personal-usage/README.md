@@ -20,10 +20,12 @@ Installation defaults disabled. Online `extension enable personal-usage` / `disa
 
 This example deliberately keeps its counter process-local. Stateful extensions
 can use the host-created absolute `api.dataDir` with normal Node filesystem APIs.
-`proxykit extension data-dir personal-usage` discovers/prepares the private path
-before activation for an application-owned init tool. It is keyed by manifest ID
-and survives removal/reinstall; do not store durable state beside package files.
-See the [persistent-data/init recipe](../../docs/EXTENSION_AUTHORING.md#persistent-data-and-pre-activation-init).
+Installation automatically creates or validates the private directory; activation
+validates it again before setup. No directory initialization step is needed.
+Extensions can initialize files during setup or document optional application
+configuration. The directory is keyed by manifest ID and survives removal/reinstall;
+do not store durable state beside package files. See the
+[persistent-data recipe](../../docs/EXTENSION_AUTHORING.md#persistent-data-and-application-configuration).
 
 For an entirely local executable install/hot-enable-path check without publishing a repository or using GitHub credentials:
 

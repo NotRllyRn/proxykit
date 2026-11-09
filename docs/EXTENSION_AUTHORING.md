@@ -138,41 +138,39 @@ Stdout is reserved for framed IPC. `api.log` and standard console methods go to 
 
 An extension can implement its own dashboard/enrollment HTTP servers using Node builtins. There is **no** `api.router`, automatic port allocation, public URL provisioning, TLS, dashboard framework or built-in OAuth. Provision ports/configuration explicitly; start listeners in setup and close them in cleanup. Use separate authentication for administrative and public-facing flows, constrain request sizes, and keep secrets out of URLs/logs. Default to loopback until deployment access controls are configured. A public enrollment flow is application code, not an installer feature.
 
-### Persistent data and pre-activation init
+### Persistent data and application configuration
 
-The host supplies `api.dataDir` before calling setup: `<store>/.data/<manifest-id>`.
-Use normal Node filesystem APIs, not a host storage service. For example:
+Installation automatically creates or validates `<store>/.data/<manifest-id>`.
+The host validates it again and supplies its absolute path as `api.dataDir` before
+calling setup, including for packages installed by older hosts. No user directory
+initialization step is needed. Use normal Node filesystem APIs to initialize your
+application's files during setup, not a host storage service. For example:
 
 ```js
-import { readFile } from 'node:fs/promises';
+import { open, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { defineHTTP } from '../sdk/index.mjs';
 
 export default defineHTTP(async api => {
   if (!api.dataDir) throw new Error('This extension requires a host with api.dataDir');
-  const config = JSON.parse(await readFile(join(api.dataDir, 'config.json'), 'utf8'));
+  const path = join(api.dataDir, 'config.json');
+  try {
+    const file = await open(path, 'wx', 0o600); // Do not overwrite existing config.
+    try { await file.writeFile(JSON.stringify({ label: 'Personal usage' })); }
+    finally { await file.close(); }
+  } catch (error) {
+    if (error.code !== 'EEXIST') throw error;
+  }
+  const config = JSON.parse(await readFile(path, 'utf8'));
   // Validate config and register your hooks/listeners here.
 });
 ```
 
-For an extension whose standalone init tool previously used an external directory,
-point that tool at the host directory **before activation**, rather than waiting
-for setup to announce a path:
-
-```sh
-# Same PROXYKIT_EXTENSIONS_DIR and OS user as the server:
-proxykit extension install https://github.com/OWNER/REPOSITORY/tree/v1.0.0 --trust
-DATA_DIR="$(proxykit extension data-dir example-extension)"
-# Example application-owned tool/flag, NOT a ProxyKit init command:
-node /path/to/application/init.mjs --data-dir "$DATA_DIR"
-proxykit extension enable example-extension
-```
-
-`extension data-dir ID` prints only an absolute path and creates/validates it;
-it works offline, online, disabled and even before install. It never runs package
-code or enables anything. Do not use `--activate` until required initialization
-has completed. Choose an init tool that accepts an explicit directory; the host
-does not discover arbitrary application configuration or copy an old external
+The host creates a directory, not application configuration. If your extension
+requires user input or supports an optional standalone configuration tool, document
+that workflow, the selected store/manifest ID, and when configuration must be
+ready. Do not use `--activate` until any required application configuration is
+ready. The host does not discover arbitrary configuration or copy an old external
 store. Stop old owners before an application-specific migration.
 
 Manifest IDs, not display labels or package versions, determine storage identity.

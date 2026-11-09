@@ -66,15 +66,9 @@ Replace `OWNER/REPOSITORY` below with a real compatible repository:
 
 Before activation, follow the extension's own configuration instructions. Set any required environment variables in **terminal A before starting the server**; exporting them only in terminal B does not change the running server's environment. Missing configuration may require restarting the server once with the right environment. Hot activation itself does not require a restart.
 
-### Initialize extension data, if required
+### Persistent extension data
 
-Each extension has a persistent private directory under the store, keyed by its unique manifest ID—not its display name. Discover or create it without activating code:
-
-```sh
-./proxykit extension data-dir example-extension
-```
-
-The command prints the absolute path. Follow the extension's initialization instructions using that directory **before enabling it**. It also works before installation, offline or while the server runs. Use the same OS user and store as the server. This command creates the directory, not the extension's configuration.
+Installation automatically creates or validates a private directory at `<store>/.data/<manifest-id>`, keyed by the unique manifest ID—not its display name. No directory initialization command is needed. The host validates it again before setup and supplies its absolute path as `api.dataDir`. Extensions can initialize their own files during setup, or document optional application-specific configuration. Creating the directory does not create application configuration.
 
 Installed Node extensions receive this path as `api.dataDir` during setup. Data survives disable/enable, server restart, package removal and reinstall; removal does **not** erase credentials or state. Different IDs have separate directories. Back up sensitive state appropriately; delete it manually only when you intentionally want to discard it and the extension has fully stopped.
 

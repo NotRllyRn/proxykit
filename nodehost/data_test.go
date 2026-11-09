@@ -25,6 +25,9 @@ import fs from 'node:fs'; import path from 'node:path';
 export default defineHTTP(api=>{
  if(!path.isAbsolute(api.dataDir)||!fs.statSync(api.dataDir).isDirectory()) throw Error('missing host directory');
  if((fs.statSync(api.dataDir).mode&0o777)!==0o700) throw Error('not private');
+ const config=path.join(api.dataDir,'config.json');
+ if(!fs.existsSync(config)) fs.writeFileSync(config,'initialized',{mode:0o600});
+ if(fs.readFileSync(config,'utf8')!=='initialized') throw Error('lost configuration');
  const count=path.join(api.dataDir,'setups');
  fs.appendFileSync(count,'setup\n',{mode:0o600});
  api.cleanup(()=>fs.appendFileSync(path.join(api.dataDir,'cleanups'),'cleanup\n',{mode:0o600}));
@@ -71,10 +74,6 @@ export default defineHTTP(api=>{
 	install("example-one", "1.0.0")
 	install("example-two", "1.0.0")
 	i := extensions.Installer{Store: store, Owned: true}
-	data, err := i.DataDir("example-one")
-	if err != nil {
-		t.Fatal(err)
-	}
 	s, err := i.State()
 	if err != nil {
 		t.Fatal(err)
@@ -84,11 +83,6 @@ export default defineHTTP(api=>{
 		t.Fatal(err)
 	}
 	if err = i.SaveState(s); err != nil {
-		t.Fatal(err)
-	}
-	// A CLI/application init can populate data before setup.
-	config := filepath.Join(data, "config.json")
-	if err = os.WriteFile(config, []byte("initialized"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	m, _ := runtimeProxy(t, store, http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}), time.Second, 4)
@@ -165,7 +159,7 @@ func TestDataDirFailureDoesNotRunSetup(t *testing.T) {
 		t.Run(fmt.Sprint(setupFails), func(t *testing.T) {
 			store := t.TempDir()
 			marker := filepath.Join(t.TempDir(), "ran")
-			source := fmt.Sprintf(`import fs from 'node:fs';export default api=>{fs.writeFileSync(%q,'ran');throw Error('setup failed')}`, marker)
+			source := fmt.Sprintf(`import fs from 'node:fs';import path from 'node:path';export default api=>{fs.writeFileSync(%q,'ran');fs.writeFileSync(path.join(api.dataDir,'state'),'preserve',{mode:0o600});throw Error('setup failed')}`, marker)
 			installFixture(t, store, "example", source)
 			if !setupFails {
 				if err := os.Symlink(t.TempDir(), filepath.Join(store, ".data")); err != nil {
@@ -182,8 +176,8 @@ func TestDataDirFailureDoesNotRunSetup(t *testing.T) {
 				t.Fatalf("setup ran: %v", ran)
 			}
 			if setupFails {
-				if _, err := os.Stat(filepath.Join(store, ".data", "example")); err != nil {
-					t.Fatal("failed setup must retain data", err)
+				if b, err := os.ReadFile(filepath.Join(store, ".data", "example", "state")); err != nil || string(b) != "preserve" {
+					t.Fatalf("failed setup must retain data: %q %v", b, err)
 				}
 			}
 		})

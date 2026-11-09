@@ -32,7 +32,7 @@ func TestFailedReplacementKeepsInstalledPackage(t *testing.T) {
 		t.Fatal("prior entry removed", err)
 	}
 	entries, err := os.ReadDir(good.Store)
-	if err != nil || len(entries) != 3 {
+	if err != nil || len(entries) != 4 { // package, .data, state and owner lock
 		t.Fatal("stages or locks leaked", err)
 	}
 }

@@ -36,12 +36,14 @@ Root `proxykit-extension.json`: strict JSON object with `manifestVersion: 1`, `i
 
 ## Persistent data addition (HTTP API and IPC remain v1)
 
-Current installed hosts create `<store>/.data/<manifest-id>` and pass the absolute
-path in the optional `init.dataDir` field, exposed as `api.dataDir` before setup.
-It is independent of package/version replacement and never removed by package
-removal. `extension data-dir ID` prepares/discovers it even before activation or
-installation. Data paths require real current-UID-owned 0700 directories under
-the trusted-ancestor store model. See [authoring/init](../EXTENSION_AUTHORING.md#persistent-data-and-pre-activation-init)
+Installation creates or validates `<store>/.data/<manifest-id>` before publishing
+the package or reporting success. Installed hosts validate it again before setup
+and pass the absolute path in the optional `init.dataDir` field, exposed as
+`api.dataDir`. No user directory initialization step is needed. Extensions own
+initialization of their files and any optional application configuration workflow.
+Data is independent of package/version replacement and never removed by package
+removal or failed activation. Data paths require real current-UID-owned 0700
+directories under the trusted-ancestor store model. See [authoring/configuration](../EXTENSION_AUTHORING.md#persistent-data-and-application-configuration)
 and [SDK storage lifecycle](../../sdk/README.md#persistent-extension-data-additive-http-v1).
 Low-level generic workers can omit `dataDir`; they do not create storage.
 
