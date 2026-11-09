@@ -34,7 +34,7 @@ func runExtension(ctx context.Context, args []string, out io.Writer) error {
 }
 func runExtensionWithInstaller(ctx context.Context, args []string, out io.Writer, i extensions.Installer) error {
 	if len(args) == 0 {
-		return errors.New("usage: extension install URL --trust [--activate] | enable ID | disable ID | status [ID] | list | remove ID")
+		return errors.New("usage: extension install URL --trust [--activate] | enable ID | disable ID | status [ID] | list | remove ID | data-dir ID")
 	}
 	request := control.Request{Op: args[0]}
 	activate := false
@@ -62,7 +62,7 @@ func runExtensionWithInstaller(ctx context.Context, args []string, out io.Writer
 		if request.Source == "" {
 			return errors.New("GitHub URL required")
 		}
-	case "enable", "disable", "remove":
+	case "enable", "disable", "remove", "data-dir":
 		if len(args) != 2 {
 			return errors.New("extension command requires one ID")
 		}
@@ -106,6 +106,9 @@ func runExtensionWithInstaller(ctx context.Context, args []string, out io.Writer
 				}
 				fmt.Fprintln(out, "Activated", response.Message)
 			}
+		case "data-dir":
+			_, e = fmt.Fprintln(out, response.Message)
+			return e
 		case "status", "list":
 			if response.Status == nil {
 				return errors.New("management status missing")
@@ -117,6 +120,13 @@ func runExtensionWithInstaller(ctx context.Context, args []string, out io.Writer
 		return e
 	}
 	switch request.Op {
+	case "data-dir":
+		path, e := i.DataDir(request.ID)
+		if e != nil {
+			return e
+		}
+		_, e = fmt.Fprintln(out, path)
+		return e
 	case "install":
 		record, e := i.Install(ctx, request.Source, request.Trust)
 		if e != nil {

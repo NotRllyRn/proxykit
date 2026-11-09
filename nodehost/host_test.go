@@ -21,6 +21,9 @@ import (
 
 func installFixture(t *testing.T, store, id, source string) {
 	t.Helper()
+	if err := os.Chmod(store, 0700); err != nil {
+		t.Fatal(err)
+	}
 	dir := filepath.Join(store, id, "package")
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		t.Fatal(err)

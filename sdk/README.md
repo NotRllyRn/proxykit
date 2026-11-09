@@ -31,6 +31,43 @@ Installed manifests require **`apiVersion: 1`**, distinct from `manifestVersion:
 - Messages are full snapshots `{method,url,header,status,body?}`, never patches; spread the supplied request/response when replacing. Request status is zero and URL absolute HTTP(S). Response method/URL may be empty. Bodies are canonical base64; no-body replacements must omit body. Respond/child always require body (empty string for empty bytes). Results require explicit `action`; unknown fields, duplicate keys, null fields, illegal actions, missing snapshot fields and noncanonical base64 fail. `replace`, `respond`, `child`, `pass` merely construct explicit result objects; native validation remains authoritative.
 - Stream input uses `input.stream={streamId,sequence,data,end:false}` and response status/headers without a duplicated response.body. IDs distinguish hook/exchange/attempt/stage; sequences start at zero per stream and increase. Native callbacks supply data only, so there is **no fabricated final unit**. Use finish for terminal evidence. `streamBytes` / `streamUnit` preserve opaque bytes with explicit decoded-size bounds (helper default 64 KiB, bridge Unit default 32 KiB). Stream replacements carry base64 in `message.body`.
 
+## Persistent extension data (additive HTTP v1)
+
+Installed `HTTPSetupAPI` supplies `readonly dataDir: string`: an absolute,
+host-created private directory available before setup. It is keyed by the unique
+manifest `id`, not a package/display name, version, commit or worker PID:
+`<store>/.data/<id>`, separate from replaceable `<store>/<id>/package` files.
+Distinct IDs get distinct directories even if their labels are identical.
+
+Use normal Node `fs`/`path` APIs (and author-installed `@types/node` for TypeScript):
+
+```js
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+// Inside async defineHTTP setup; your application owns the file's schema:
+const config = JSON.parse(await readFile(join(api.dataDir, 'config.json'), 'utf8'));
+```
+
+`proxykit extension data-dir ID` creates/validates the directory and prints only
+its absolute path, online or offline, including before installation or while
+disabled. Use the same store and OS identity as the server. Run your application's
+init/config tool against that path **before enable**, then read it from setup.
+See the [init workflow](../docs/EXTENSION_AUTHORING.md#persistent-data-and-pre-activation-init).
+It does not execute the extension or enable it.
+
+Data survives disable/re-enable, hot activation, restart, setup failure, removal
+and reinstall/version replacement of the same ID. Removal never deletes it;
+there is no automatic purge, migration, database, CRUD service, file quota or
+sandbox. The author owns atomic writes, file permissions (use 0600 for secrets),
+concurrency, backup and schema migration. Changing the store/ID selects different
+data. Directory creation fails on symlinks, non-directories, wrong ownership or
+non-private permissions (0700 required); store ancestors must remain trusted.
+Same-UID trusted extensions are **not isolated** from each other's files.
+Older HTTP v1 hosts do not supply this additive field: extensions requiring it
+must state a minimum tested host revision and fail setup clearly if absent.
+Generic low-level `SetupAPI.dataDir` is optional; installed HTTP hosts always
+supply it. The low-level worker does not create or own storage itself.
+
 ## Managed ordinary HTTP
 
 Non-delivery HTTP handlers receive `context.http(fullBufferedRequest)`. It uses bounded correlated IPC to Go's `engine.Client` with the active invocation context and exact configured gateway origin, not direct `Input.Call` or a Node-visible capability. Example inside a handler:

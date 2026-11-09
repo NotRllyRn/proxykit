@@ -1,5 +1,6 @@
 // Embedded trusted worker runtime. stdout is exclusively framed protocol v1.
 import { pathToFileURL } from 'node:url';
+import { isAbsolute } from 'node:path';
 import { format } from 'node:util';
 import { Console } from 'node:console';
 const wireWrite = process.stdout.write.bind(process.stdout);
@@ -48,12 +49,14 @@ function keys(m, required, optional = []) {
   if (required.some(k => !Object.hasOwn(m, k)) || Object.keys(m).some(k => !required.includes(k) && !optional.includes(k))) throw new Error('invalid message fields');
 }
 async function initialize(m) {
-  keys(m, ['v', 'type', 'entry', 'config', 'maxFrame', 'concurrency']);
+  keys(m, ['v', 'type', 'entry', 'config', 'maxFrame', 'concurrency'], ['dataDir']);
+  if (m.dataDir !== undefined && (typeof m.dataDir !== 'string' || (m.dataDir !== '' && !isAbsolute(m.dataDir)))) throw new Error('invalid dataDir');
   if (initialized || typeof m.entry !== 'string' || !Number.isInteger(m.maxFrame) || m.maxFrame < 256 || m.maxFrame > 64 * 1024 * 1024 || !Number.isInteger(m.concurrency) || m.concurrency < 1 || m.concurrency > 4096) throw new Error('invalid init');
   initialized = true; maxFrame = m.maxFrame; concurrency = m.concurrency;
   let registrationOpen = true;
   const api = Object.freeze({
     config: m.config,
+    dataDir: m.dataDir || undefined,
     log,
     on(descriptor, handler) {
       if (!registrationOpen) throw new Error('registration is closed');

@@ -25,6 +25,8 @@ export interface HTTPContext extends HookContext {
   http(request: BufferedMessage): Promise<BufferedMessage>;
 }
 export interface HTTPSetupAPI {
+  /** Host-created absolute private directory keyed by manifest ID; retained after removal. */
+  readonly dataDir: string;
   readonly config: JSONValue;
   on(descriptor: HookDescriptor & { stage: 'delivery' }, handler: (input: HTTPInput, context: HookContext) => HTTPResult | Promise<HTTPResult>): void;
   on(descriptor: HookDescriptor & { stage: Exclude<Stage,'delivery'> }, handler: (input: HTTPInput, context: HTTPContext) => HTTPResult | Promise<HTTPResult>): void;

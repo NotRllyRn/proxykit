@@ -4,7 +4,8 @@
 
 One server/listener and one stable reverse proxy publish immutable native engines.
 The host/author HTTP API remains v1; the author handler signature, snapshots, hooks,
-managed-call helper and IPC messages are unchanged. **`apiVersion: 1` is required**
+and managed-call helper are unchanged. Persistent storage adds setup `api.dataDir`
+and the corresponding optional IPC init field without changing either v1 major. **`apiVersion: 1` is required**
 in every new manifest, independently of `manifestVersion: 1`, package SemVer and
 IPC `v:1`. Missing/unsupported API majors fail install before code executes. SDK
 file names or copied helpers never imply compatibility.
@@ -12,6 +13,7 @@ file names or copied helpers never imply compatibility.
 ```
 proxykit extension install https://github.com/example/repository --trust
 proxykit extension status
+proxykit extension data-dir example-extension # prepare/discover storage before app init
 proxykit extension enable example-extension
 proxykit extension disable example-extension
 proxykit extension status example-extension
@@ -72,6 +74,26 @@ retirement cannot begin their cleanup during setup. Different code or
 configuration under a still-owned ID is rejected. Resource migration and partial
 setup cleanup remain the author's responsibility. Arbitrary setup side effects
 are not a transaction: register cleanup promptly and unwind partial acquisition.
+
+### Persistent data is independent of worker lifetime
+
+Installed Node setup receives additive HTTP v1 `api.dataDir`, a read-only absolute
+path created/validated by the host before setup: `<store>/.data/<manifest-id>`.
+It is separate from replaceable package files and keyed only by unique manifest
+ID (not display labels, version or commit). `extension data-dir ID` prepares and
+prints the same path online or offline, including disabled/pre-install IDs,
+without running code. An application can initialize its config there **before**
+enable; see the [author init workflow](EXTENSION_AUTHORING.md#persistent-data-and-pre-activation-init).
+
+Data remains through unrelated activation/worker reuse, disable/re-enable,
+cleanup, restart, failed setup, removal and reinstall/version replacement. Removal
+only removes code/provenance; it never deletes `.data/<id>`. No automatic purge,
+schema migration or overlapping/multi-instance owner support is added. Cleanup
+should close resources, not erase durable state. Authors own file permissions,
+atomic updates, concurrency, backup and migration via ordinary Node filesystem
+APIs. Data directories must be real, current-UID-owned 0700 directories; symlink,
+file and insecure-permission failures abort preparation before setup. The store's
+ancestors must be trusted as below. This is not same-UID extension isolation.
 
 ## Bounds, expiry and shutdown
 
@@ -141,6 +163,14 @@ rename and disabled-decision commit yields an unresolved, nonexecuting record.
 Do not edit installed files, provenance or state by hand.
 
 ## Observable verification
+
+`nodehost/data_test.go` exercises actual installed Node SDK dataDir delivery,
+distinct IDs with identical hook labels, pre-init config, stable worker reuse,
+disable/re-enable cleanup, restart, removal/version replacement and storage/setup
+failure retention. `extensions/data_test.go` covers invalid IDs, private modes,
+symlink/non-directory rejection and stable paths. The compiled CLI archive fixture
+also verifies offline pre-install and online disabled path discovery followed by
+initialization, setup and persistent writes across enable/disable.
 
 `nodehost/runtime_test.go` exercises repeated stateful PID/port/lock/job reuse,
 required-dependency rollback, setup and injected persistence rollback, native and

@@ -124,6 +124,7 @@ Build with `npm install` then `npm run build` **in your development checkout**. 
 |---|---|
 | `defineHTTP(setup)` | Typed identity helper for the default HTTP setup function; not a dispatcher |
 | `api.on(descriptor, handler)` | Register while setup runs; registrations freeze after setup completes |
+| `api.dataDir` | Read-only absolute host-created private directory for this manifest ID; persists independently of installed code |
 | `api.config` | Host-supplied JSON; CLI supplies `gatewayOrigin`, not an arbitrary per-package configuration UI |
 | `api.log(...args)` | Log to stderr; redact secrets and request content |
 | `api.cleanup(fn)` | Register sync/async cleanup, called in reverse order after active handlers settle |
@@ -136,6 +137,56 @@ Async setup is awaited. If setup cannot acquire a resource, clean up anything it
 Stdout is reserved for framed IPC. `api.log` and standard console methods go to stderr; do not use `process.stdout.write` or create a stdout logger.
 
 An extension can implement its own dashboard/enrollment HTTP servers using Node builtins. There is **no** `api.router`, automatic port allocation, public URL provisioning, TLS, dashboard framework or built-in OAuth. Provision ports/configuration explicitly; start listeners in setup and close them in cleanup. Use separate authentication for administrative and public-facing flows, constrain request sizes, and keep secrets out of URLs/logs. Default to loopback until deployment access controls are configured. A public enrollment flow is application code, not an installer feature.
+
+### Persistent data and pre-activation init
+
+The host supplies `api.dataDir` before calling setup: `<store>/.data/<manifest-id>`.
+Use normal Node filesystem APIs, not a host storage service. For example:
+
+```js
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { defineHTTP } from '../sdk/index.mjs';
+
+export default defineHTTP(async api => {
+  if (!api.dataDir) throw new Error('This extension requires a host with api.dataDir');
+  const config = JSON.parse(await readFile(join(api.dataDir, 'config.json'), 'utf8'));
+  // Validate config and register your hooks/listeners here.
+});
+```
+
+For an extension whose standalone init tool previously used an external directory,
+point that tool at the host directory **before activation**, rather than waiting
+for setup to announce a path:
+
+```sh
+# Same PROXYKIT_EXTENSIONS_DIR and OS user as the server:
+proxykit extension install https://github.com/OWNER/REPOSITORY/tree/v1.0.0 --trust
+DATA_DIR="$(proxykit extension data-dir example-extension)"
+# Example application-owned tool/flag, NOT a ProxyKit init command:
+node /path/to/application/init.mjs --data-dir "$DATA_DIR"
+proxykit extension enable example-extension
+```
+
+`extension data-dir ID` prints only an absolute path and creates/validates it;
+it works offline, online, disabled and even before install. It never runs package
+code or enables anything. Do not use `--activate` until required initialization
+has completed. Choose an init tool that accepts an explicit directory; the host
+does not discover arbitrary application configuration or copy an old external
+store. Stop old owners before an application-specific migration.
+
+Manifest IDs, not display labels or package versions, determine storage identity.
+The manifest has no separate display-name field; identical application/hook labels
+under distinct IDs still receive different directories. One directory per ID,
+no multi-instance framework. Disable, cleanup, restart, remove/reinstall and version
+replacement keep data; removal never silently deletes it. Keep databases/secrets
+out of package files. Authors own schema validation/migration, backups, atomic
+writes and concurrent access; use private file modes (0600) for secrets. No CRUD,
+database, quota, secret vault or sandbox API is implied. The host refuses symlinks,
+non-directory/wrong-owner/non-0700 data paths instead of repairing them; trusted
+store ancestors and the server identity remain the security boundary. Trusted
+same-UID code can access other data. `apiVersion` remains **1**; document a minimum
+tested host revision when requiring this additive field (older hosts omit it).
 
 ## 4. Hook stages and valid results
 
@@ -299,7 +350,7 @@ Before publishing, test:
 - Split reads, non-ASCII/binary bodies and unsupported encodings for body hooks.
 - Persistence/restart and uncertain effects for stateful extensions.
 
-Unit tests can invoke setup with a fake `on/config/log/cleanup` API to capture handlers, but that does not certify native action validation or installed behavior. Existing executable references: [minimal ESM extension](../examples/node-personal-usage/), [typed authoring fixture](../sdk/authoring.fixture.mts), [Node bridge tests](../nodehost/host_test.go), [CLI activation tests](../cmd/proxykit/activation_test.go) and [SDK tests](../sdk/authoring.test.mjs).
+Unit tests can invoke setup with a fake `on/config/dataDir/log/cleanup` API to capture handlers, but that does not certify native action validation or installed behavior. Existing executable references: [minimal ESM extension](../examples/node-personal-usage/), [typed authoring fixture](../sdk/authoring.fixture.mts), [Node bridge tests](../nodehost/host_test.go), [CLI activation tests](../cmd/proxykit/activation_test.go) and [SDK tests](../sdk/authoring.test.mjs).
 
 ## 9. Troubleshooting / publishing checklist
 

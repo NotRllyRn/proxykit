@@ -34,6 +34,17 @@ Acceptance: fake GitHub archive → install → compiled CLI → real Node hook 
 
 Root `proxykit-extension.json`: strict JSON object with `manifestVersion: 1`, `id` (lowercase safe identifier), `version` (explicit package version), `entry` (relative `.mjs` path). Reject unknown fields, invalid IDs/versions and absolute, dot-dot, symlink/hardlink/special-file archive paths. Resolve the selected ref/default branch to an immutable 40-hex commit before downloading its archive. Record source URL and resolved commit in host-owned provenance, never trust archive-supplied provenance. Bound download/extracted sizes and file counts. Stage in the destination filesystem, validate fully before atomic publish, leave a prior install intact on failure; prefer refusing overwrite initially if atomic updates cannot be kept simple. List reports provenance; remove validates ID and store containment. Changed registrations require server restart; CLI says so explicitly. Local fake GitHub HTTP/archive fixtures exercise production validation without credentials/live packages.
 
+## Persistent data addition (HTTP API and IPC remain v1)
+
+Current installed hosts create `<store>/.data/<manifest-id>` and pass the absolute
+path in the optional `init.dataDir` field, exposed as `api.dataDir` before setup.
+It is independent of package/version replacement and never removed by package
+removal. `extension data-dir ID` prepares/discovers it even before activation or
+installation. Data paths require real current-UID-owned 0700 directories under
+the trusted-ancestor store model. See [authoring/init](../EXTENSION_AUTHORING.md#persistent-data-and-pre-activation-init)
+and [SDK storage lifecycle](../../sdk/README.md#persistent-extension-data-additive-http-v1).
+Low-level generic workers can omit `dataDir`; they do not create storage.
+
 ## Public worker protocol v1
 
 Transport: stdin/stdout, unsigned 32-bit big-endian byte length followed by UTF-8 JSON. Default maximum frame 1 MiB; reject zero/oversize lengths before allocating body. The initial `init` frame is additionally capped at 1 MiB before negotiation. Frame bounds include the complete JSON envelope, not just a body field. Default concurrency is 16 (accepted configured range 1–4096); accepted frame range is 256 bytes–64 MiB. Stdout is protocol-only; SDK logging and standard global console methods go to stderr. Direct extension writes to stdout are unsupported and fail the process protocol. All frames carry `v: 1` and `type`; request/reply frames carry unique string `id`. Unknown versions, malformed messages and unmatched non-late replies terminate the worker and fail pending calls.
@@ -71,7 +82,7 @@ Installer: trust rejection; invalid URL/ref/ID/manifest; traversal and link entr
 Every shape below includes `v:1` and no extra top-level keys. `output`, `input` and `config` may be any JSON value; a returned `null` is meaningful, while missing/undefined output is not. The host rejects malformed UTF-8, duplicate JSON keys, unknown fields, wrong shapes and unmatched replies. Runtime validates host message fields and version before dispatch.
 
 ```text
-host -> {v:1,type:"init",entry:"/absolute/extension.mjs",config:{},maxFrame:1048576,concurrency:16}
+host -> {v:1,type:"init",entry:"/absolute/extension.mjs",dataDir:"/absolute/store/.data/example",config:{},maxFrame:1048576,concurrency:16}
 node -> {v:1,type:"ready",hooks:[{id:"example",stage:"observe",bodyMode:"none",order:0}]}
 host -> {v:1,type:"invoke",id:"1",hook:"example",input:{},deadline:UNIX_MILLISECONDS}
 node -> {v:1,type:"result",id:"1",output:{action:"pass"}}
@@ -81,7 +92,7 @@ host -> {v:1,type:"shutdown"}
 node -> {v:1,type:"stopped"}
 ```
 
-`order` and `deadline` are optional; all other illustrated fields are required. Error codes emitted by the runtime are `HOOK_ERROR` and `CANCELLED`; host treats a nonempty code/message as an invocation error, not a successful pass. Startup/setup/protocol failures log stderr and exit nonzero rather than inventing an undocumented startup-error frame. Cancel for already-settled work is harmless (it may race result delivery). A worker-originated reply for an ID no longer pending is a protocol failure, not an unrestricted late-result allowance. Duplicate readiness/stopped frames are failures. A stopped acknowledgement is permitted only during host shutdown after pending results have settled.
+`dataDir` (absolute when supplied; empty/omitted for generic workers), `order` and `deadline` are optional; all other illustrated fields are required. Error codes emitted by the runtime are `HOOK_ERROR` and `CANCELLED`; host treats a nonempty code/message as an invocation error, not a successful pass. Startup/setup/protocol failures log stderr and exit nonzero rather than inventing an undocumented startup-error frame. Cancel for already-settled work is harmless (it may race result delivery). A worker-originated reply for an ID no longer pending is a protocol failure, not an unrestricted late-result allowance. Duplicate readiness/stopped frames are failures. A stopped acknowledgement is permitted only during host shutdown after pending results have settled.
 
 Setup receives `config`, `on(descriptor, handler)`, `log(...args)` and `cleanup(fn)`. Async setup is awaited; registrations then close. Cleanup functions run in reverse registration order after active handlers settle. The runtime does not call a handler whose invocation deadline has already expired; an active handler receives a signal and must cooperate. Cancellation does not force a Promise to settle and does not undo side effects. The host kills an uncooperative process after grace. A cleanup function that hangs is also subject to host shutdown kill. All normal global console methods (including table/count) are redirected to stderr before module import. Direct stdout writes or constructing a separate stdout logger remain unsupported trusted-code behavior.
 

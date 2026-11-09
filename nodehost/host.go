@@ -100,7 +100,12 @@ func buildHost(ctx context.Context, o Options, records []extensions.Installation
 		options.Entry = filepath.Join(o.Store, record.Manifest.ID, "package", filepath.FromSlash(record.Manifest.Entry))
 		w := reuse[record.Manifest.ID]
 		if w == nil {
+			// The embedding host owns the store for the worker lifetime.
 			var e error
+			options.DataDir, e = (extensions.Installer{Store: o.Store, Owned: true}).DataDir(record.Manifest.ID)
+			if e != nil {
+				return nil, fmt.Errorf("data directory %s: %w", record.Manifest.ID, e)
+			}
 			w, e = worker.New(options)
 			if e != nil {
 				return nil, e

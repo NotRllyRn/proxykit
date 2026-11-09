@@ -443,6 +443,20 @@ func (m *Runtime) pruneReapedLocked() {
 	}
 }
 
+// DataDir prepares persistent storage even for a disabled or not-yet-installed ID.
+func (m *Runtime) DataDir(ctx context.Context, id string) (string, error) {
+	if err := m.admit(ctx); err != nil {
+		return "", err
+	}
+	defer func() { <-m.txn }()
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.closed {
+		return "", extension.ErrClosed
+	}
+	return m.installer.DataDir(id)
+}
+
 func (m *Runtime) Remove(id string) error {
 	if err := m.admit(context.Background()); err != nil {
 		return err

@@ -11,6 +11,8 @@ export interface HookDescriptor {
 }
 export interface HookContext { signal: AbortSignal; deadline?: number }
 export interface SetupAPI {
+  /** Host-created persistent directory; installed HTTP hosts always supply it. */
+  readonly dataDir?: string;
   readonly config: JSONValue;
   on(descriptor: HookDescriptor, handler: (input: JSONValue, context: HookContext) => JSONValue | Promise<JSONValue>): void;
   log(...args: unknown[]): void;

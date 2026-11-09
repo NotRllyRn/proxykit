@@ -38,14 +38,20 @@ func TestSystemInstalledNodeActivationAndShutdown(t *testing.T) {
 	if out, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build %v %s", err, out)
 	}
-	source := fmt.Sprintf(`import {writeFileSync} from 'node:fs';export default api=>{
+	source := fmt.Sprintf(`import {writeFileSync,readFileSync,appendFileSync} from 'node:fs';import {join,isAbsolute} from 'node:path';import {defineHTTP} from './sdk.mjs';export default defineHTTP(api=>{
+ if(!isAbsolute(api.dataDir)||readFileSync(join(api.dataDir,'config'),'utf8')!=='initialized')throw Error('missing initialized dataDir');
+ appendFileSync(join(api.dataDir,'setups'),'setup\n',{mode:0o600});
  api.on({id:'decorate',stage:'responseBody',bodyMode:'buffered'},i=>({action:'replace',message:{...i.response,body:Buffer.from(Buffer.from(i.response.body,'base64').toString()+' installed').toString('base64')}}));
  api.cleanup(()=>writeFileSync(%q,'clean'));
- };`, marker)
+ });`, marker)
+	sdk, err := os.ReadFile("../../sdk/index.mjs")
+	if err != nil {
+		t.Fatal(err)
+	}
 	var archive bytes.Buffer
 	gz := gzip.NewWriter(&archive)
 	tw := tar.NewWriter(gz)
-	for name, body := range map[string]string{"root/proxykit-extension.json": `{"manifestVersion":1,"apiVersion":1,"id":"example-user","version":"1.0.0","entry":"main.mjs"}`, "root/main.mjs": source} {
+	for name, body := range map[string]string{"root/proxykit-extension.json": `{"manifestVersion":1,"apiVersion":1,"id":"example-user","version":"1.0.0","entry":"main.mjs"}`, "root/main.mjs": source, "root/sdk.mjs": string(sdk)} {
 		if err := tw.WriteHeader(&tar.Header{Name: name, Mode: 0600, Size: int64(len(body))}); err != nil {
 			t.Fatal(err)
 		}
@@ -70,6 +76,17 @@ func TestSystemInstalledNodeActivationAndShutdown(t *testing.T) {
 	store := filepath.Join(temp, "extensions")
 	var output bytes.Buffer
 	installer := extensions.Installer{Store: store, APIBase: fake.URL, ArchiveBase: fake.URL}
+	if err := runExtensionWithInstaller(context.Background(), []string{"data-dir", "example-user"}, &output, installer); err != nil {
+		t.Fatal(err)
+	}
+	dataDir := strings.TrimSpace(output.String())
+	if !filepath.IsAbs(dataDir) {
+		t.Fatal(dataDir)
+	}
+	if err := os.WriteFile(filepath.Join(dataDir, "config"), []byte("initialized"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	output.Reset()
 	if err := runExtensionWithInstaller(context.Background(), []string{"install", "https://github.com/example/repository", "--trust"}, &output, installer); err != nil {
 		t.Fatal(err)
 	}
@@ -134,6 +151,9 @@ func TestSystemInstalledNodeActivationAndShutdown(t *testing.T) {
 		}
 		return string(out)
 	}
+	if path := strings.TrimSpace(manage("data-dir", "example-user")); path != dataDir {
+		t.Fatalf("online path %q != offline %q", path, dataDir)
+	}
 	manage("enable", "example-user")
 	status := manage("status", "example-user")
 	if !strings.Contains(status, "ACTIVE") || !strings.Contains(status, "generation=2") {
@@ -191,6 +211,9 @@ func TestSystemInstalledNodeActivationAndShutdown(t *testing.T) {
 	}
 	if err := command.Wait(); err != nil {
 		t.Fatalf("compiled shutdown %v; %s", err, <-logs)
+	}
+	if b, err := os.ReadFile(filepath.Join(dataDir, "setups")); err != nil || string(b) != "setup\nsetup\n" {
+		t.Fatalf("persistent setup state: %q %v", b, err)
 	}
 	if b, err := os.ReadFile(marker); err != nil || string(b) != "clean" {
 		t.Fatalf("worker not cleaned/reaped: %q %v", b, err)

@@ -4,6 +4,9 @@ const unit: StreamUnit = streamUnit('example-stream', 0, new Uint8Array([1, 2]),
 const json: JSONValue = unit;
 void json;
 const httpSetup = defineHTTP(api => {
+  const dataDir: string = api.dataDir; void dataDir;
+  // @ts-expect-error The persistent path is a read-only host fact.
+  api.dataDir = '/another/path';
   api.on({ id: 'request', stage: 'request', bodyMode: 'buffered', failure: 'block', order: -2 }, i => {
     const hasTrailers: boolean = i.requestHasTrailers; void hasTrailers;
     // @ts-expect-error Original trailer presence is a read-only host fact.

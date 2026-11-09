@@ -51,6 +51,7 @@ func cloneHooks(hooks []HookDescriptor) []HookDescriptor {
 type Options struct {
 	NodeBinary                                                string
 	Entry                                                     string
+	DataDir                                                   string // host-created absolute persistent path; optional for low-level workers
 	Config                                                    json.RawMessage
 	Stderr                                                    io.Writer
 	MaxFrame                                                  int
@@ -224,7 +225,7 @@ func (w *Worker) start(ctx context.Context) error {
 		defer stdout.Close()
 		p.reader(stdout)
 	}()
-	err = p.send(map[string]any{"v": 1, "type": "init", "entry": w.options.Entry, "config": w.options.Config, "maxFrame": w.options.MaxFrame, "concurrency": w.options.Concurrency})
+	err = p.send(map[string]any{"v": 1, "type": "init", "entry": w.options.Entry, "dataDir": w.options.DataDir, "config": w.options.Config, "maxFrame": w.options.MaxFrame, "concurrency": w.options.Concurrency})
 	if err != nil {
 		p.fail(err)
 		return err

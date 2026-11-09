@@ -18,6 +18,13 @@ curl -i http://127.0.0.1:8080/example
 
 Installation defaults disabled. Online `extension enable personal-usage` / `disable personal-usage` changes pipelines without restarting the listener; `extension status` separates enabled intent from active/draining/failed state. Unchanged workers retain their counters and resources. Disable and wait for drain/reaping before removal/replacement. Workers clean up after HTTP drain; setup/descriptor/dependency failures preserve the prior pipeline. See [finite drain and legacy policy](../../docs/HOT_ACTIVATION.md). `PROXYKIT_EXTENSIONS_DIR` isolates the store; `-node` selects the Node binary. Node must be installed separately. Linux / Node 24 is the tested process environment; this is not a sandbox.
 
+This example deliberately keeps its counter process-local. Stateful extensions
+can use the host-created absolute `api.dataDir` with normal Node filesystem APIs.
+`proxykit extension data-dir personal-usage` discovers/prepares the private path
+before activation for an application-owned init tool. It is keyed by manifest ID
+and survives removal/reinstall; do not store durable state beside package files.
+See the [persistent-data/init recipe](../../docs/EXTENSION_AUTHORING.md#persistent-data-and-pre-activation-init).
+
 For an entirely local executable install/hot-enable-path check without publishing a repository or using GitHub credentials:
 
 ```sh
