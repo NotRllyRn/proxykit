@@ -28,7 +28,7 @@ The listener defaults to loopback. Without an authentication extension, there is
 
 For the numbered, two-terminal walkthrough, see **[Set up ProxyKit and install extensions](docs/GETTING_STARTED.md)**. The commands below are a quick reference.
 
-Requires Node on PATH when activating Node extensions (tested with Node 24). Packages must contain a root `proxykit-extension.json` manifest and prebuilt ESM; installation does not run npm, build commands or package scripts.
+Requires Node on PATH for TypeScript source installation and Node extension activation (tested with Node 24). Packages contain a root `proxykit-extension.json` and either TypeScript source (`.ts`/`.mts`) or prebuilt JavaScript ESM (`.mjs`). ProxyKit typechecks and compiles supported source packages using its bundled compiler; it never runs npm, author build commands or package scripts.
 
 ```sh
 # Replace this placeholder with a repository you have reviewed and trust:
@@ -50,7 +50,7 @@ Set `PROXYKIT_EXTENSIONS_DIR` to select the store; otherwise it lives under your
 
 ## Develop an extension
 
-Start with the **[TypeScript extension developer guide](docs/EXTENSION_AUTHORING.md)**: a complete first extension, GitHub repository layout and manifest, prebuilt packaging, all HTTP hook stages, API recipes, ordering, credentials, lifecycle, testing and troubleshooting. Use the [SDK reference](sdk/README.md) and [typed API](sdk/http.d.mts) for exact contracts; see the [minimal runnable example](examples/node-personal-usage/) for an existing package.
+Start with the **[TypeScript extension developer guide](docs/EXTENSION_AUTHORING.md)**: a complete first extension, GitHub repository layout and manifest, source installation and prebuilt packaging, all HTTP hook stages, API recipes, ordering, credentials, lifecycle, testing and troubleshooting. Prefer publishing TypeScript source without precompiling for extensions that fit the documented source-mode limits. Handwritten JavaScript and precompiled TypeScript remain supported; use prebuilt `.mjs` for Node builtin imports, third-party dependencies or custom builds. Use the [SDK reference](sdk/README.md) and [typed API](sdk/http.d.mts) for exact contracts; see the [minimal runnable example](examples/node-personal-usage/) for an existing package.
 
 ## Connection support
 
@@ -101,7 +101,7 @@ WebSocket traffic uses standard-library upgrade handling; there is no gateway We
 
 `proxy.New(upstream)` returns a `*proxy.Proxy` embedding the standard `*httputil.ReverseProxy`, with HTTP/1 full duplex enabled. Configure its `Rewrite`, `ModifyResponse` or `Transport` before serving to modify requests and responses, including body readers. Transformations must keep length/encoding headers correct and close replaced bodies. Configuration must remain unchanged while requests are running. Close the transport's idle connections when finished. Embedded servers should supply a cancellable `http.Server.BaseContext` and cancel it after HTTP draining to close upgraded connections, as the executable does.
 
-For managed native extensions, use `extension.New` and `proxy.NewWithEngine`. The engine owns ordered hooks, bounded body recovery, scoped internal calls, original observations and delivery evidence. See [execution contracts](docs/implementation/execution.md). `nodehost.Open` adapts enabled installed Node hooks to that same engine; the CLI uses `nodehost.OpenRuntime` with `proxy.NewWithRuntime` for hot activation. TypeScript authors compile to ESM before packaging.
+For managed native extensions, use `extension.New` and `proxy.NewWithEngine`. The engine owns ordered hooks, bounded body recovery, scoped internal calls, original observations and delivery evidence. See [execution contracts](docs/implementation/execution.md). `nodehost.Open` adapts enabled installed Node hooks to that same engine; the CLI uses `nodehost.OpenRuntime` with `proxy.NewWithRuntime` for hot activation. TypeScript authors can publish supported source directly or compile to ESM before packaging.
 
 Optional examples demonstrate [account brokering](examples/brokerapp/), [managed AI coordination](examples/aihost/), [durable recall](examples/recall/) and their [combined composition](examples/system/) with an independent original recorder. Local socket/process tests cover two tenants, routing, tools, restart continuation, buffered SSE and shutdown. They are application building blocks, not enabled-by-default services or universal protocol adapters.
 
