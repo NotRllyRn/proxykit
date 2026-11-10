@@ -227,7 +227,7 @@ func (m *Runtime) Change(ctx context.Context, id string, enabled bool) (err erro
 	reuse := map[string]*worker.Worker{}
 	for _, r := range records {
 		if live := m.instances[r.Manifest.ID]; live != nil {
-			if live.record != r || live.stopping {
+			if !live.record.Equal(r) || live.stopping {
 				m.mu.Unlock()
 				return fmt.Errorf("%s: overlapping replacement or cleanup in progress", r.Manifest.ID)
 			}

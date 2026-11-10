@@ -249,7 +249,9 @@ Installation automatically creates or validates `<store>/.data/<manifest-id>`.
 The host validates it again and supplies its absolute path as `api.dataDir` before
 calling setup, including for packages installed by older hosts. No user directory
 initialization step is needed. Use normal Node filesystem APIs to initialize your
-application's files during setup, not a host storage service. For example:
+application's files during setup, not a host storage service. The following example
+is for **prebuilt ESM packages only**: the source TypeScript installer does not
+support `node:fs/promises` or `node:path` imports.
 
 ```js
 import { open, readFile } from 'node:fs/promises';

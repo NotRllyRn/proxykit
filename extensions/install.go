@@ -39,6 +39,14 @@ type Installation struct {
 	Commit   string       `json:"commit"`
 	Build    *SourceBuild `json:"build,omitempty"`
 }
+
+// Equal compares the full installation and build provenance by value.
+func (r Installation) Equal(other Installation) bool {
+	return r.Manifest == other.Manifest && r.Source == other.Source && r.Commit == other.Commit &&
+		(r.Build == nil && other.Build == nil ||
+			r.Build != nil && other.Build != nil && *r.Build == *other.Build)
+}
+
 type Source struct{ Owner, Repository, Revision string }
 
 func ParseSource(raw string) (Source, error) {
