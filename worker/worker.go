@@ -191,9 +191,7 @@ func (w *Worker) start(ctx context.Context) error {
 	w.last = nil
 	w.mu.Unlock()
 	go func() {
-		err := p.cmd.Wait()
-		// No extension-owned subprocess may outlive this worker's lifecycle.
-		p.kill()
+		err := p.wait()
 		// Descendants may also inherit stdout; allow final frames to drain,
 		// but do not let inherited descriptors prevent reaping completion.
 		drain := time.NewTimer(20 * time.Millisecond)
