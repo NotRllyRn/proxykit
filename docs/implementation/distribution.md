@@ -1,5 +1,28 @@
 # Distribution and trusted Node workers
 
+## Current addition: host-compiled TypeScript source installation
+
+`.mts` and `.ts` manifest entries now infer source mode; prebuilt `.mjs` (including
+precompiled TypeScript) stays unchanged. Required `apiVersion: 1`, trust, disabled
+install, explicit activation and persistent `api.dataDir` contracts are unchanged.
+The host embeds the verified official TypeScript 5.9.3 archive and SDK, strictly
+typechecks all package source, and compiles before publication or intent mutation.
+No npm/npx, package scripts, runtime download, PATH tsc or disabled package
+execution. See [current authoring contract](../EXTENSION_AUTHORING.md#host-compiler-and-source-mode-limits)
+for exact import/config/format/asset restrictions, bounded compiler lifecycle,
+version/hash/license/provisioning, and source/runtime tree integrity. Historical
+prebuilt-only/no-compilation claims below do not describe source mode.
+
+Implementation tests: `extensions/source_test.go` covers installed `.mts` and `.ts`
+through real workers, relative and host SDK imports, SDK/type/syntax/import errors,
+asset URLs, disabled state, staging rollback, cancellation/deadline, unsupported
+config/formats and runtime asset integrity. `nodehost/source_test.go` covers the
+real archive installer → compiler → installed native HTTP pipeline and failed
+typechecked replacement preserving enabled intent, package and running hook;
+original-source mutation is rejected by inventory. Existing `.mjs` installer and
+compiled CLI tests retain the prebuilt path. This is local implementation evidence,
+not independent review or cross-platform certification.
+
 **Historical implementation record.** The restart-only activation and four-field manifest claims below are superseded by [safe hot activation](../HOT_ACTIVATION.md): required `apiVersion: 1`, disabled installs, explicit enabled decisions, immutable generations and reuse of unchanged workers. IPC `v:1` and the author HTTP handler API are unchanged. Consult that document and [authoring](../EXTENSION_AUTHORING.md) for current behavior, not the older snapshots below.
 
 Status: Group B installer, worker, SDK, installed HTTP activation bridge and CLI reviewed in `c39637d` and integrated as `8f36088`. Parent verification passed the full repository race suite, vet, CLI build and all three SDK tests (including TypeScript) after integration. This document records the v1 wire contract, historical proposal and executable evidence. Group A execution, original snapshots and DeliveryEvidence are reused without changing extension/ or proxy/. Nothing here claims sandboxing or complete R01–R50 coverage.

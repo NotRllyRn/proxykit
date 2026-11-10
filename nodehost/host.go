@@ -97,7 +97,7 @@ func buildHost(ctx context.Context, o Options, records []extensions.Installation
 	var hooks []installedHook
 	for _, record := range records {
 		options := o.Worker
-		options.Entry = filepath.Join(o.Store, record.Manifest.ID, "package", filepath.FromSlash(record.Manifest.Entry))
+		options.Entry = filepath.Join(o.Store, record.Manifest.ID, "package", filepath.FromSlash(record.RuntimeEntry()))
 		w := reuse[record.Manifest.ID]
 		if w == nil {
 			// The embedding host owns the store for the worker lifetime.

@@ -63,7 +63,10 @@ func (i Installer) Inventory() ([]InventoryRecord, error) {
 				e = r.Manifest.Validate()
 			}
 			if e == nil {
-				_, e = readRegular(filepath.Join(i.Store, row.ID, "package", filepath.FromSlash(r.Manifest.Entry)), 64<<20)
+				_, e = readRegular(filepath.Join(i.Store, row.ID, "package", filepath.FromSlash(r.RuntimeEntry())), 64<<20)
+			}
+			if e == nil {
+				e = r.Verify(filepath.Join(i.Store, row.ID, "package"))
 			}
 		}
 		if e != nil {

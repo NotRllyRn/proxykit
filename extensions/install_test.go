@@ -165,7 +165,7 @@ func TestSourceAndManifestValidation(t *testing.T) {
 			t.Errorf("accepted %s", s)
 		}
 	}
-	for _, m := range []Manifest{{1, 1, "../bad", "1.0.0", "main.mjs"}, {2, 1, "test", "1.0.0", "main.mjs"}, {1, 1, "test", "latest", "main.mjs"}, {1, 1, "test", "1.0.0", "../main.mjs"}, {1, 1, "test", "1.0.0", "C:/main.mjs"}, {1, 1, "test", "1.0.0", "main.ts"}} {
+	for _, m := range []Manifest{{1, 1, "../bad", "1.0.0", "main.mjs"}, {2, 1, "test", "1.0.0", "main.mjs"}, {1, 1, "test", "latest", "main.mjs"}, {1, 1, "test", "1.0.0", "../main.mjs"}, {1, 1, "test", "1.0.0", "C:/main.mjs"}, {1, 1, "test", "1.0.0", "main.cts"}} {
 		if err := m.Validate(); err == nil {
 			t.Errorf("accepted %+v", m)
 		}

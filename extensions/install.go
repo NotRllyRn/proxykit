@@ -1,4 +1,4 @@
-// Package extensions installs prebuilt trusted ESM packages without executing them.
+// Package extensions installs trusted ESM and typechecked TypeScript source packages without executing package code.
 package extensions
 
 import (
@@ -34,9 +34,10 @@ type Manifest struct {
 	Entry           string `json:"entry"`
 }
 type Installation struct {
-	Manifest Manifest `json:"manifest"`
-	Source   string   `json:"source"`
-	Commit   string   `json:"commit"`
+	Manifest Manifest     `json:"manifest"`
+	Source   string       `json:"source"`
+	Commit   string       `json:"commit"`
+	Build    *SourceBuild `json:"build,omitempty"`
 }
 type Source struct{ Owner, Repository, Revision string }
 
@@ -76,8 +77,8 @@ func (m Manifest) Validate() error {
 	if m.APIVersion != 1 {
 		return fmt.Errorf("extension apiVersion %d unsupported or missing; this host requires apiVersion: 1", m.APIVersion)
 	}
-	if m.ManifestVersion != 1 || !safeID.MatchString(m.ID) || !validVersion(m.Version) || !safePath(m.Entry) || !strings.HasSuffix(m.Entry, ".mjs") {
-		return errors.New("invalid v1 manifest: require safe id, semantic version and relative .mjs entry")
+	if m.ManifestVersion != 1 || !safeID.MatchString(m.ID) || !validVersion(m.Version) || !safePath(m.Entry) || !(strings.HasSuffix(m.Entry, ".mjs") || sourceEntry(m.Entry)) {
+		return errors.New("invalid v1 manifest: require safe id, semantic version and relative .mjs, .mts or .ts entry")
 	}
 	return nil
 }
@@ -182,6 +183,8 @@ type Installer struct {
 	APIBase, ArchiveBase      string
 	MaxDownload, MaxExtracted int64
 	MaxFiles                  int
+	NodeBinary                string        // host Node executable; compiler is always embedded, never PATH tsc
+	CompileTimeout            time.Duration // zero selects 30s, maximum 2m
 }
 
 func (i Installer) defaults() Installer {
@@ -316,6 +319,15 @@ func (i Installer) Install(ctx context.Context, source string, trust bool) (Inst
 		return Installation{}, errors.New("entry is not a regular file")
 	}
 	result := Installation{Manifest: m, Source: source, Commit: sha}
+	if sourceEntry(m.Entry) {
+		result.Build, err = i.compile(ctx, pkg)
+		if err != nil {
+			return Installation{}, err
+		}
+		if _, err = readRegular(filepath.Join(pkg, result.RuntimeEntry()), 64<<20); err != nil {
+			return Installation{}, err
+		}
+	}
 	b, _ = json.MarshalIndent(result, "", "  ")
 	if err = os.WriteFile(filepath.Join(stage, "installation.json"), b, 0600); err != nil {
 		return Installation{}, err
@@ -522,6 +534,9 @@ func (i Installer) List() ([]Installation, error) {
 		}
 		if _, err := ParseSource(record.Source); err != nil {
 			return nil, errors.New("invalid installed source provenance")
+		}
+		if err = record.Verify(filepath.Join(i.Store, record.Manifest.ID, "package")); err != nil {
+			return nil, err
 		}
 		result = append(result, record)
 	}

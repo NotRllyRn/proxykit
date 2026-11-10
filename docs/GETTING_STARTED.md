@@ -74,11 +74,11 @@ Installed Node extensions receive this path as `api.dataDir` during setup. Data 
 
 ### Required package format
 
-The repository must contain a root manifest and prebuilt ESM entry point, for example:
+Prefer a repository containing a root manifest and TypeScript source entry:
 
 ```text
 proxykit-extension.json
-dist/extension.mjs
+src/extension.mts
 ```
 
 ```json
@@ -87,11 +87,15 @@ dist/extension.mjs
   "apiVersion": 1,
   "id": "example-extension",
   "version": "1.0.0",
-  "entry": "dist/extension.mjs"
+  "entry": "src/extension.mts"
 }
 ```
 
-The entry must implement ProxyKit's extension API; an arbitrary JavaScript file is not enough. Runtime dependencies/assets must be included. **The installer does not run npm, compile TypeScript or execute build scripts.** Missing or unsupported API versions are rejected. Authors should use the [developer guide](EXTENSION_AUTHORING.md), which documents the full packaging contract.
+The entry must implement ProxyKit's extension API; an arbitrary script is not enough. `.mts`/`.ts` selects source mode: the host's embedded, pinned **TypeScript 5.9.3** compiler strictly typechecks against the embedded SDK and compiles in temporary staging, without executing package code. No compiler download, npm/npx, package build/lifecycle scripts or local `tsc` is used. Node is required for source installation as well as activation. A compiler failure publishes nothing and does not change enabled intent.
+
+Source mode is deliberately narrow: relative source imports and `@proxykit/sdk` only, fixed ES2022 ESM/strict options, no package tsconfig, copied JS, Node builtin imports or third-party dependency resolution. Assets retain their relative layout beside generated modules; use `new URL('./asset', import.meta.url)`. See [source limits, compiler hash/license/provisioning and integrity](EXTENSION_AUTHORING.md#host-compiler-and-source-mode-limits).
+
+Prebuilt `.mjs` remains fully supported, including author-precompiled TypeScript: use `"entry": "dist/extension.mjs"` and commit that file and its dependencies/assets. It is not rebuilt or typechecked by the installer. Missing or unsupported `apiVersion` is rejected in either mode. Authors should use the [developer guide](EXTENSION_AUTHORING.md).
 
 ## 6. Activate and verify
 

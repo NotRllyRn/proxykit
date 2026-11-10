@@ -2,7 +2,9 @@
 
 New extension authors: start with the [TypeScript developer guide](../docs/EXTENSION_AUTHORING.md) for repository layout, a complete starter, publishing/installing, stage-by-stage recipes and testing. This page is the compact API contract reference.
 
-Dependency-free ESM and TypeScript declarations. Bundle/copy `index.mjs` and any relative runtime modules into the prebuilt package, or use the runtime-supplied `api` directly as the example does. The installer does not fetch SDK dependencies or compile TypeScript. `defineExtension` remains a generic worker API; `defineHTTP` gives typed installed-HTTP inputs, results and contexts over the same registration API.
+Dependency-free ESM and TypeScript declarations. **Prefer installed TypeScript source** (`.mts`/`.ts` manifest entry) and import from `@proxykit/sdk`: the pinned host TypeScript 5.9.3 compiler strictly typechecks against these embedded declarations and emits ESM with the matching embedded SDK runtime. No npm, dependency download, package scripts or package execution occurs during installation. Source mode intentionally supports only relative source and host SDK imports, with fixed strict ES2022 settings; see [compiler provisioning/hash/license, asset paths and limitations](../docs/EXTENSION_AUTHORING.md#host-compiler-and-source-mode-limits).
+
+Prebuilt `.mjs`, including author-precompiled TypeScript, remains supported unchanged. For that workflow bundle/copy `index.mjs` and relative runtime modules, or use the runtime-supplied `api` directly. The example below uses the copied-SDK prebuilt form; for source mode change its import to `@proxykit/sdk`. `defineExtension` remains a generic worker API; `defineHTTP` gives typed installed-HTTP inputs, results and contexts over the same registration API.
 
 ```ts
 import { defineHTTP, replace, pass } from './sdk/index.mjs';

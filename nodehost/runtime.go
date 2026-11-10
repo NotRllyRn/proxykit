@@ -78,7 +78,7 @@ func OpenRuntime(ctx context.Context, o RuntimeOptions) (*Runtime, error) {
 	}
 	o.Engine.SharedAdmission = make(chan struct{}, n)
 	stop, cancel := context.WithCancel(context.Background())
-	m := &Runtime{txn: make(chan struct{}, 1), stop: stop, cancel: cancel, shutdownDone: make(chan struct{}), options: o, installer: extensions.Installer{Store: o.Store, Owned: true}, draining: map[uint64]*generation{}, instances: map[string]*instance{}, failures: map[string]string{}}
+	m := &Runtime{txn: make(chan struct{}, 1), stop: stop, cancel: cancel, shutdownDone: make(chan struct{}), options: o, installer: extensions.Installer{Store: o.Store, Owned: true, NodeBinary: o.Worker.NodeBinary}, draining: map[uint64]*generation{}, instances: map[string]*instance{}, failures: map[string]string{}}
 	defer func() {
 		if m.current == nil {
 			cancel()

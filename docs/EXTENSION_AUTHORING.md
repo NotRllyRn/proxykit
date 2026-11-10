@@ -4,16 +4,117 @@ This is the developer entry point for **installed HTTP v1 extensions**. It docum
 
 ## 1. Mental model and conventions
 
-- ProxyKit runs your prebuilt ESM module in a trusted Node process. Export one setup function; register hooks during setup. Go owns HTTP dispatch, body retention, ordering and result validation.
-- TypeScript is an authoring language, **not an installer input**. Compile before publishing. There is no npm package download, dependency installation, build script or automatic TypeScript execution on the server.
+- ProxyKit runs ESM in a trusted Node process. Prefer **TypeScript source installation** for small dependency-free extensions: publish a `.mts` or `.ts` entry and let the host typecheck and compile it. Export one setup function; register hooks during setup. Go owns HTTP dispatch, body retention, ordering and result validation.
+- Prebuilt `.mjs` remains supported unchanged, including author-precompiled TypeScript and bundled dependencies. Installation never runs npm/npx, dependency installation, package build/lifecycle scripts or package code.
 - Handlers decide whether to act. Return `pass()` when not applicable; there is no separate check callback.
 - Return detached full snapshots, not mutations or patches. Keep handlers small, choose explicit body/failure modes and avoid global per-request state. Never assume requests execute serially.
 - Use stable descriptive hook IDs, generic example labels and documented configuration. Keep secrets, databases and runtime output out of Git. Document permissions, ports, persistence, limits and unsupported modes in your extension's README.
 - Extensions are **not sandboxed**. They have the server user's filesystem/network privileges. `--trust` means consent to code execution, not verification of safety.
 
-## 2. GitHub repository layout
+## 2. Preferred: publish TypeScript source
 
-A minimal TypeScript repository can look like this:
+Publish a root manifest plus source and regular-file assets. No copied SDK, `dist`, package.json or tsconfig is required:
+
+```text
+example-extension/
+├── proxykit-extension.json
+├── README.md
+├── LICENSE
+└── src/
+    ├── extension.mts
+    ├── label.ts
+    └── asset.txt
+```
+
+```json
+{
+  "manifestVersion": 1,
+  "apiVersion": 1,
+  "id": "example-extension",
+  "version": "1.0.0",
+  "entry": "src/extension.mts"
+}
+```
+
+```ts
+// src/extension.mts
+import { defineHTTP, pass, replace } from '@proxykit/sdk';
+import { label } from './label.js'; // resolves to label.ts; emitted as label.mjs
+export default defineHTTP(api => {
+  api.on({ id: 'response-label', stage: 'responseStart', bodyMode: 'none' }, input => {
+    if (input.response.status !== 200) return pass();
+    return replace({ ...input.response,
+      header: { ...input.response.header, 'X-Example-Extension': [label] } });
+  });
+});
+// src/label.ts: export const label: string = 'enabled';
+```
+
+### Host compiler and source-mode limits
+
+The Go binary embeds the **unmodified official TypeScript 5.9.3 npm archive**,
+Apache-2.0 license and host-owned driver. Its SHA-256 is
+`10e108c9cf7d5f2879053dff18515fb405abf2ccef63eaaf017d9c571687a1d3`.
+The artifact was retrieved from the official npm registry and verified against
+its SHA-512 SRI; see [license and provenance](../extensions/compiler/PROVENANCE.md).
+Building the Go binary provisions the compiler automatically with `go:embed`;
+there are no runtime downloads, npm calls, arbitrary local `tsc` lookup or
+`TSC_BINARY` override (that variable is only for SDK authoring tests). Node must
+be installed on PATH; a running embedded host can use its configured Node binary.
+
+This is **real strict typechecking**, not transpile-only: all package `.ts`/`.mts`
+files and the actual host-embedded SDK declarations are checked, including SDK
+export names and callback types, before any output is published. The matching
+host SDK runtime is copied into the generated tree. Fixed options: ES2022 ESM,
+strict, ES2022 + DOM standard libraries (for SDK AbortSignal/URL types), no ambient
+package types, no plugins or package config. TypeScript's explicit escape hatches
+such as `any` and diagnostic suppression still work; typechecking is not runtime
+validation or a sandbox, and DOM declarations do not imply browser APIs in Node.
+
+Supported imports are `@proxykit/sdk` and **relative package source files only**.
+Use explicit `.mts`/`.ts`, or runtime-style `.mjs` → `.mts` and `.js` → `.ts`.
+Static imports/re-exports and literal dynamic imports are rewritten to the exact
+emitted `.mjs` paths. Type-only imports use the same restriction. No extensionless,
+directory, bare dependency, Node builtin, JSON, URL, query/fragment, escaping or
+nonliteral imports. No JSX, CommonJS, namespaces, declaration files or triple-slash
+directives. Source packages containing JavaScript or `tsconfig*.json` are rejected,
+not silently built with different settings. An optional package.json may declare
+`type: module`; its scripts are never executed. Use the prebuilt workflow below
+for Node builtin typings, copied SDKs, third-party dependencies or custom compiler
+configuration. This deliberately narrow first source mode is not a full Node
+application build system.
+
+The original archive remains under `package/`; generated ESM and copied assets
+are under the reserved `package/.proxykit-build/`, preserving relative layout.
+Both `.ts` and `.mts` emit `.mjs`. Regular non-source assets (except package.json)
+are mirrored beside modules, so `new URL('./asset.txt', import.meta.url)` points
+to the runtime copy; do not resolve assets against cwd or assume source filenames
+exist beside emitted modules. Assets cannot be imported as modules. `.sdk` and
+`.proxykit-build` at package root are reserved. Output-name collisions fail
+installation. Build tools never write into `api.dataDir`.
+
+Archive download/extraction bounds still apply. Generated-plus-source trees are
+limited to 128 MiB and 8192 filesystem objects; emitted modules additionally to
+64 MiB / 2048 files. Compilation has a 30-second default deadline, 256 MiB V8 old
+heap plus 16 MiB semi-space setting, bounded 16 KiB retained diagnostics and pipe
+completion, and context cancellation/forced termination (private process group on
+Unix; direct child elsewhere). V8 settings are **not a hard RSS/OS memory sandbox**.
+Embedded installers may choose a shorter timeout or at most two minutes. The
+host driver spawns no subprocesses. Compilation precedes package publication,
+persistent data creation and enabled-state intent changes. A failed compile
+removes staging and leaves existing packages/running generations/intent intact.
+Installation still defaults disabled; no source code executes until activation.
+
+Host provenance records the compiler version/hash and a SHA-256 digest covering
+original source, manifest, generated modules, SDK and assets. Inventory/activation
+reject modified trees and links/special files. This detects changes relative to
+host-owned provenance, not a signature, GitHub authenticity proof or protection
+against trusted same-UID code changing provenance itself. Prebuilt `.mjs` retains
+its existing behavior and does not acquire this new source-build integrity check.
+
+### Optional: author-precompiled TypeScript / prebuilt ESM
+
+For the broader prebuilt workflow, a repository can instead look like this:
 
 ```text
 example-extension/
@@ -58,7 +159,7 @@ These are the **only** manifest keys. Unknown/duplicate keys fail validation.
 | `apiVersion` | Required host/author HTTP API major integer `1`; independent of package version and IPC `v:1`. Missing/unsupported majors are rejected, never inferred from copied SDK files |
 | `id` | `[a-z][a-z0-9-]{0,63}`; stable installation identity |
 | `version` | SemVer-shaped string, at most 128 bytes |
-| `entry` | Safe relative path to an existing regular `.mjs` file; no absolute path or `..` |
+| `entry` | Safe relative existing regular `.mts`/`.ts` (source mode) or `.mjs` (prebuilt); no absolute path or `..` |
 
 There are no manifest permissions, ports, dependency installation, lifecycle scripts or arbitrary configuration fields. An ID collision refuses installation rather than overwriting an existing package.
 
@@ -358,8 +459,8 @@ Unit tests can invoke setup with a fake `on/config/dataDir/log/cleanup` API to c
 
 | Symptom | Check |
 |---|---|
-| Install cannot find manifest/entry | Root manifest and prebuilt `.mjs` must be in the selected commit, not only your laptop/release attachment |
-| Runtime cannot resolve import | Include relative modules/assets; no server-side npm install occurs |
+| Install cannot find manifest/entry | Root manifest and selected `.mts`/`.ts` source or prebuilt `.mjs` must be in the selected commit, not only your laptop/release attachment |
+| Import/config rejected during source install | Follow source-mode limits above, or publish prebuilt `.mjs` for custom tooling/Node builtins; no server-side npm install occurs |
 | Startup fails ordering validation | Missing requires, cycles, global ID length, incompatible body modes or numeric-order contradictions |
 | Hook output rejected | Explicit action, full snapshot fields, header arrays, body-mode rules and canonical base64 |
 | Stream is aborted | Blocking failure after commitment cannot become a replacement response |
