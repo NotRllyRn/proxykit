@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"testing"
 	"time"
 )
@@ -83,10 +82,17 @@ func TestWaitKillsInheritedStderrBeforeReaping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Orphaned descendants may remain zombies until the system reaps them.
-	data, err := os.ReadFile("/proc/" + strconv.Itoa(pid) + "/stat")
-	if err == nil && !strings.Contains(string(data), ") Z ") {
-		_ = syscall.Kill(pid, syscall.SIGKILL)
-		t.Fatalf("descendant survived group termination: %s", data)
+	// SIGKILL delivery is asynchronous; descriptors can close before exit is
+	// observable. Orphans may then remain zombies until the system reaps them.
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		data, err := os.ReadFile("/proc/" + strconv.Itoa(pid) + "/stat")
+		if os.IsNotExist(err) || (err == nil && strings.Contains(string(data), ") Z ")) {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("descendant did not exit after group termination: stat=%q err=%v", data, err)
+		}
+		time.Sleep(time.Millisecond)
 	}
 }
