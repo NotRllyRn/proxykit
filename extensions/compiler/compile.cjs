@@ -92,7 +92,7 @@ const rewrite = context => sf => {
       const parent = n.parent;
       if (target && parent && (ts.isImportDeclaration(parent) || ts.isExportDeclaration(parent) || ts.isCallExpression(parent) && parent.expression.kind === ts.SyntaxKind.ImportKeyword)) {
         let rel = path.relative(path.dirname(runtimePath(sf.fileName)),runtimePath(target)).split(path.sep).join('/');
-        if (!rel.startsWith('.')) rel = './'+rel;
+        if (!rel.startsWith('./') && !rel.startsWith('../')) rel = './'+rel;
         return ts.factory.createStringLiteral(rel);
       }
     }

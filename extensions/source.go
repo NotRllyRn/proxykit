@@ -41,7 +41,7 @@ func sourceEntry(entry string) bool {
 }
 func (r Installation) RuntimeEntry() string {
 	if sourceEntry(r.Manifest.Entry) {
-		return filepath.Join(buildDir, strings.TrimSuffix(strings.TrimSuffix(r.Manifest.Entry, ".mts"), ".ts")+".mjs")
+		return filepath.Join(buildDir, strings.TrimSuffix(r.Manifest.Entry, filepath.Ext(r.Manifest.Entry))+".mjs")
 	}
 	return r.Manifest.Entry
 }

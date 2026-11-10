@@ -19,13 +19,15 @@ func sourceItems(entry, body string, extra ...item) []item {
 	return append([]item{{name: "root/proxykit-extension.json", body: `{"manifestVersion":1,"apiVersion":1,"id":"example-user","version":"1.0.0","entry":"` + entry + `"}`}, {name: "root/" + entry, body: body}}, extra...)
 }
 func TestInstalledSourceRuntime(t *testing.T) {
-	for _, ext := range []string{"mts", "ts"} {
-		t.Run(ext, func(t *testing.T) {
-			items := sourceItems("src/main."+ext, `import {defineHTTP, pass} from '@proxykit/sdk';
+	for _, entry := range []string{"src/main.mts", "src/main.ts", "main.mts", "main.ts", "main.ts.mts"} {
+		t.Run(entry, func(t *testing.T) {
+			dir := filepath.Dir(entry)
+			items := sourceItems(entry, `import {defineHTTP, pass} from '@proxykit/sdk';
 import {label} from './exports.ts';
-export default defineHTTP(api => { api.on({id:'source',stage:'request',bodyMode:'none'}, async () => ({...pass(),metadata:{label,dynamic:(await import('./relative.mts')).label,asset:new URL('./asset.txt',import.meta.url).href,data:api.dataDir}})); });`, item{name: "root/src/exports.ts", body: `export { label } from './relative.mjs';`}, item{name: "root/src/relative.mts", body: `export const label: string = 'compiled';`}, item{name: "root/src/asset.txt", body: "asset content"}, item{name: "root/package.json", body: `{"type":"module","scripts":{"install":"exit 99","build":"exit 99"}}`})
+import {hidden} from './.hidden/helper.ts';
+export default defineHTTP(api => { api.on({id:'source',stage:'request',bodyMode:'none'}, async () => ({...pass(),metadata:{label,hidden,dynamic:(await import('./relative.mts')).label,asset:new URL('./asset.txt',import.meta.url).href,data:api.dataDir}})); });`, item{name: filepath.ToSlash(filepath.Join("root", dir, "exports.ts")), body: `export { label } from './relative.mjs';`}, item{name: filepath.ToSlash(filepath.Join("root", dir, "relative.mts")), body: `export const label: string = 'compiled';`}, item{name: filepath.ToSlash(filepath.Join("root", dir, ".hidden/helper.ts")), body: `export const hidden: string = 'dot directory';`}, item{name: filepath.ToSlash(filepath.Join("root", dir, "asset.txt")), body: "asset content"}, item{name: "root/package.json", body: `{"type":"module","scripts":{"install":"exit 99","build":"exit 99"}}`})
 			i, _ := fixture(t, archive(t, items))
-			if ext == "ts" {
+			if entry == "src/main.ts" {
 				cwd, e := os.Getwd()
 				if e != nil {
 					t.Fatal(e)
@@ -73,7 +75,7 @@ export default defineHTTP(api => { api.on({id:'source',stage:'request',bodyMode:
 			if e = json.Unmarshal(b, &result); e != nil {
 				t.Fatal(e)
 			}
-			if result.Action != "pass" || result.Metadata["label"] != "compiled" || result.Metadata["dynamic"] != "compiled" || result.Metadata["data"] != data {
+			if result.Action != "pass" || result.Metadata["label"] != "compiled" || result.Metadata["hidden"] != "dot directory" || result.Metadata["dynamic"] != "compiled" || result.Metadata["data"] != data {
 				t.Fatalf("%s", b)
 			}
 			u, e := url.Parse(result.Metadata["asset"])
