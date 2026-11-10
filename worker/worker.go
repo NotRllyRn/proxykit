@@ -98,6 +98,7 @@ type process struct {
 	writes     chan []byte
 	once       sync.Once
 	stopOnce   sync.Once
+	killOnce   sync.Once
 	readerDone chan struct{}
 }
 
@@ -158,6 +159,7 @@ func (w *Worker) start(ctx context.Context) error {
 	}
 	p := &process{owner: w, pending: map[string]*pending{}, readyCh: make(chan error, 1), exited: make(chan struct{}), writes: make(chan []byte, w.options.Concurrency*2+8), readerDone: make(chan struct{})}
 	p.cmd = exec.Command(w.options.NodeBinary, "--input-type=module", "-e", runtimeSource)
+	configureProcess(p.cmd)
 	p.cmd.Stderr = w.options.Stderr
 	// Bound os/exec's copy wait when a descendant inherits stderr. Writers must
 	// still return from Write: WaitDelay cannot interrupt arbitrary user code.
@@ -190,6 +192,8 @@ func (w *Worker) start(ctx context.Context) error {
 	w.mu.Unlock()
 	go func() {
 		err := p.cmd.Wait()
+		// No extension-owned subprocess may outlive this worker's lifecycle.
+		p.kill()
 		// Descendants may also inherit stdout; allow final frames to drain,
 		// but do not let inherited descriptors prevent reaping completion.
 		drain := time.NewTimer(20 * time.Millisecond)
@@ -225,7 +229,7 @@ func (w *Worker) start(ctx context.Context) error {
 		defer stdout.Close()
 		p.reader(stdout)
 	}()
-	err = p.send(map[string]any{"v": 1, "type": "init", "entry": w.options.Entry, "dataDir": w.options.DataDir, "config": w.options.Config, "maxFrame": w.options.MaxFrame, "concurrency": w.options.Concurrency})
+	err = p.send(map[string]any{"v": 1, "type": "init", "entry": w.options.Entry, "dataDir": w.options.DataDir, "config": w.options.Config, "maxFrame": w.options.MaxFrame, "concurrency": w.options.Concurrency, "shutdownTimeout": w.options.ShutdownTimeout.Milliseconds()})
 	if err != nil {
 		p.fail(err)
 		return err
@@ -236,7 +240,12 @@ func (w *Worker) start(ctx context.Context) error {
 	case err = <-p.readyCh:
 		return err
 	case <-ctx.Done():
-		err = ctx.Err()
+		// Setup may already own durable resources. Request protocol cleanup,
+		// but retain the cancellation grace for an uncooperative setup.
+		cleanup, cancel := context.WithTimeout(context.Background(), w.options.CancelGrace)
+		_ = w.Stop(cleanup)
+		cancel()
+		return ctx.Err()
 	case <-timer.C:
 		err = errors.New("worker startup timeout")
 	}
@@ -268,8 +277,11 @@ func (p *process) fail(err error) {
 		default:
 		}
 		_ = p.stdin.Close()
-		_ = p.cmd.Process.Kill()
+		p.kill()
 	})
+}
+func (p *process) kill() {
+	p.killOnce.Do(func() { killProcess(p.cmd) })
 }
 func (p *process) send(v any) error {
 	b, err := json.Marshal(v)

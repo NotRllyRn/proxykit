@@ -8,11 +8,13 @@ const log = (...args) => process.stderr.write(format(...args) + '\n');
 const stderrConsole = new Console({ stdout: process.stderr, stderr: process.stderr });
 for (const key of Object.keys(console)) if (typeof stderrConsole[key] === 'function') console[key] = stderrConsole[key].bind(stderrConsole);
 let maxFrame = 1024 * 1024, concurrency = 16, initialized = false, ready = false, stopping = false;
+let setup = Promise.resolve(), disconnected = false, shutdownTimeout = 5000;
 const hooks = new Map(), active = new Map(), cleanups = [];
 const identifier = /^[a-zA-Z][a-zA-Z0-9_.-]{0,127}$/;
 let outCount = 0;
-function fatal(error) { log('proxykit worker:', error?.stack ?? error); process.exit(1); }
+function fatal(error) { log('proxykit worker:', error?.stack ?? error); exitDisconnected(1); }
 function send(message) {
+  if (disconnected) return;
   const text = JSON.stringify({ v: 1, ...message });
   if (message.type === 'result' && !Object.hasOwn(JSON.parse(text), 'output')) throw new Error('hook must return a JSON value');
   const body = Buffer.from(text);
@@ -21,7 +23,7 @@ function send(message) {
   const frame = Buffer.allocUnsafe(body.length + 4); frame.writeUInt32BE(body.length); body.copy(frame, 4);
   // Validation/allocation rejection is definitely unsent and consumes no queue slot.
   outCount++;
-  try { wireWrite(frame, error => { outCount--; if (error) fatal(error); }); }
+  try { wireWrite(frame, error => { outCount--; if (error) disconnect(); }); }
   // Once a write is attempted, delivery is uncertain: never reuse correlation.
   catch (error) { fatal(error); }
 }
@@ -49,10 +51,12 @@ function keys(m, required, optional = []) {
   if (required.some(k => !Object.hasOwn(m, k)) || Object.keys(m).some(k => !required.includes(k) && !optional.includes(k))) throw new Error('invalid message fields');
 }
 async function initialize(m) {
-  keys(m, ['v', 'type', 'entry', 'config', 'maxFrame', 'concurrency'], ['dataDir']);
+  keys(m, ['v', 'type', 'entry', 'config', 'maxFrame', 'concurrency'], ['dataDir', 'shutdownTimeout']);
   if (m.dataDir !== undefined && (typeof m.dataDir !== 'string' || (m.dataDir !== '' && !isAbsolute(m.dataDir)))) throw new Error('invalid dataDir');
   if (initialized || typeof m.entry !== 'string' || !Number.isInteger(m.maxFrame) || m.maxFrame < 256 || m.maxFrame > 64 * 1024 * 1024 || !Number.isInteger(m.concurrency) || m.concurrency < 1 || m.concurrency > 4096) throw new Error('invalid init');
+  if (m.shutdownTimeout !== undefined && (!Number.isSafeInteger(m.shutdownTimeout) || m.shutdownTimeout < 0)) throw new Error('invalid shutdownTimeout');
   initialized = true; maxFrame = m.maxFrame; concurrency = m.concurrency;
+  shutdownTimeout = Math.max(1, Math.min(m.shutdownTimeout ?? 5000, 2147483647));
   let registrationOpen = true;
   const api = Object.freeze({
     config: m.config,
@@ -114,7 +118,10 @@ async function invoke(m) {
   } finally { clearTimeout(timer); call.pending?.reject(new Error('expired managed scope')); call.pending = undefined; active.delete(m.id); }
 }
 async function shutdown(m) {
-  keys(m, ['v', 'type']); if (!ready || stopping) throw new Error('invalid shutdown'); stopping = true;
+  keys(m, ['v', 'type']); if (!initialized || stopping) throw new Error('invalid shutdown'); stopping = true;
+  // Setup can register cleanup after an await. Never run a partial cleanup
+  // stack concurrently with setup; the host (or disconnect timer) bounds it.
+  await setup;
   for (const call of active.values()) call.controller.abort();
   // Host enforces a bounded deadline and kills uncooperative work/cleanup.
   while (active.size) await new Promise(resolve => setTimeout(resolve, 5));
@@ -122,12 +129,12 @@ async function shutdown(m) {
   send({ type: 'stopped' });
   process.stdin.pause();
   // Ensure stopped is flushed; trusted extension-owned handles are forcibly ended.
-  const finish = () => outCount ? setTimeout(finish, 5) : process.exit(0); finish();
+  const finish = () => outCount && !disconnected ? setTimeout(finish, 5) : exitDisconnected(0); finish();
 }
 function message(m) {
   if (m?.v !== 1 || typeof m.type !== 'string') throw new Error('unsupported protocol');
   switch (m.type) {
-    case 'init': initialize(m).catch(fatal); break;
+    case 'init': setup = initialize(m); setup.catch(fatal); break;
     case 'invoke': invoke(m).catch(fatal); break;
     case 'callResult': {
       keys(m, ['v', 'type', 'id', 'callId'], ['output', 'error']);
@@ -163,7 +170,28 @@ process.stdin.on('data', chunk => {
     }
   } catch (error) { fatal(error); }
 });
-process.stdin.on('end', () => { if (!stopping) fatal(new Error('host disconnected')); });
-process.stdin.on('error', fatal);
+// EOF is the ownership boundary even if the host died without sending shutdown.
+// Do not just ignore terminal signals: a disconnected worker must clean up and
+// exit within a deadline without relying on its now-absent supervisor.
+function exitDisconnected(code) {
+  if (disconnected) {
+    // On Unix the host made our PID a private process-group ID. End inherited
+    // descendants too. Other platforms (or standalone runtime probes) fall back
+    // to exiting this process; never signal the host's foreground group.
+    try { process.kill(-process.pid, 'SIGKILL'); } catch {}
+  }
+  process.exit(code);
+}
+function disconnect() {
+  if (disconnected) return;
+  disconnected = true;
+  setTimeout(() => exitDisconnected(1), shutdownTimeout);
+  if (!initialized) { exitDisconnected(1); return; }
+  if (!stopping) shutdown({ v: 1, type: 'shutdown' }).catch(fatal);
+}
+process.stdin.on('end', disconnect);
+process.stdin.on('error', disconnect);
+process.stdout.on('error', disconnect);
+process.stderr.on('error', disconnect);
 process.on('uncaughtException', fatal);
 process.on('unhandledRejection', fatal);
